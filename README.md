@@ -3,7 +3,7 @@ Integrating the desktop and mobile versions of UniqueBible.app into a single app
 
 # BEST TWO INTO ONE
 
-We have produced
+We have produced:
 
 - a desktop version: https://github.com/eliranwong/UniqueBible
 
