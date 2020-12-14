@@ -1,4 +1,4 @@
-# UniqueBibleAppUltimate
+# Unique Bible App Expanded
 Integrating the desktop and mobile versions of UniqueBible.app into a single application and a cross-platform interface.
 
 # BEST TWO INTO ONE
