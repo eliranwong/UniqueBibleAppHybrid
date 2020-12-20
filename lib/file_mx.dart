@@ -1,19 +1,21 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:sqflite/sqflite.dart';
 
 class StorageMx {
 
   // Check if storage permission is granted.
-  Future<bool> checkStoragePermission() async {
+  static Future<bool> checkStoragePermission() async {
     final permissionResult = await Permission.storage.request();
     return (permissionResult.isGranted) ? true : false;
   }
 
   // get user directory
-  Future<String> getUserDirectoryPath() async {
+  static Future<String> getUserDirectoryPath() async {
     if (await checkStoragePermission()) {
       final Directory userDirectory = (Platform.isAndroid)
           ? await getExternalStorageDirectory()
@@ -31,6 +33,23 @@ class FileMx {
   final String userDirectory;
 
   FileMx(this.userDirectory);
+
+  // Get path of a json file in bundle.
+  String getAssetsJsonPath(String feature, [String module]) => "assets/$feature/$module.json";
+
+  // Open a sqlite database in user directory.
+  Future<Database> openSqliteDB(String feature, String filename) async => (feature == "FULLPATH") ? await openDatabase(filename) : await openDatabase(join(userDirectory, feature, filename));
+
+  // Query an already opened database.
+  Future<List<Map<String, dynamic>>> queryOpenedSqliteDB(Database db, String sqlStatement, List<dynamic> filer) async => await db.rawQuery(sqlStatement, filer);
+
+  // Open a database and perform a single query.
+  Future<List<Map<String, dynamic>>> querySqliteDB(String feature, String filename, String sqlStatement, List<dynamic> filer) async {
+    final Database db = await openSqliteDB(feature, filename);
+    List<Map<String, dynamic>> queryResults = await queryOpenedSqliteDB(db, sqlStatement, filer);
+    db.close();
+    return queryResults;
+  }
 
   // Functions related to operations on directories:
 

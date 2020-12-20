@@ -1,9 +1,15 @@
 // Copyright 2020-2021 Eliran Wong. All rights reserved.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'file_mx.dart';
+import 'bible_parser.dart';
 
 void main() {
+  // Avoid errors caused by flutter upgrade.
+  // Importing 'package:flutter/widgets.dart' is required.
+  // The following line is suggested at https://flutter.dev/docs/cookbook/persistence/sqlite
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
 
@@ -50,11 +56,21 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  String marvelData;
+  FileMx fileMx
 
-  Future testFileMx() async {
-    final String marvelData = await StorageMx().getUserDirectoryPath();
+  _MyHomePageState() {
+    setup();
+  }
+
+  Future<void> setup() async {
+    marvelData = await StorageMx.getUserDirectoryPath();
+    fileMx = FileMx(marvelData);
+    print("ready");
+  }
+
+  Future<void> testFileMx() async {
     if (marvelData.isNotEmpty) {
-      final FileMx fileMx = FileMx(marvelData);
       Map<String, List<String>> resources = {
         "bibles": ["KJV.bible", "NET.bible"],
       };
@@ -64,11 +80,29 @@ class _MyHomePageState extends State<MyHomePage> {
         });
       }
       final String biblesFolder = await fileMx.getUserDirectoryFolder("bibles");
-      fileMx.getDirectoryItems(biblesFolder);
+      print(fileMx.getDirectoryItems(biblesFolder));
     }
   }
+
+  Future<void> testSqlite() async {
+    // test sqlite DB
+    String sqlStatement = "SELECT * FROM Verses WHERE Book = ? AND Chapter = ? ORDER BY Verse";
+    List<dynamic> filter = [43, 3];
+    print(await fileMx.querySqliteDB("bibles", "NET.bible", sqlStatement, filter));
+  }
+
+  void testBibleParser() {
+    BibleParser parser = BibleParser("ENG");
+    String testText = ";kja dfasdfkj; Rm 5:8 skjj Jn 3:16 ;lkjas;dkjf ";
+    print(parser.extractAllReferences(testText));
+  }
+
   void _incrementCounter() {
+    // TESTING HERE!
     testFileMx();
+    testSqlite();
+    //testBibleParser();
+
     setState(() {
       // This call to setState tells the Flutter framework that something has
       // changed in this State, which causes it to rerun the build method below
