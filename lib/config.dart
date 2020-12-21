@@ -1,9 +1,31 @@
+// Packages
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:state_notifier/state_notifier.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+// Library
 import 'module_description.dart';
 
-class Config {
+final configProvider = StateNotifierProvider((ref) => Config());
+
+class Config extends StateNotifier<Configurations> {
+
+  Config() : super(Configurations());
+
+  void updateThemeData() => state.updateThemeData();
+  //Future<void> setDefault() async => await state.setDefault();
+  Future<void> save(String feature, dynamic newSetting) async => state.save(feature, newSetting);
+  Future<void> add(String feature, List<int> newItem) async => state.add(feature, newItem);
+  Future<void> remove(String feature, List<int> newItem) async => state.remove(feature, newItem);
+
+}
+
+class Configurations {
+
+  Configurations() {
+    setDefault();
+  }
 
   SharedPreferences prefs;
   ThemeData mainTheme;
@@ -63,7 +85,6 @@ class Config {
     ],
   };
 
-
   // Functions to work with "settings" or preferences
 
   void updateThemeData() {
@@ -88,7 +109,8 @@ class Config {
           .toList();
 
   List<String> convertListListIntToListString(List<List<int>> listListInt) =>
-      listListInt.map((i) => i.join(".")).toList();
+      [for (List<int> i in listListInt) i.join(".")];
+  // same as listListInt.map((i) => i.join(".")).toList()
 
   Future<void> setDefault() async {
     // Get an instance of SharedPreferences.
@@ -112,7 +134,16 @@ class Config {
         stringValues[key] = storedValue;
       }
     }
-    // Preferences with String values
+    // Preferences with int values
+    for (String key in intValues.keys) {
+      final int storedValue = prefs.getInt(key);
+      if (storedValue == null) {
+        prefs.setInt(key, intValues[key]);
+      } else {
+        intValues[key] = storedValue;
+      }
+    }
+    // Preferences with double values
     for (String key in doubleValues.keys) {
       final double storedValue = prefs.getDouble(key);
       if (storedValue == null) {
@@ -139,62 +170,63 @@ class Config {
         listListIntValues[key] = convertListStringToListListInt(storedValue);
       }
     }
+
+    print("Settings are ready!");
   }
 
   Future<void> save(String feature, dynamic newSetting) async {
     if (stringValues.containsKey(feature)) {
+      stringValues[feature] = newSetting;
       await prefs.setString(feature, newSetting as String);
     } else if (boolValues.containsKey(feature)) {
+      boolValues[feature] = newSetting;
       await prefs.setBool(feature, newSetting as bool);
     } else if (doubleValues.containsKey(feature)) {
+      doubleValues[feature] = newSetting;
       await prefs.setDouble(feature, newSetting as double);
-    } else if (doubleValues.containsKey(feature)) {
+    } else if (intValues.containsKey(feature)) {
+      intValues[feature] = newSetting;
       await prefs.setInt(feature, newSetting as int);
     } else if (listStringValues.containsKey(feature)) {
+      listStringValues[feature] = newSetting;
       await prefs.setStringList(feature, newSetting as List<String>);
+    } else if (listListIntValues.containsKey(feature)) {
+      listListIntValues[feature] = newSetting;
+      await prefs.setStringList(feature, convertListListIntToListString(newSetting));
     }
   }
 
   Future<void> add(String feature, List<int> newItem) async {
     switch (feature) {
       case "historyActiveVerse":
-        List<String> tempHistoryActiveVerse =
-            prefs.getStringList("historyActiveVerse");
-        final String newAddition = newItem.join(".");
-        if (tempHistoryActiveVerse[0] != newAddition) {
-          tempHistoryActiveVerse.insert(0, newAddition);
-          // set limitations for the number of history records
-          if (tempHistoryActiveVerse.length > 20)
-            tempHistoryActiveVerse = tempHistoryActiveVerse.sublist(0, 20);
-          await prefs.setStringList(
-              "historyActiveVerse", tempHistoryActiveVerse);
+        List<List<int>> historyActiveVerse = listListIntValues[feature];
+        if (newItem != historyActiveVerse.first) {
+          historyActiveVerse.insert(0, newItem);
+          if (historyActiveVerse.length > 20) historyActiveVerse.sublist(0, 20);
+          save(feature, historyActiveVerse);
         }
         break;
       case "favouriteVerse":
-        List<String> tempFavouriteVerse = prefs.getStringList("favouriteVerse");
-        final String newAddition = newItem.join(".");
-        if ((tempFavouriteVerse.isEmpty) ||
-            (tempFavouriteVerse[0] != newAddition)) {
+        List<List<int>> favouriteVerse = listListIntValues[feature];
+        if ((favouriteVerse.isEmpty) || (newItem != favouriteVerse.first)) {
           // avoid duplication in favourite records:
-          int indexFound = tempFavouriteVerse.indexOf(newAddition);
-          if (indexFound != -1) tempFavouriteVerse.removeAt(indexFound);
-          tempFavouriteVerse.insert(0, newAddition);
-          // set limitations for the number of history records
-          if (tempFavouriteVerse.length > 20)
-            tempFavouriteVerse = tempFavouriteVerse.sublist(0, 20);
-          await prefs.setStringList("favouriteVerse", tempFavouriteVerse);
+          final int indexFound = favouriteVerse.indexOf(newItem);
+          if (indexFound != -1) favouriteVerse.removeAt(indexFound);
+          favouriteVerse.insert(0, newItem);
+          if (favouriteVerse.length > 20) favouriteVerse.sublist(0, 20);
+          save(feature, favouriteVerse);
         }
         break;
     }
   }
 
-  Future<void> remove(String feature, List<int> newItem) async {
+  Future<void> remove(String feature, List<int> binItem) async {
     if (feature == "favouriteVerse") {
-      final String newAddition = newItem.join(".");
-      List<String> tempFavouriteVerse = prefs.getStringList("favouriteVerse");
-      final int indexFound = tempFavouriteVerse.indexOf(newAddition);
-      if (indexFound != -1) tempFavouriteVerse.removeAt(indexFound);
-      await prefs.setStringList("favouriteVerse", tempFavouriteVerse);
+      List<List<int>> favouriteVerse = listListIntValues[feature];
+      final int indexFound = favouriteVerse.indexOf(binItem);
+      if (indexFound != -1) favouriteVerse.removeAt(indexFound);
+      save(feature, favouriteVerse);
     }
   }
+
 }
