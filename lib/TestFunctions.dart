@@ -2,7 +2,7 @@ import 'file_mx.dart';
 import 'bible_parser.dart';
 
 class TestFunctions {
-  
+
   String marvelData;
   FileMx fileMx;
 

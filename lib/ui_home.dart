@@ -9,19 +9,16 @@ import 'dart:io';
 // My libraries
 import 'config.dart';
 import 'app_translation.dart';
+// ui
+import 'ui_home_bottom_app_bar.dart';
+import 'ui_home_top_app_bar.dart';
 
 class UiHome extends HookWidget {
 
   // A global key
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   // To work with riverpod
-  //final Config config = useProvider(configProvider);
-  //final Configurations configState = useProvider(configProvider.state);
-  //AsyncValue<Configurations> config = useProvider(configProvider);
-  //Configurations configState;
-
   final configState = useProvider(configProvider).state;
-
   // variable to work with translations
   String abbreviations;
   final Map<String, List<String>> interfaceApp = AppTranslation().interfaceApp,
@@ -52,7 +49,6 @@ class UiHome extends HookWidget {
 
   @override
   build(BuildContext context) {
-    print("main builder here");
     return Theme(
       data: ThemeData(
         unselectedWidgetColor: configState.myColors["blue"],
@@ -60,79 +56,31 @@ class UiHome extends HookWidget {
       child: Scaffold(
         key: _scaffoldKey,
         //drawer: (configState.boolValues["bigScreen"]) ? null : _buildDrawer(),
-        appBar: _buildAppBar(context),
+        appBar: HomeTopAppBar(context, abbreviations).buildTopAppBar(),
         body: Container(
-          color: configState.backgroundColor,
+          color: configState.myColors["backgroundColor"],
           child: _buildLayout(context),
         ),
-        bottomNavigationBar: _buildBottomAppBar(context),
+        bottomNavigationBar: HomeBottomAppBar(context).buildBottomAppBar(),
         floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
-        floatingActionButton: _buildFloatingActionButton(),
+        floatingActionButton: _buildFloatingActionButton(context),
       ),
     );
   }
 
   // Required by build function: _buildDrawer(), _buildAppBar(context), _buildLayout(context), _buildBottomAppBar(context), _buildFloatingActionButton()
-  FloatingActionButton _buildFloatingActionButton() {
-    return FloatingActionButton(
-      backgroundColor: configState.floatingButtonColor,
-      onPressed: () {
-        print("Floating button pressed!");
-      },
-      //tooltip: interfaceApp[abbreviations][5],
-      child: Icon(Icons.add),
-    );
-  }
-
-  Widget _buildAppBar(BuildContext context) {
-    //original color: Theme.of(context).appBarTheme.color
-    //List<PopupMenuEntry<String>> popupMenu = _appBarPopupMenu();
-    //if (!configState.bigScreen) popupMenu.removeAt(3);
-    return AppBar(
-      backgroundColor: configState.appBarColor,
-      title: Text(interfaceApp[abbreviations].first),
-      leading: Builder(
-        builder: (BuildContext context) {
-          return IconButton(
-            tooltip: interfaceApp[abbreviations][1],
-            icon: const Icon(Icons.menu),
-            onPressed: () {
-              print("navigation button pressed.");
-              print(configState.boolValues["showDrawer"]);
-              if (configState.boolValues["bigScreen"]) {
-                print("navigation button's action triggered.");
-                configState.save("showDrawer", !context.read(showDrawerP).state);
-                context.refresh(showDrawerP);
-                print(configState.boolValues["showDrawer"]);
-              } else {
-                _scaffoldKey.currentState.openDrawer();
-              }
-            },
-          );
-        },
-      ),
-      actions: <Widget>[
-        IconButton(
-          tooltip: interfaceApp[abbreviations][3],
-          icon: const Icon(Icons.swap_calls),
+  Widget _buildFloatingActionButton(BuildContext context) {
+    return Consumer(
+      builder: (context, watch, child) {
+        return FloatingActionButton(
+          backgroundColor: watch(myColorsP).state["floatingButtonColor"],
           onPressed: () {
-            print("switch button pressed");
+            print("Floating button pressed!");
           },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomAppBar(BuildContext context) {
-    return BottomAppBar(
-      // Container placed here is necessary for controlling the height of the ListView.
-      child: Container(
-        padding: EdgeInsets.only(right: 84.0),
-        height: 48,
-        color: configState.bottomAppBarColor,
-        child: ListView(scrollDirection: Axis.horizontal, children: <Widget>[
-        ]),
-      ),
+          //tooltip: interfaceApp[abbreviations][5],
+          child: Icon(Icons.add),
+        );
+      },
     );
   }
 
@@ -144,16 +92,18 @@ class UiHome extends HookWidget {
 
     return Row(
       children: <Widget>[
-        //(configState.boolValues["showDrawer"]) ? _buildTabletDrawer() : Container(),
         Consumer(
-          // Rebuild only the Text when counterProvider updates
           builder: (context, watch, child) {
-            // Listens to the value exposed by counterProvider
             final bool showDrawer = watch(showDrawerP).state;
-            return (showDrawer) ? Center(child: Text("FOR TESTING ONLY!")) : Container();
+            return (showDrawer) ? _buildTabletDrawer() : Container();
           },
         ),
-        (configState.boolValues["showDrawer"]) ? _buildDivider() : Container(),
+        Consumer(
+          builder: (context, watch, child) {
+            final bool showDrawer = watch(showDrawerP).state;
+            return (showDrawer) ? _buildDivider() : Container();
+          },
+        ),
         _wrap(
           OrientationBuilder(
             builder: (context, orientation) {
@@ -192,7 +142,7 @@ class UiHome extends HookWidget {
   }
 
   Widget _dummyWidget() {
-    return Center(child: Text("FOR TESTING ONLY!"));
+    return Center(child: Text("TESTING!"));
   }
 
   Widget _buildTabletDrawer() {

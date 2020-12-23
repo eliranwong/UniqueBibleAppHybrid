@@ -22,7 +22,8 @@ final configProvider = StateProvider<Configurations>((ref) {
   );
 });
 
-// Expose configurations individual bool values
+final configCopyProvider = StateProvider<Configurations>((ref) => Configurations());
+
 final showDrawerP = StateProvider<bool>(
         (ref) => ref.watch(configProvider).state.boolValues["showDrawer"]),
     bigScreenP = StateProvider<bool>(
@@ -85,31 +86,17 @@ final historyActiveVerseP = StateProvider<List<List<int>>>(
     favouriteVerseP = StateProvider<List<List<int>>>(
             (ref) => ref.watch(configProvider).state.listListIntValues["favouriteVerse"]);
 
+final mainThemeP = StateProvider<ThemeData>((ref) => ref.watch(configProvider).state.mainTheme);
+final myColorsP = StateProvider<Map<String, Color>>((ref) => ref.watch(configProvider).state.myColors);
+final verseTextStyleP = StateProvider<Map<String, TextStyle>>((ref) => ref.watch(configProvider).state.myTextStyle);
+
 class Configurations {
   SharedPreferences prefs;
 
+  // The following variables changes when intValues["backgroundBrightness"] or doubleValues["fontSize"] changes.
   ThemeData mainTheme;
-  Map<String, TextStyle> verseTextStyle;
+  Map<String, TextStyle> myTextStyle;
   Map<String, Color> myColors;
-
-  // Variables to work with text styles and colours
-  TextStyle verseNoFont,
-      verseFont,
-      verseFontHebrew,
-      verseFontGreek,
-      activeVerseNoFont,
-      activeVerseFont,
-      activeVerseFontHebrew,
-      activeVerseFontGreek,
-      interlinearStyle,
-      interlinearStyleDim;
-  Color appBarColor, bottomAppBarColor, backgroundColor, floatingButtonColor;
-  final TextStyle highlightStyle = TextStyle(
-    fontWeight: FontWeight.bold,
-    //fontStyle: FontStyle.italic,
-    decoration: TextDecoration.underline,
-    color: Colors.blue,
-  );
 
   // Default values.
 
@@ -313,6 +300,9 @@ class Configurations {
 
   // Run the following function when intValues["backgroundBrightness"] or doubleValues["fontSize"] is changed.
   void updateTextStyle() {
+
+    Color appBarColor, bottomAppBarColor, backgroundColor, floatingButtonColor;
+
     final int backgroundBrightness = intValues["backgroundBrightness"];
     // adjustment with changes of brightness
     backgroundColor = Colors.blueGrey[backgroundBrightness];
@@ -349,41 +339,54 @@ class Configurations {
       "deepOrange": deepOrange,
       "grey": grey,
       "appBarColor": appBarColor,
+      "floatingButtonColor": floatingButtonColor,
       "bottomAppBarColor": bottomAppBarColor,
       "background": backgroundColor,
     };
 
     // update various font text style here
-    verseNoFont =
-        TextStyle(fontSize: (doubleValues["fontSize"] - 3), color: blueAccent);
-    verseFont = TextStyle(fontSize: doubleValues["fontSize"], color: black);
+    TextStyle verseNoFont =
+        TextStyle(fontSize: (doubleValues["fontSize"] - 3), color: blueAccent),
+    verseFont = TextStyle(fontSize: doubleValues["fontSize"], color: black),
     verseFontHebrew = TextStyle(
         fontFamily: "Ezra SIL",
         fontSize: (doubleValues["fontSize"] + 4),
-        color: black);
+        color: black),
     verseFontGreek =
-        TextStyle(fontSize: (doubleValues["fontSize"] + 2), color: black);
+        TextStyle(fontSize: (doubleValues["fontSize"] + 2), color: black),
     activeVerseNoFont = TextStyle(
         fontSize: (doubleValues["fontSize"] - 3),
         color: blue,
-        fontWeight: FontWeight.bold);
+        fontWeight: FontWeight.bold),
     activeVerseFont =
-        TextStyle(fontSize: doubleValues["fontSize"], color: indigo);
+        TextStyle(fontSize: doubleValues["fontSize"], color: indigo),
     activeVerseFontHebrew = TextStyle(
         fontFamily: "Ezra SIL",
         fontSize: (doubleValues["fontSize"] + 4),
-        color: indigo);
+        color: indigo),
     activeVerseFontGreek =
-        TextStyle(fontSize: (doubleValues["fontSize"] + 2), color: indigo);
+        TextStyle(fontSize: (doubleValues["fontSize"] + 2), color: indigo),
     interlinearStyle =
-        TextStyle(fontSize: (doubleValues["fontSize"] - 3), color: deepOrange);
+        TextStyle(fontSize: (doubleValues["fontSize"] - 3), color: deepOrange),
     interlinearStyleDim = TextStyle(
         fontSize: (doubleValues["fontSize"] - 3),
         color: grey,
-        fontStyle: FontStyle.italic);
+        fontStyle: FontStyle.italic),
+    subtitleStyle = TextStyle(
+      fontSize: (doubleValues["fontSize"] - 4),
+      color: (backgroundBrightness >= 700)
+          ? Colors.grey[400]
+          : grey,
+    ),
+    highlightStyle = TextStyle(
+          fontWeight: FontWeight.bold,
+          //fontStyle: FontStyle.italic,
+          decoration: TextDecoration.underline,
+          color: Colors.blue,
+        );
 
     // set the same font settings, which is passed to search delegate
-    verseTextStyle = {
+    myTextStyle = {
       "HebrewFont": TextStyle(fontFamily: "Ezra SIL"),
       "verseNoFont": verseNoFont,
       "verseFont": verseFont,
@@ -395,25 +398,21 @@ class Configurations {
       "activeVerseFontGreek": activeVerseFontGreek,
       "interlinearStyle": interlinearStyle,
       "interlinearStyleDim": interlinearStyleDim,
+      "subtitleStyle": subtitleStyle,
+      "highlightStyle": highlightStyle,
     };
 
-    updateThemeData();
-  }
-
-  void updateThemeData() {
-    if (myColors != null) {
-      mainTheme = ThemeData(
-        //primaryColor: myColors["appBarColor"],
-        appBarTheme: AppBarTheme(color: myColors["appBarColor"]),
-        scaffoldBackgroundColor:
-            Colors.blueGrey[intValues["backgroundBrightness"]],
-        unselectedWidgetColor: myColors["blue"],
-        accentColor: myColors["blueAccent"],
-        dividerColor: myColors["grey"],
-        cardColor: (intValues["backgroundBrightness"] >= 500)
-            ? myColors["appBarColor"]
-            : Colors.grey[300],
-      );
-    }
+    mainTheme = ThemeData(
+      //primaryColor: myColors["appBarColor"],
+      appBarTheme: AppBarTheme(color: myColors["appBarColor"]),
+      scaffoldBackgroundColor:
+      Colors.blueGrey[intValues["backgroundBrightness"]],
+      unselectedWidgetColor: myColors["blue"],
+      accentColor: myColors["blueAccent"],
+      dividerColor: myColors["grey"],
+      cardColor: (intValues["backgroundBrightness"] >= 500)
+          ? myColors["appBarColor"]
+          : Colors.grey[300],
+    );
   }
 }
