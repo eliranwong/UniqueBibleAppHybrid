@@ -13,6 +13,22 @@ final configProvider = FutureProvider<Configurations>((ref) async {
   return config;
 });
 
+final configProvider2 = StateProvider<Configurations>((ref) {
+  final config2 = ref.watch(configProvider);
+  return config2.when(
+    loading: () => Configurations(),
+    error: (error, stack) => Configurations(),
+    data: (config) => config,
+  );
+});
+
+final showDrawerP = StateProvider<bool>((ref) {
+  final bool showDrawer = ref.watch(configProvider2).state.boolValues["showDrawer"];
+  return showDrawer;
+});
+
+final configProvider3 = StateProvider<int>((ref) => 0);
+
 //final configProvider = StateNotifierProvider((ref) => Config());
 
 /*

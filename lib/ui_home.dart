@@ -17,9 +17,10 @@ class UiHome extends HookWidget {
   // To work with riverpod
   //final Config config = useProvider(configProvider);
   //final Configurations configState = useProvider(configProvider.state);
+  //AsyncValue<Configurations> config = useProvider(configProvider);
+  //Configurations configState;
 
-  AsyncValue<Configurations> config = useProvider(configProvider);
-  Configurations configState;
+  final configState = useProvider(configProvider2).state;
 
   // variable to work with translations
   String abbreviations;
@@ -31,11 +32,6 @@ class UiHome extends HookWidget {
 
   // Constructor
   UiHome() {
-    configState = config.when(
-        loading: () => Configurations(),
-        error: (error, stack) => Configurations(),
-        data: (config) => config);
-
     setupPackages();
     setupAtmosphere();
   }
@@ -56,6 +52,7 @@ class UiHome extends HookWidget {
 
   @override
   build(BuildContext context) {
+    print("main builder here");
     return Theme(
       data: ThemeData(
         unselectedWidgetColor: configState.myColors["blue"],
@@ -103,8 +100,9 @@ class UiHome extends HookWidget {
               print("navigation button pressed.");
               print(configState.boolValues["showDrawer"]);
               if (configState.boolValues["bigScreen"]) {
-                print("Hello");
-                context.read(configProvider).when(data: (c) => c.save("showDrawer", !configState.boolValues["showDrawer"]), loading: () => print("loading"), error: (error, stack) => print("error"));
+                print("navigation button's action triggered.");
+                context.read(showDrawerP).state = !context.read(showDrawerP).state;
+                context.read(configProvider2).state.save("showDrawer", context.read(showDrawerP).state);
                 print(configState.boolValues["showDrawer"]);
               } else {
                 _scaffoldKey.currentState.openDrawer();
@@ -143,9 +141,18 @@ class UiHome extends HookWidget {
       //
     }
     return _buildBibleChapter(context);*/
+
     return Row(
       children: <Widget>[
-        (configState.boolValues["showDrawer"]) ? _buildTabletDrawer() : Container(),
+        //(configState.boolValues["showDrawer"]) ? _buildTabletDrawer() : Container(),
+        Consumer(
+          // Rebuild only the Text when counterProvider updates
+          builder: (context, watch, child) {
+            // Listens to the value exposed by counterProvider
+            final bool showDrawer = watch(showDrawerP).state;
+            return (showDrawer) ? Center(child: Text("FOR TESTING ONLY!")) : Container();
+          },
+        ),
         (configState.boolValues["showDrawer"]) ? _buildDivider() : Container(),
         _wrap(
           OrientationBuilder(
