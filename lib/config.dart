@@ -7,36 +7,60 @@ import 'package:shared_preferences/shared_preferences.dart';
 // Library
 import 'module_description.dart';
 
-final configProvider = StateNotifierProvider((ref) => Config());
+final configProvider = FutureProvider<Configurations>((ref) async {
+  Configurations config = Configurations();
+  await config.setDefault();
+  return config;
+});
 
+//final configProvider = StateNotifierProvider((ref) => Config());
+
+/*
 class Config extends StateNotifier<Configurations> {
-
   Config() : super(Configurations());
 
   void updateThemeData() => state.updateThemeData();
-  //Future<void> setDefault() async => await state.setDefault();
-  Future<void> save(String feature, dynamic newSetting) async => state.save(feature, newSetting);
-  Future<void> add(String feature, List<int> newItem) async => state.add(feature, newItem);
-  Future<void> remove(String feature, List<int> newItem) async => state.remove(feature, newItem);
-
-}
+  Future<void> setDefault() async => await state.setDefault();
+  Future<void> save(String feature, dynamic newSetting) async =>
+      state.save(feature, newSetting);
+  Future<void> add(String feature, List<int> newItem) async =>
+      state.add(feature, newItem);
+  Future<void> remove(String feature, List<int> newItem) async =>
+      state.remove(feature, newItem);
+}*/
 
 class Configurations {
 
-  Configurations() {
-    setDefault();
-  }
-
   SharedPreferences prefs;
+
   ThemeData mainTheme;
   Map<String, TextStyle> verseTextStyle;
   Map<String, Color> myColors;
+
+  // Variables to work with text styles and colours
+  TextStyle verseNoFont,
+      verseFont,
+      verseFontHebrew,
+      verseFontGreek,
+      activeVerseNoFont,
+      activeVerseFont,
+      activeVerseFontHebrew,
+      activeVerseFontGreek,
+      interlinearStyle,
+      interlinearStyleDim;
+  Color appBarColor, bottomAppBarColor, backgroundColor, floatingButtonColor;
+  final TextStyle highlightStyle = TextStyle(
+    fontWeight: FontWeight.bold,
+    //fontStyle: FontStyle.italic,
+    decoration: TextDecoration.underline,
+    color: Colors.blue,
+  );
 
   // Default values are assigned to some variables.
 
   // Default bool values.
   Map<String, bool> boolValues = {
-    "bigScreen": false,
+    "bigScreen": true,
     "showNotes": false,
     "showFlags": false,
     "showPinyin": false,
@@ -69,7 +93,7 @@ class Configurations {
   Map<String, int> intValues = {
     "instantAction": 0,
     "favouriteAction": 1,
-    "backgroundColor": 0,
+    "backgroundBrightness": 0,
   };
   // Default List<String> values.
   Map<String, List<String>> listStringValues = {
@@ -86,22 +110,6 @@ class Configurations {
   };
 
   // Functions to work with "settings" or preferences
-
-  void updateThemeData() {
-    if (myColors != null) {
-      mainTheme = ThemeData(
-        //primaryColor: myColors["appBarColor"],
-        appBarTheme: AppBarTheme(color: myColors["appBarColor"]),
-        scaffoldBackgroundColor: Colors.blueGrey[intValues["backgroundColor"]],
-        unselectedWidgetColor: myColors["blue"],
-        accentColor: myColors["blueAccent"],
-        dividerColor: myColors["grey"],
-        cardColor: (intValues["backgroundColor"] >= 500)
-            ? myColors["appBarColor"]
-            : Colors.grey[300],
-      );
-    }
-  }
 
   List<List<int>> convertListStringToListListInt(List<String> listString) =>
       listString
@@ -165,34 +173,51 @@ class Configurations {
     for (var key in listListIntValues.keys) {
       final List<String> storedValue = prefs.getStringList(key);
       if (storedValue == null) {
-        prefs.setStringList(key, convertListListIntToListString(listListIntValues[key]));
+        prefs.setStringList(
+            key, convertListListIntToListString(listListIntValues[key]));
       } else {
         listListIntValues[key] = convertListStringToListListInt(storedValue);
       }
     }
+
+    // Update text styles, colours, theme data
+    updateTextStyle();
 
     print("Settings are ready!");
   }
 
   Future<void> save(String feature, dynamic newSetting) async {
     if (stringValues.containsKey(feature)) {
-      stringValues[feature] = newSetting;
-      await prefs.setString(feature, newSetting as String);
+      if (stringValues[feature] != newSetting) {
+        stringValues[feature] = newSetting;
+        await prefs.setString(feature, newSetting as String);
+      }
     } else if (boolValues.containsKey(feature)) {
-      boolValues[feature] = newSetting;
-      await prefs.setBool(feature, newSetting as bool);
+      if (boolValues[feature] != newSetting) {
+        boolValues[feature] = newSetting;
+        await prefs.setBool(feature, newSetting as bool);
+      }
     } else if (doubleValues.containsKey(feature)) {
-      doubleValues[feature] = newSetting;
-      await prefs.setDouble(feature, newSetting as double);
+      if (doubleValues[feature] != newSetting) {
+        doubleValues[feature] = newSetting;
+        await prefs.setDouble(feature, newSetting as double);
+      }
     } else if (intValues.containsKey(feature)) {
-      intValues[feature] = newSetting;
-      await prefs.setInt(feature, newSetting as int);
+      if (intValues[feature] != newSetting) {
+        intValues[feature] = newSetting;
+        await prefs.setInt(feature, newSetting as int);
+      }
     } else if (listStringValues.containsKey(feature)) {
-      listStringValues[feature] = newSetting;
-      await prefs.setStringList(feature, newSetting as List<String>);
+      if (listStringValues[feature] != newSetting) {
+        listStringValues[feature] = newSetting;
+        await prefs.setStringList(feature, newSetting as List<String>);
+      }
     } else if (listListIntValues.containsKey(feature)) {
-      listListIntValues[feature] = newSetting;
-      await prefs.setStringList(feature, convertListListIntToListString(newSetting));
+      if (listListIntValues[feature] != newSetting) {
+        listListIntValues[feature] = newSetting;
+        await prefs.setStringList(
+            feature, convertListListIntToListString(newSetting));
+      }
     }
   }
 
@@ -226,6 +251,114 @@ class Configurations {
       final int indexFound = favouriteVerse.indexOf(binItem);
       if (indexFound != -1) favouriteVerse.removeAt(indexFound);
       save(feature, favouriteVerse);
+    }
+  }
+
+  // Text styles and colours
+
+  // Run the following function when intValues["backgroundBrightness"] or doubleValues["fontSize"] is changed.
+  void updateTextStyle() {
+    final int backgroundBrightness = intValues["backgroundBrightness"];
+    // adjustment with changes of brightness
+    backgroundColor = Colors.blueGrey[backgroundBrightness];
+    Color blueAccent, indigo, black, blue, deepOrange, grey;
+    if (backgroundBrightness >= 500) {
+      blueAccent = Colors.blueAccent[100];
+      indigo = Colors.indigo[200];
+      black = Colors.grey[300];
+      blue = Colors.blue[300];
+      deepOrange = Colors.deepOrange[300];
+      grey = Colors.grey[400];
+      appBarColor = Colors.blueGrey[backgroundBrightness - 200];
+      floatingButtonColor = Colors.blueGrey[backgroundBrightness - 300];
+      bottomAppBarColor = Colors.grey[500];
+    } else {
+      blueAccent = Colors.blue[700];
+      indigo = Colors.indigo[700];
+      black = Colors.black;
+      blue = Colors.blueAccent[700];
+      deepOrange = Colors.deepOrange[700];
+      grey = Colors.grey[700];
+      //appBarColor = Theme.of(context).appBarTheme.color;
+      appBarColor = Colors.blue[600];
+      floatingButtonColor = Colors.blue[600];
+      bottomAppBarColor = Colors.grey[backgroundBrightness + 100];
+    }
+
+    // define a set of colors
+    myColors = {
+      "blueAccent": blueAccent,
+      "indigo": indigo,
+      "black": black,
+      "blue": blue,
+      "deepOrange": deepOrange,
+      "grey": grey,
+      "appBarColor": appBarColor,
+      "bottomAppBarColor": bottomAppBarColor,
+      "background": backgroundColor,
+    };
+
+    // update various font text style here
+    verseNoFont =
+        TextStyle(fontSize: (doubleValues["fontSize"] - 3), color: blueAccent);
+    verseFont = TextStyle(fontSize: doubleValues["fontSize"], color: black);
+    verseFontHebrew = TextStyle(
+        fontFamily: "Ezra SIL",
+        fontSize: (doubleValues["fontSize"] + 4),
+        color: black);
+    verseFontGreek =
+        TextStyle(fontSize: (doubleValues["fontSize"] + 2), color: black);
+    activeVerseNoFont = TextStyle(
+        fontSize: (doubleValues["fontSize"] - 3),
+        color: blue,
+        fontWeight: FontWeight.bold);
+    activeVerseFont =
+        TextStyle(fontSize: doubleValues["fontSize"], color: indigo);
+    activeVerseFontHebrew = TextStyle(
+        fontFamily: "Ezra SIL",
+        fontSize: (doubleValues["fontSize"] + 4),
+        color: indigo);
+    activeVerseFontGreek =
+        TextStyle(fontSize: (doubleValues["fontSize"] + 2), color: indigo);
+    interlinearStyle =
+        TextStyle(fontSize: (doubleValues["fontSize"] - 3), color: deepOrange);
+    interlinearStyleDim = TextStyle(
+        fontSize: (doubleValues["fontSize"] - 3),
+        color: grey,
+        fontStyle: FontStyle.italic);
+
+    // set the same font settings, which is passed to search delegate
+    verseTextStyle = {
+      "HebrewFont": TextStyle(fontFamily: "Ezra SIL"),
+      "verseNoFont": verseNoFont,
+      "verseFont": verseFont,
+      "verseFontHebrew": verseFontHebrew,
+      "verseFontGreek": verseFontGreek,
+      "activeVerseNoFont": activeVerseNoFont,
+      "activeVerseFont": activeVerseFont,
+      "activeVerseFontHebrew": activeVerseFontHebrew,
+      "activeVerseFontGreek": activeVerseFontGreek,
+      "interlinearStyle": interlinearStyle,
+      "interlinearStyleDim": interlinearStyleDim,
+    };
+
+    updateThemeData();
+  }
+
+  void updateThemeData() {
+    if (myColors != null) {
+      mainTheme = ThemeData(
+        //primaryColor: myColors["appBarColor"],
+        appBarTheme: AppBarTheme(color: myColors["appBarColor"]),
+        scaffoldBackgroundColor:
+        Colors.blueGrey[intValues["backgroundBrightness"]],
+        unselectedWidgetColor: myColors["blue"],
+        accentColor: myColors["blueAccent"],
+        dividerColor: myColors["grey"],
+        cardColor: (intValues["backgroundBrightness"] >= 500)
+            ? myColors["appBarColor"]
+            : Colors.grey[300],
+      );
     }
   }
 
