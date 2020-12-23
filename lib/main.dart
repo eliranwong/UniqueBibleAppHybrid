@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-// User interface
-//import 'ui_test.dart';
-import 'ui_home.dart';
+// My libraries
 import 'config.dart';
+// User interface
+import 'ui_home.dart';
 
 void main() {
   // Avoid errors caused by flutter upgrade.
@@ -29,7 +29,7 @@ void main() {
 class UniqueBibleApp extends HookWidget {
   @override
   build(BuildContext context) {
-    AsyncValue<Configurations> config = useProvider(configProvider);
+    final AsyncValue<Configurations> config = useProvider(configurationsProvider);
 
     return MaterialApp(
       title: 'Unique Bible App',

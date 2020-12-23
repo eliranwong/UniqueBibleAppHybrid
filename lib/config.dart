@@ -1,52 +1,91 @@
 // Packages
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:state_notifier/state_notifier.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-// Library
+// Core libraries
+import 'dart:io';
+// My libraries
 import 'module_description.dart';
 
-final configProvider = FutureProvider<Configurations>((ref) async {
-  Configurations config = Configurations();
-  await config.setDefault();
-  return config;
+final configurationsProvider = FutureProvider<Configurations>((ref) async {
+  final Configurations configurations = Configurations();
+  await configurations.setDefault();
+  return configurations;
 });
 
-final configProvider2 = StateProvider<Configurations>((ref) {
-  final config2 = ref.watch(configProvider);
-  return config2.when(
+final configProvider = StateProvider<Configurations>((ref) {
+  final AsyncValue<Configurations> config = ref.watch(configurationsProvider);
+  return config.when(
     loading: () => Configurations(),
     error: (error, stack) => Configurations(),
     data: (config) => config,
   );
 });
 
-final showDrawerP = StateProvider<bool>((ref) {
-  final bool showDrawer = ref.watch(configProvider2).state.boolValues["showDrawer"];
-  return showDrawer;
-});
+// Expose configurations individual bool values
+final showDrawerP = StateProvider<bool>(
+        (ref) => ref.watch(configProvider).state.boolValues["showDrawer"]),
+    bigScreenP = StateProvider<bool>(
+        (ref) => ref.watch(configProvider).state.boolValues["bigScreen"]),
+    showNotesP = StateProvider<bool>(
+            (ref) => ref.watch(configProvider).state.boolValues["showNotes"]),
+    showFlagsP = StateProvider<bool>(
+            (ref) => ref.watch(configProvider).state.boolValues["showFlags"]),
+    showPinyinP = StateProvider<bool>(
+            (ref) => ref.watch(configProvider).state.boolValues["showPinyin"]),
+    showTransliterationP = StateProvider<bool>(
+            (ref) => ref.watch(configProvider).state.boolValues["showTransliteration"]),
+    showHeadingVerseNoP = StateProvider<bool>(
+            (ref) => ref.watch(configProvider).state.boolValues["showHeadingVerseNo"]),
+    alwaysOpenMarvelBibleExternallyP = StateProvider<bool>(
+            (ref) => ref.watch(configProvider).state.boolValues["alwaysOpenMarvelBibleExternally"]);
 
-final configProvider3 = StateProvider<int>((ref) => 0);
+final abbreviationsP = StateProvider<String>(
+        (ref) => ref.watch(configProvider).state.stringValues["abbreviations"]),
+    bible1P = StateProvider<String>(
+            (ref) => ref.watch(configProvider).state.stringValues["bigScreen"]),
+    bible2P = StateProvider<String>(
+            (ref) => ref.watch(configProvider).state.stringValues["bible2"]),
+    iBibleP = StateProvider<String>(
+            (ref) => ref.watch(configProvider).state.stringValues["iBible"]),
+    marvelBibleP = StateProvider<String>(
+            (ref) => ref.watch(configProvider).state.stringValues["marvelBible"]),
+    marvelCommentaryP = StateProvider<String>(
+            (ref) => ref.watch(configProvider).state.stringValues["marvelCommentary"]),
+    ttsChineseP = StateProvider<String>(
+            (ref) => ref.watch(configProvider).state.stringValues["ttsChinese"]),
+    ttsEnglishP = StateProvider<String>(
+            (ref) => ref.watch(configProvider).state.stringValues["ttsEnglish"]),
+    ttsGreekP = StateProvider<String>(
+            (ref) => ref.watch(configProvider).state.stringValues["ttsGreek"]);
 
-//final configProvider = StateNotifierProvider((ref) => Config());
+final fontSizeP = StateProvider<double>(
+        (ref) => ref.watch(configProvider).state.doubleValues["fontSize"]),
+    morphologyVersionP = StateProvider<double>(
+            (ref) => ref.watch(configProvider).state.doubleValues["morphologyVersion"]),
+    lexiconVersionP = StateProvider<double>(
+            (ref) => ref.watch(configProvider).state.doubleValues["lexiconVersion"]),
+    toolsVersionP = StateProvider<double>(
+            (ref) => ref.watch(configProvider).state.doubleValues["toolsVersion"]),
+    speechRateP = StateProvider<double>(
+            (ref) => ref.watch(configProvider).state.doubleValues["speechRate"]);
 
-/*
-class Config extends StateNotifier<Configurations> {
-  Config() : super(Configurations());
+final instantActionP = StateProvider<int>(
+        (ref) => ref.watch(configProvider).state.intValues["instantAction"]),
+    favouriteActionP = StateProvider<int>(
+            (ref) => ref.watch(configProvider).state.intValues["favouriteAction"]),
+    backgroundBrightnessP = StateProvider<int>(
+            (ref) => ref.watch(configProvider).state.intValues["backgroundBrightness"]);
 
-  void updateThemeData() => state.updateThemeData();
-  Future<void> setDefault() async => await state.setDefault();
-  Future<void> save(String feature, dynamic newSetting) async =>
-      state.save(feature, newSetting);
-  Future<void> add(String feature, List<int> newItem) async =>
-      state.add(feature, newItem);
-  Future<void> remove(String feature, List<int> newItem) async =>
-      state.remove(feature, newItem);
-}*/
+final compareBibleListP = StateProvider<List<String>>(
+        (ref) => ref.watch(configProvider).state.listStringValues["compareBibleList"]);
+
+final historyActiveVerseP = StateProvider<List<List<int>>>(
+        (ref) => ref.watch(configProvider).state.listListIntValues["historyActiveVerse"]),
+    favouriteVerseP = StateProvider<List<List<int>>>(
+            (ref) => ref.watch(configProvider).state.listListIntValues["favouriteVerse"]);
 
 class Configurations {
-
   SharedPreferences prefs;
 
   ThemeData mainTheme;
@@ -72,7 +111,7 @@ class Configurations {
     color: Colors.blue,
   );
 
-  // Default values are assigned to some variables.
+  // Default values.
 
   // Default bool values.
   Map<String, bool> boolValues = {
@@ -367,7 +406,7 @@ class Configurations {
         //primaryColor: myColors["appBarColor"],
         appBarTheme: AppBarTheme(color: myColors["appBarColor"]),
         scaffoldBackgroundColor:
-        Colors.blueGrey[intValues["backgroundBrightness"]],
+            Colors.blueGrey[intValues["backgroundBrightness"]],
         unselectedWidgetColor: myColors["blue"],
         accentColor: myColors["blueAccent"],
         dividerColor: myColors["grey"],
@@ -377,5 +416,4 @@ class Configurations {
       );
     }
   }
-
 }

@@ -1,12 +1,12 @@
 // Packages
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 // Core libraries
 import 'dart:io';
-// Other libraries
+// My libraries
 import 'config.dart';
 import 'app_translation.dart';
 
@@ -20,7 +20,7 @@ class UiHome extends HookWidget {
   //AsyncValue<Configurations> config = useProvider(configProvider);
   //Configurations configState;
 
-  final configState = useProvider(configProvider2).state;
+  final configState = useProvider(configProvider).state;
 
   // variable to work with translations
   String abbreviations;
