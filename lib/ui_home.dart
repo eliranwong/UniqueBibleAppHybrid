@@ -101,8 +101,8 @@ class UiHome extends HookWidget {
               print(configState.boolValues["showDrawer"]);
               if (configState.boolValues["bigScreen"]) {
                 print("navigation button's action triggered.");
-                context.read(showDrawerP).state = !context.read(showDrawerP).state;
-                context.read(configProvider2).state.save("showDrawer", context.read(showDrawerP).state);
+                configState.save("showDrawer", !context.read(showDrawerP).state);
+                context.refresh(showDrawerP);
                 print(configState.boolValues["showDrawer"]);
               } else {
                 _scaffoldKey.currentState.openDrawer();
