@@ -22,12 +22,14 @@ final configProvider = StateProvider<Configurations>((ref) {
   );
 });
 
-final configCopyProvider = StateProvider<Configurations>((ref) => Configurations());
+//final configCopyProvider = StateProvider<Configurations>((ref) => Configurations());
 
 final showDrawerP = StateProvider<bool>(
         (ref) => ref.watch(configProvider).state.boolValues["showDrawer"]),
     bigScreenP = StateProvider<bool>(
         (ref) => ref.watch(configProvider).state.boolValues["bigScreen"]),
+    showWorkspaceP = StateProvider<bool>(
+            (ref) => ref.watch(configProvider).state.boolValues["showWorkspace"]),
     showNotesP = StateProvider<bool>(
             (ref) => ref.watch(configProvider).state.boolValues["showNotes"]),
     showFlagsP = StateProvider<bool>(
@@ -88,7 +90,7 @@ final historyActiveVerseP = StateProvider<List<List<int>>>(
 
 final mainThemeP = StateProvider<ThemeData>((ref) => ref.watch(configProvider).state.mainTheme);
 final myColorsP = StateProvider<Map<String, Color>>((ref) => ref.watch(configProvider).state.myColors);
-final verseTextStyleP = StateProvider<Map<String, TextStyle>>((ref) => ref.watch(configProvider).state.myTextStyle);
+final myTextStyleP = StateProvider<Map<String, TextStyle>>((ref) => ref.watch(configProvider).state.myTextStyle);
 
 class Configurations {
   SharedPreferences prefs;
@@ -103,6 +105,7 @@ class Configurations {
   // Default bool values.
   Map<String, bool> boolValues = {
     "bigScreen": true,
+    "showWorkspace": false,
     "showNotes": false,
     "showFlags": false,
     "showPinyin": false,
@@ -168,7 +171,7 @@ class Configurations {
 
     // Preferences with bool values
     for (String key in boolValues.keys) {
-      final bool storedValue = prefs.getBool("bigScreen");
+      final bool storedValue = prefs.getBool(key);
       if (storedValue == null) {
         prefs.setBool(key, boolValues[key]);
       } else {

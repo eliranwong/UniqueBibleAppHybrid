@@ -1,5 +1,6 @@
 class AppTranslation {
-  Map<String, List<String>> interfaceApp = {
+
+  static const Map<String, List<String>> interfaceApp = {
     "ENG": [
       "Unique Bible App",
       "Navigation menu",
@@ -101,7 +102,7 @@ class AppTranslation {
     ],
   };
 
-  Map<String, List<String>> interfaceBottom = {
+  static const Map<String, List<String>> interfaceBottom = {
     "ENG": [
       "Instant Interlinear",
       "Bible Topics",
@@ -158,7 +159,7 @@ class AppTranslation {
     ],
   };
 
-  Map<String, List<String>> interfaceMessage = {
+  static const Map<String, List<String>> interfaceMessage = {
     "ENG": [
       "is selected.\n'Tap' it again to open your 'Favourite Action'.\nOr 'press' & 'hold' it for more actions.",
       "Loading cross-references ...",
@@ -185,7 +186,7 @@ class AppTranslation {
     ],
   };
 
-  Map<String, List<String>> interfaceDialog = {
+  static const Map<String, List<String>> interfaceDialog = {
     "ENG": [
       "Select an action:",
       "Share",
@@ -221,7 +222,7 @@ class AppTranslation {
     ],
   };
 
-  Map<String, List<String>> interfaceBibleSearch = {
+  static const Map<String, List<String>> interfaceBibleSearch = {
     "ENG": [
       "is not properly formatted for search. Please correct and try again.",
       "Clear",
@@ -231,4 +232,86 @@ class AppTranslation {
     "TC": ["組成的格式不正確，請更正然後再嘗試", "清空", "更多 …", "搜索"],
     "SC": ["组成的格式不正确，请更正然后再尝试", "清空", "更多 …", "搜索"],
   };
+
+  static const Map<String, List<String>> interfaceBibleSettings = {
+    "ENG": [
+      "Settings",
+      "Interface",
+      "Primary Bible",
+      "Book",
+      "Chapter",
+      "Verse",
+      "Font Size",
+      "Versions for Comparison",
+      "Favourite Action",
+      "Instant Action",
+      "Save",
+      "Background Brightness",
+      "English Audio",
+      "Chinese Audio",
+      "Speech Rate",
+      "Normal",
+      "Greek Speech",
+      "Big Screen Mode",
+      "Secondary Bible",
+      "Default Marvel Bible",
+      "Instant Interlinear",
+      "Show Heading Verse No.",
+      "Open Marvel.Bible Externally",
+      "Default Marvel Commentary", // 23
+    ],
+    "TC": [
+      "設定",
+      "介面語言",
+      "首選聖經",
+      "書卷",
+      "章",
+      "節",
+      "字體大小",
+      "版本比較選項",
+      "常用功能",
+      "即時功能",
+      "存檔",
+      "背景顏色深淺",
+      "英語發聲",
+      "中文發聲",
+      "發聲速度",
+      "正常",
+      "希臘語發聲",
+      "大屏幕模式",
+      "次選聖經",
+      "預設 Marvel 聖經",
+      "即時原文逐字翻譯",
+      "在標題前顯示節數",
+      "使用外置瀏覽器開啟 Marvel.Bible",
+      "預設 Marvel 釋經書", // 23
+    ],
+    "SC": [
+      "设定",
+      "接口语言",
+      "首选圣经",
+      "书卷",
+      "章",
+      "节",
+      "字体大小",
+      "版本比较选项",
+      "常用功能",
+      "即时功能",
+      "存档",
+      "背景颜色深浅",
+      "英语发声",
+      "中文发声",
+      "发声速度",
+      "正常",
+      "希腊语发声",
+      "大屏幕模式",
+      "次选圣经",
+      "预设 Marvel 圣经",
+      "即时原文逐字翻译",
+      "在标题前显示节数",
+      "使用外置浏览器开启 Marvel.Bible",
+      "预设 Marvel 释经书", // 23
+    ],
+  };
+
 }

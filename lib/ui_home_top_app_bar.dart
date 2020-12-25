@@ -3,54 +3,248 @@ import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'config.dart';
 import 'app_translation.dart';
+import 'bible_settings.dart';
 
 class HomeTopAppBar {
 
-  final configState = useProvider(configProvider).state;
-  final Map<String, List<String>> interfaceApp = AppTranslation().interfaceApp;
-
-  final BuildContext context;
-  final String abbreviations;
-  HomeTopAppBar(this.context, this.abbreviations);
-
-  Widget buildTopAppBar() {
-    //original color: Theme.of(context).appBarTheme.color
-    //List<PopupMenuEntry<String>> popupMenu = _appBarPopupMenu();
-    //if (!configState.bigScreen) popupMenu.removeAt(3);
-    return AppBar(
-      backgroundColor: configState.myColors["appBarColor"],
-      title: Text(interfaceApp[abbreviations].first),
-      leading: Builder(
-        builder: (BuildContext context) {
-          return IconButton(
-            tooltip: interfaceApp[abbreviations][1],
-            icon: const Icon(Icons.menu),
-            onPressed: () {
-              print("navigation button pressed.");
-              print(configState.boolValues["showDrawer"]);
-              if (configState.boolValues["bigScreen"]) {
-                print("navigation button's action triggered.");
-                configState.save("showDrawer", !context.read(showDrawerP).state);
-                context.refresh(showDrawerP);
-                print(configState.boolValues["showDrawer"]);
-              } else {
-                // open drawer for small screen users
-                //_scaffoldKey.currentState.openDrawer();
-              }
-            },
-          );
-        },
-      ),
-      actions: <Widget>[
-        IconButton(
-          tooltip: interfaceApp[abbreviations][3],
-          icon: const Icon(Icons.swap_calls),
-          onPressed: () {
-            print("switch button pressed");
+  Widget buildPopupMenuButton(BuildContext context) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final String abbreviations = watch(abbreviationsP).state;
+        final List<String> interfaceApp =
+            AppTranslation.interfaceApp[abbreviations];
+        return PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert),
+          tooltip: interfaceApp[21],
+          padding: EdgeInsets.zero,
+          onSelected: (String value) {
+            switch (value) {
+              case "Big":
+                print("Big");
+                /*if (this.config.plus) {
+              setState(() {
+                this.config.bigScreen = !this.config.bigScreen;
+                this.config.save("bigScreen", this.config.bigScreen);
+                if ((_typing) && (!this.config.bigScreen))
+                  _typing = !_typing;
+              });
+            } else {
+              _nonPlusMessage(this.interfaceApp[this.abbreviations][11]);
+            }*/
+                break;
+              case "Workspace":
+                context
+                    .read(configProvider)
+                    .state
+                    .save("showWorkspace", !context.read(showWorkspaceP).state);
+                context.refresh(showWorkspaceP);
+                break;
+              case "Notes":
+                context
+                    .read(configProvider)
+                    .state
+                    .save("showNotes", !context.read(showNotesP).state);
+                context.refresh(showNotesP);
+                break;
+              case "Flags":
+                context
+                    .read(configProvider)
+                    .state
+                    .save("showFlags", !context.read(showFlagsP).state);
+                context.refresh(showFlagsP);
+                break;
+              case "Pinyin":
+                context
+                    .read(configProvider)
+                    .state
+                    .save("showPinyin", !context.read(showPinyinP).state);
+                context.refresh(showPinyinP);
+                break;
+              case "Transliteration":
+                print("showTransliteration");
+                context.read(configProvider).state.save("showTransliteration",
+                    !context.read(showTransliterationP).state);
+                context.refresh(showTransliterationP);
+                break;
+              case "Verse":
+                print("Verse");
+                //_openVerseSelector(context);
+                break;
+              case "Settings":
+                _openBibleSettings(context);
+                print("Settings");
+                break;
+              case "Manual":
+                print("Manual");
+                //_launchUserManual();
+                break;
+              case "Contact":
+                print("Contact");
+                //_launchContact();
+                break;
+              default:
+                break;
+            }
           },
-        ),
-      ],
+          itemBuilder: (BuildContext context) => _buildPopupMenu(interfaceApp),
+        );
+      },
     );
   }
 
+  List<PopupMenuEntry<String>> _buildPopupMenu(List<String> interfaceApp) {
+    return <PopupMenuEntry<String>>[
+      PopupMenuItem<String>(
+        value: "Verse",
+        child: ListTile(
+          leading: Icon(Icons.directions),
+          title: Text(interfaceApp[24]),
+        ),
+      ),
+      const PopupMenuDivider(),
+      PopupMenuItem<String>(
+        value: "Big",
+        child: ListTile(
+          leading: Consumer(
+            builder: (context, watch, child) {
+              return Icon((watch(bigScreenP).state)
+                  ? Icons.phone_android
+                  : Icons.laptop);
+            },
+          ),
+          title: Consumer(
+            builder: (context, watch, child) {
+              return Text((watch(bigScreenP).state)
+                  ? interfaceApp[18]
+                  : interfaceApp[17]);
+            },
+          ),
+        ),
+      ),
+      PopupMenuItem<String>(
+        value: "Workspace",
+        child: ListTile(
+          leading: Consumer(
+            builder: (context, watch, child) {
+              return Icon((watch(showWorkspaceP).state)
+                  ? Icons.visibility_off
+                  : Icons.visibility);
+            },
+          ),
+          title: Consumer(
+            builder: (context, watch, child) {
+              return Text(
+                  "${(watch(showWorkspaceP).state) ? interfaceApp[20] : interfaceApp[19]}${AppTranslation.interfaceBottom[watch(abbreviationsP).state][9]}");
+            },
+          ),
+        ),
+      ),
+      const PopupMenuDivider(),
+      PopupMenuItem<String>(
+        value: "Flags",
+        child: ListTile(
+          leading: Consumer(
+            builder: (context, watch, child) {
+              return Icon((watch(showFlagsP).state)
+                  ? Icons.visibility_off
+                  : Icons.visibility);
+            },
+          ),
+          title: Consumer(
+            builder: (context, watch, child) {
+              return Text(
+                  "${(watch(showFlagsP).state) ? interfaceApp[20] : interfaceApp[19]}${interfaceApp[28]}");
+            },
+          ),
+        ),
+      ),
+      PopupMenuItem<String>(
+        value: "Notes",
+        child: ListTile(
+          leading: Consumer(
+            builder: (context, watch, child) {
+              return Icon((watch(showNotesP).state)
+                  ? Icons.visibility_off
+                  : Icons.visibility);
+            },
+          ),
+          title: Consumer(
+            builder: (context, watch, child) {
+              return Text(
+                  "${(watch(showNotesP).state) ? interfaceApp[20] : interfaceApp[19]}${interfaceApp[13]}");
+            },
+          ),
+        ),
+      ),
+      PopupMenuItem<String>(
+        value: "Transliteration",
+        child: ListTile(
+          leading: Consumer(
+            builder: (context, watch, child) {
+              return Icon((watch(showTransliterationP).state)
+                  ? Icons.visibility_off
+                  : Icons.visibility);
+            },
+          ),
+          title: Consumer(
+            builder: (context, watch, child) {
+              return Text(
+                  "${(watch(showTransliterationP).state) ? interfaceApp[20] : interfaceApp[19]}${interfaceApp[30]}");
+            },
+          ),
+        ),
+      ),
+      PopupMenuItem<String>(
+        value: "Pinyin",
+        child: ListTile(
+          leading: Consumer(
+            builder: (context, watch, child) {
+              return Icon((watch(showPinyinP).state)
+                  ? Icons.visibility_off
+                  : Icons.visibility);
+            },
+          ),
+          title: Consumer(
+            builder: (context, watch, child) {
+              return Text(
+                  "${(watch(showPinyinP).state) ? interfaceApp[20] : interfaceApp[19]}${interfaceApp[29]}");
+            },
+          ),
+        ),
+      ),
+      const PopupMenuDivider(),
+      PopupMenuItem<String>(
+        value: "Settings",
+        child: ListTile(
+          leading: Icon(Icons.settings),
+          title: Text(interfaceApp[4]),
+        ),
+      ),
+      const PopupMenuDivider(),
+      PopupMenuItem<String>(
+        value: "Manual",
+        child: ListTile(
+          leading: Icon(Icons.help_outline),
+          title: Consumer(
+            builder: (context, watch, child) {
+              return Text(AppTranslation
+                  .interfaceBottom[watch(abbreviationsP).state][8]);
+            },
+          ),
+        ),
+      ),
+      PopupMenuItem<String>(
+        value: "Contact",
+        child: ListTile(
+          leading: Icon(Icons.alternate_email),
+          title: Text(interfaceApp[14]),
+        ),
+      ),
+    ];
+  }
+
+  Future<void> _openBibleSettings(BuildContext context) async {
+    await Navigator.push(
+        context, MaterialPageRoute(builder: (context) => BibleSettings()));
+  }
 }

@@ -1,6 +1,5 @@
 // Packages
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -9,23 +8,24 @@ import 'dart:io';
 // My libraries
 import 'config.dart';
 import 'app_translation.dart';
+import 'bible_settings.dart';
 // ui
 import 'ui_home_bottom_app_bar.dart';
 import 'ui_home_top_app_bar.dart';
+//testing
 
 class UiHome extends HookWidget {
-
   // A global key
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  // To work with riverpod
+  // To work with provider
   final configState = useProvider(configProvider).state;
   // variable to work with translations
   String abbreviations;
-  final Map<String, List<String>> interfaceApp = AppTranslation().interfaceApp,
-      interfaceBottom = AppTranslation().interfaceBottom,
-      interfaceMessage = AppTranslation().interfaceMessage,
-      interfaceDialog = AppTranslation().interfaceDialog,
-      interfaceBibleSearch = AppTranslation().interfaceBibleSearch;
+  final Map<String, List<String>> interfaceApp = AppTranslation.interfaceApp,
+      interfaceBottom = AppTranslation.interfaceBottom,
+      interfaceMessage = AppTranslation.interfaceMessage,
+      interfaceDialog = AppTranslation.interfaceDialog,
+      interfaceBibleSearch = AppTranslation.interfaceBibleSearch;
 
   // Constructor
   UiHome() {
@@ -49,6 +49,9 @@ class UiHome extends HookWidget {
 
   @override
   build(BuildContext context) {
+    //original color: Theme.of(context).appBarTheme.color
+    //List<PopupMenuEntry<String>> popupMenu = _buildPopupMenu();
+    //if (!configState.bigScreen) popupMenu.removeAt(3);
     return Theme(
       data: ThemeData(
         unselectedWidgetColor: configState.myColors["blue"],
@@ -56,7 +59,37 @@ class UiHome extends HookWidget {
       child: Scaffold(
         key: _scaffoldKey,
         //drawer: (configState.boolValues["bigScreen"]) ? null : _buildDrawer(),
-        appBar: HomeTopAppBar(context, abbreviations).buildTopAppBar(),
+        appBar: AppBar(
+          backgroundColor: useProvider(myColorsP).state["appBarColor"],
+          title: Text(interfaceApp[useProvider(abbreviationsP).state].first),
+          leading: Builder(
+            builder: (BuildContext context) {
+              return IconButton(
+                tooltip: interfaceApp[configState.stringValues["abbreviations"]][1],
+                icon: const Icon(Icons.menu),
+                onPressed: () {
+                  if (configState.boolValues["bigScreen"]) {
+                    configState.save("showDrawer", !context.read(showDrawerP).state);
+                    context.refresh(showDrawerP);
+                  } else {
+                    // open drawer for small screen users
+                    //_scaffoldKey.currentState.openDrawer();
+                  }
+                },
+              );
+            },
+          ),
+          actions: <Widget>[
+            IconButton(
+              tooltip: interfaceApp[useProvider(abbreviationsP).state][3],
+              icon: const Icon(Icons.swap_calls),
+              onPressed: () {
+                print("switch button pressed");
+              },
+            ),
+            HomeTopAppBar().buildPopupMenuButton(context),
+          ],
+        ),
         body: Container(
           color: configState.myColors["backgroundColor"],
           child: _buildLayout(context),
@@ -93,16 +126,12 @@ class UiHome extends HookWidget {
     return Row(
       children: <Widget>[
         Consumer(
-          builder: (context, watch, child) {
-            final bool showDrawer = watch(showDrawerP).state;
-            return (showDrawer) ? _buildTabletDrawer() : Container();
-          },
+          builder: (context, watch, child) =>
+              (watch(showDrawerP).state) ? _buildTabletDrawer() : Container(),
         ),
         Consumer(
-          builder: (context, watch, child) {
-            final bool showDrawer = watch(showDrawerP).state;
-            return (showDrawer) ? _buildDivider() : Container();
-          },
+          builder: (context, watch, child) =>
+              (watch(showDrawerP).state) ? _buildDivider() : Container(),
         ),
         _wrap(
           OrientationBuilder(

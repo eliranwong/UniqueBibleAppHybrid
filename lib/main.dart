@@ -2,12 +2,12 @@
 
 // Packages
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 // My libraries
 import 'config.dart';
 // User interface
+import 'routes.dart';
 import 'ui_home.dart';
 
 void main() {
@@ -29,15 +29,31 @@ void main() {
 class UniqueBibleApp extends HookWidget {
   @override
   build(BuildContext context) {
-    final AsyncValue<Configurations> config = useProvider(configurationsProvider);
+    final AsyncValue<Configurations> config =
+        useProvider(configurationsProvider);
 
+    return config.when(
+      loading: () => _dummyApp("Loading ..."),
+      error: (error, stack) => _dummyApp("Failed to load preferences!"),
+      data: (config) => _mainApp(),
+    );
+  }
+
+  MaterialApp _mainApp() {
     return MaterialApp(
-      title: 'Unique Bible App',
-      home: config.when(
-        loading: () => const Text('loading'),
-        error: (error, stack) => const Text('Oops'),
-        data: (config) => UiHome(),
+      title: "Unique Bible App",
+      home: UiHome(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+
+  MaterialApp _dummyApp(String message) {
+    return MaterialApp(
+      title: "Unique Bible App",
+      home: Center(
+        child: Text(message),
       ),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -46,6 +62,11 @@ class UniqueBibleApp extends HookWidget {
     return Consumer(
       builder: (context, watch, child) {
         return Text(watch(bible1P).state);
+      },
+    );
+    return Consumer(
+      builder: (context, watch, child) {
+        return ...;
       },
     );
 * */
