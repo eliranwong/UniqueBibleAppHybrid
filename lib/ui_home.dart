@@ -49,13 +49,8 @@ class UiHome extends HookWidget {
 
   @override
   build(BuildContext context) {
-    //original color: Theme.of(context).appBarTheme.color
-    //List<PopupMenuEntry<String>> popupMenu = _buildPopupMenu();
-    //if (!configState.bigScreen) popupMenu.removeAt(3);
     return Theme(
-      data: ThemeData(
-        unselectedWidgetColor: configState.myColors["blue"],
-      ),
+      data: useProvider(mainThemeP).state,
       child: Scaffold(
         key: _scaffoldKey,
         //drawer: (configState.boolValues["bigScreen"]) ? null : _buildDrawer(),
@@ -68,25 +63,15 @@ class UiHome extends HookWidget {
                 tooltip: interfaceApp[configState.stringValues["abbreviations"]][1],
                 icon: const Icon(Icons.menu),
                 onPressed: () {
-                  if (configState.boolValues["bigScreen"]) {
-                    configState.save("showDrawer", !context.read(showDrawerP).state);
-                    context.refresh(showDrawerP);
-                  } else {
-                    // open drawer for small screen users
-                    //_scaffoldKey.currentState.openDrawer();
-                  }
+                  configState.save("showDrawer", !context.read(showDrawerP).state);
+                  context.refresh(showDrawerP);
                 },
               );
             },
           ),
           actions: <Widget>[
-            IconButton(
-              tooltip: interfaceApp[useProvider(abbreviationsP).state][3],
-              icon: const Icon(Icons.swap_calls),
-              onPressed: () {
-                print("switch button pressed");
-              },
-            ),
+            HomeTopAppBar().buildSwitchButton(context),
+            HomeTopAppBar().buildWorkspaceButton(context),
             HomeTopAppBar().buildPopupMenuButton(context),
           ],
         ),
@@ -118,10 +103,6 @@ class UiHome extends HookWidget {
   }
 
   Widget _buildLayout(BuildContext context) {
-    /*if (configState.boolValues["bigScreen"]) {
-      //
-    }
-    return _buildBibleChapter(context);*/
 
     return Row(
       children: <Widget>[
@@ -164,22 +145,86 @@ class UiHome extends HookWidget {
 
   List<Widget> _buildLayoutWidgets(BuildContext context) {
     return <Widget>[
-      _wrap(_buildBibleChapter(context), 2),
-      //(_display) ? _buildDivider() : Container(),
-      //(_display) ? _wrap(_buildWorkspace(context), 2) : Container(),
+      Consumer(
+        builder: (context, watch, child) {
+          final int workspaceLayout = watch(workspaceLayoutP).state;
+          if (workspaceLayout == 2) {
+            return Container();
+          } else {
+            return _wrap(_buildBibleChapter(context), 2);
+          }
+        },
+      ),
+      Consumer(
+        builder: (context, watch, child) {
+          final int workspaceLayout = watch(workspaceLayoutP).state;
+          if (workspaceLayout == 1) {
+            return _buildDivider();
+          } else {
+            return Container();
+          }
+        },
+      ),
+      Consumer(
+        builder: (context, watch, child) {
+          final int workspaceLayout = watch(workspaceLayoutP).state;
+          if (workspaceLayout == 0) {
+            return Container();
+          } else {
+            return _wrap(_buildWorkspace(context), 2);
+          }
+        },
+      ),
     ];
   }
 
-  Widget _dummyWidget() {
-    return Center(child: Text("TESTING!"));
+  Widget _dummyWidget(String message) {
+    return Center(child: Text(message));
   }
 
   Widget _buildTabletDrawer() {
-    return _dummyWidget();
+    return SizedBox(
+      width: 250,
+      child: BibleDrawer(),
+    );
   }
 
   Widget _buildBibleChapter(BuildContext context) {
-    return _dummyWidget();
+    return _dummyWidget("Bible Reading HERE!");
+  }
+
+  Widget _buildWorkspace(BuildContext context) {
+    return _dummyWidget("Workspace HERE!");
   }
 
 }
+
+class BibleDrawer extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          toolbarHeight: 48, // 48 is minimum height to height the title
+          bottom: TabBar(
+            tabs: [
+              Tab(icon: Icon(Icons.account_tree_outlined)),
+              Tab(icon: Icon(Icons.apps)),
+              Tab(icon: Icon(Icons.search)),
+            ],
+          ),
+          title: Text('Tabs Demo'),
+        ),
+        body: TabBarView(
+          children: [
+            Icon(Icons.account_tree_outlined),
+            Icon(Icons.apps),
+            Icon(Icons.search),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

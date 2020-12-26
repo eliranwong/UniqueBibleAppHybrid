@@ -121,10 +121,10 @@ class BibleSettings extends StatelessWidget {
           max: 900.0,
           divisions: 9,
           label: backgroundBrightnessDouble.round().toString(),
-          onChanged: (double newValue) {
+          onChanged: (double newValue) async {
             if (newValue != backgroundBrightnessDouble) {
               final int newValueInt = newValue.round();
-              context
+              await context
                   .read(configProvider)
                   .state
                   .save("backgroundBrightness", newValueInt);
@@ -156,9 +156,9 @@ class BibleSettings extends StatelessWidget {
           min: 7.0,
           max: 40.0,
           divisions: 33,
-          onChanged: (double newValue) {
+          onChanged: (double newValue) async {
             if (newValue != fontSize) {
-              context.read(configProvider).state.save("fontSize", newValue);
+              await context.read(configProvider).state.save("fontSize", newValue);
               context.refresh(fontSizeP);
               context.refresh(mainThemeP);
               context.refresh(myColorsP);

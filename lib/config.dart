@@ -75,8 +75,8 @@ final instantActionP = StateProvider<int>(
         (ref) => ref.watch(configProvider).state.intValues["instantAction"]),
     favouriteActionP = StateProvider<int>(
             (ref) => ref.watch(configProvider).state.intValues["favouriteAction"]),
-    showWorkspaceP = StateProvider<int>(
-            (ref) => ref.watch(configProvider).state.intValues["showWorkspace"]),
+    workspaceLayoutP = StateProvider<int>(
+            (ref) => ref.watch(configProvider).state.intValues["workspaceLayout"]),
     backgroundBrightnessP = StateProvider<int>(
             (ref) => ref.watch(configProvider).state.intValues["backgroundBrightness"]);
 
@@ -140,7 +140,7 @@ class Configurations {
     "instantAction": 1,
     "favouriteAction": 2,
     "backgroundBrightness": 0,
-    "showWorkspace": 0,
+    "workspaceLayout": 0,
   };
   // Default List<String> values.
   Map<String, List<String>> listStringValues = {
@@ -233,6 +233,16 @@ class Configurations {
     print("Settings are ready!");
   }
 
+  Future<void> changeWorkspaceLayout() async {
+    int workspaceLayout = intValues["workspaceLayout"];
+    if (workspaceLayout == 2) {
+      workspaceLayout = 0;
+    } else {
+      workspaceLayout++;
+    }
+    await save("workspaceLayout", workspaceLayout);
+  }
+
   Future<void> save(String feature, dynamic newSetting) async {
     if (stringValues.containsKey(feature)) {
       if (stringValues[feature] != newSetting) {
@@ -308,6 +318,7 @@ class Configurations {
   // Run the following function when intValues["backgroundBrightness"] or doubleValues["fontSize"] is changed.
   void updateTheme() {
 
+    print("updating theme");
     Color backgroundColor, canvasColor, cardColor,
         blueAccent, indigo, black, blue, deepOrange, grey,
         appBarColor, floatingButtonColor, bottomAppBarColor,

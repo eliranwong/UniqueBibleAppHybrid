@@ -7,6 +7,35 @@ import 'bible_settings.dart';
 
 class HomeTopAppBar {
 
+  Widget buildSwitchButton(BuildContext context) {
+    return Consumer(
+      builder: (context, watch, child) {
+        return IconButton(
+          tooltip: AppTranslation.interfaceApp[watch(abbreviationsP).state][3],
+          icon: const Icon(Icons.swap_calls),
+          onPressed: () {
+            print("switch button pressed");
+          },
+        );
+      },
+    );
+  }
+
+  Widget buildWorkspaceButton(BuildContext context) {
+    return Consumer(
+      builder: (context, watch, child) {
+        return IconButton(
+          tooltip: AppTranslation.interfaceBottom[watch(abbreviationsP).state][9],
+          icon: const Icon(Icons.workspaces_outline),
+          onPressed: () async {
+            await context.read(configProvider).state.changeWorkspaceLayout();
+            context.refresh(workspaceLayoutP);
+          },
+        );
+      },
+    );
+  }
+
   Widget buildPopupMenuButton(BuildContext context) {
     return Consumer(
       builder: (context, watch, child) {
@@ -19,26 +48,6 @@ class HomeTopAppBar {
           padding: EdgeInsets.zero,
           onSelected: (String value) {
             switch (value) {
-              case "Big":
-                print("Big");
-                /*if (this.config.plus) {
-              setState(() {
-                this.config.bigScreen = !this.config.bigScreen;
-                this.config.save("bigScreen", this.config.bigScreen);
-                if ((_typing) && (!this.config.bigScreen))
-                  _typing = !_typing;
-              });
-            } else {
-              _nonPlusMessage(this.interfaceApp[this.abbreviations][11]);
-            }*/
-                break;
-              case "Workspace":
-                context
-                    .read(configProvider)
-                    .state
-                    .save("showWorkspace", !context.read(showWorkspaceP).state);
-                context.refresh(showWorkspaceP);
-                break;
               case "Notes":
                 context
                     .read(configProvider)
