@@ -21,4 +21,6 @@ In this project, we are bringing the best features of the two projects into a si
 
 UI Layout:
 
+
+<img src="screenshot_ui_layout.png">
 [screenshot_ui_layout.png]
