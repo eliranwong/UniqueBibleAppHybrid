@@ -16,3 +16,9 @@ In this project, we are bringing the best features of the two projects into a si
 * Android
 * Chrome OS
 * Linux
+
+# Progress
+
+UI Layout:
+
+[screenshot_ui_layout.png]
