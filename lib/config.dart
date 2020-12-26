@@ -28,8 +28,6 @@ final showDrawerP = StateProvider<bool>(
         (ref) => ref.watch(configProvider).state.boolValues["showDrawer"]),
     bigScreenP = StateProvider<bool>(
         (ref) => ref.watch(configProvider).state.boolValues["bigScreen"]),
-    showWorkspaceP = StateProvider<bool>(
-            (ref) => ref.watch(configProvider).state.boolValues["showWorkspace"]),
     showNotesP = StateProvider<bool>(
             (ref) => ref.watch(configProvider).state.boolValues["showNotes"]),
     showFlagsP = StateProvider<bool>(
@@ -77,6 +75,8 @@ final instantActionP = StateProvider<int>(
         (ref) => ref.watch(configProvider).state.intValues["instantAction"]),
     favouriteActionP = StateProvider<int>(
             (ref) => ref.watch(configProvider).state.intValues["favouriteAction"]),
+    showWorkspaceP = StateProvider<int>(
+            (ref) => ref.watch(configProvider).state.intValues["showWorkspace"]),
     backgroundBrightnessP = StateProvider<int>(
             (ref) => ref.watch(configProvider).state.intValues["backgroundBrightness"]);
 
@@ -91,21 +91,22 @@ final historyActiveVerseP = StateProvider<List<List<int>>>(
 final mainThemeP = StateProvider<ThemeData>((ref) => ref.watch(configProvider).state.mainTheme);
 final myColorsP = StateProvider<Map<String, Color>>((ref) => ref.watch(configProvider).state.myColors);
 final myTextStyleP = StateProvider<Map<String, TextStyle>>((ref) => ref.watch(configProvider).state.myTextStyle);
+final dropdownUnderlineP = StateProvider<Container>((ref) => ref.watch(configProvider).state.dropdownUnderline);
 
 class Configurations {
   SharedPreferences prefs;
 
-  // The following variables changes when intValues["backgroundBrightness"] or doubleValues["fontSize"] changes.
+  // The following variables change when intValues["backgroundBrightness"] or doubleValues["fontSize"] changes.
   ThemeData mainTheme;
   Map<String, TextStyle> myTextStyle;
   Map<String, Color> myColors;
+  Container dropdownUnderline;
 
   // Default values.
 
   // Default bool values.
   Map<String, bool> boolValues = {
     "bigScreen": true,
-    "showWorkspace": false,
     "showNotes": false,
     "showFlags": false,
     "showPinyin": false,
@@ -136,9 +137,10 @@ class Configurations {
   };
   // Default double values.
   Map<String, int> intValues = {
-    "instantAction": 0,
-    "favouriteAction": 1,
+    "instantAction": 1,
+    "favouriteAction": 2,
     "backgroundBrightness": 0,
+    "showWorkspace": 0,
   };
   // Default List<String> values.
   Map<String, List<String>> listStringValues = {
@@ -226,7 +228,7 @@ class Configurations {
     }
 
     // Update text styles, colours, theme data
-    updateTextStyle();
+    updateTheme();
 
     print("Settings are ready!");
   }
@@ -246,11 +248,13 @@ class Configurations {
       if (doubleValues[feature] != newSetting) {
         doubleValues[feature] = newSetting;
         await prefs.setDouble(feature, newSetting as double);
+        if (feature == "fontSize") updateTheme();
       }
     } else if (intValues.containsKey(feature)) {
       if (intValues[feature] != newSetting) {
         intValues[feature] = newSetting;
         await prefs.setInt(feature, newSetting as int);
+        if (feature == "backgroundBrightness") updateTheme();
       }
     } else if (listStringValues.containsKey(feature)) {
       if (listStringValues[feature] != newSetting) {
@@ -302,15 +306,20 @@ class Configurations {
   // Text styles and colours
 
   // Run the following function when intValues["backgroundBrightness"] or doubleValues["fontSize"] is changed.
-  void updateTextStyle() {
+  void updateTheme() {
 
-    Color appBarColor, bottomAppBarColor, backgroundColor, floatingButtonColor;
+    Color backgroundColor, canvasColor, cardColor,
+        blueAccent, indigo, black, blue, deepOrange, grey,
+        appBarColor, floatingButtonColor, bottomAppBarColor,
+        dropdownBackground, dropdownBorder, dropdownDisabled, dropdownEnabled;
 
     final int backgroundBrightness = intValues["backgroundBrightness"];
     // adjustment with changes of brightness
     backgroundColor = Colors.blueGrey[backgroundBrightness];
-    Color blueAccent, indigo, black, blue, deepOrange, grey;
+
     if (backgroundBrightness >= 500) {
+      canvasColor = Colors.blueGrey[backgroundBrightness - 200];
+      cardColor = Colors.blueGrey[backgroundBrightness - 200];
       blueAccent = Colors.blueAccent[100];
       indigo = Colors.indigo[200];
       black = Colors.grey[300];
@@ -320,7 +329,13 @@ class Configurations {
       appBarColor = Colors.blueGrey[backgroundBrightness - 200];
       floatingButtonColor = Colors.blueGrey[backgroundBrightness - 300];
       bottomAppBarColor = Colors.grey[500];
+      dropdownBackground = Colors.blueGrey[backgroundBrightness - 200];
+      dropdownBorder = Colors.grey[400];
+      dropdownDisabled = Colors.blueAccent[100];
+      dropdownEnabled = Colors.blueAccent[100];
     } else {
+      canvasColor = Colors.blueGrey[backgroundBrightness];
+      cardColor = Colors.grey[300];
       blueAccent = Colors.blue[700];
       indigo = Colors.indigo[700];
       black = Colors.black;
@@ -331,6 +346,10 @@ class Configurations {
       appBarColor = Colors.blue[600];
       floatingButtonColor = Colors.blue[600];
       bottomAppBarColor = Colors.grey[backgroundBrightness + 100];
+      dropdownBackground = Colors.blueGrey[backgroundBrightness];
+      dropdownBorder = Colors.grey[700];
+      dropdownDisabled = Colors.blueAccent[700];
+      dropdownEnabled = Colors.blueAccent[700];
     }
 
     // define a set of colors
@@ -345,6 +364,12 @@ class Configurations {
       "floatingButtonColor": floatingButtonColor,
       "bottomAppBarColor": bottomAppBarColor,
       "background": backgroundColor,
+      "canvasColor": canvasColor,
+      "cardColor": cardColor,
+      "dropdownBackground": dropdownBackground,
+      "dropdownBorder": dropdownBorder,
+      "dropdownDisabled": dropdownDisabled,
+      "dropdownEnabled": dropdownEnabled,
     };
 
     // update various font text style here
@@ -410,12 +435,26 @@ class Configurations {
       appBarTheme: AppBarTheme(color: myColors["appBarColor"]),
       scaffoldBackgroundColor:
       Colors.blueGrey[intValues["backgroundBrightness"]],
+      canvasColor: myColors["canvasColor"],
       unselectedWidgetColor: myColors["blue"],
       accentColor: myColors["blueAccent"],
       dividerColor: myColors["grey"],
-      cardColor: (intValues["backgroundBrightness"] >= 500)
-          ? myColors["appBarColor"]
-          : Colors.grey[300],
+      cardColor: myColors["cardColor"],
+      textTheme: TextTheme(
+        bodyText1: verseFont,
+        subtitle1: subtitleStyle,
+      ),
+    );
+
+    dropdownUnderline = Container(
+      decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: dropdownBorder))),
     );
   }
+
+  static Future<void> goTo(BuildContext context, Widget widget) async {
+    await Navigator.push(
+        context, MaterialPageRoute(builder: (context) => widget));
+  }
+
 }

@@ -7,7 +7,6 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 // My libraries
 import 'config.dart';
 // User interface
-import 'routes.dart';
 import 'ui_home.dart';
 
 void main() {

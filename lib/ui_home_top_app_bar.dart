@@ -71,8 +71,7 @@ class HomeTopAppBar {
                 //_openVerseSelector(context);
                 break;
               case "Settings":
-                _openBibleSettings(context);
-                print("Settings");
+                Configurations.goTo(context, BibleSettings());
                 break;
               case "Manual":
                 print("Manual");
@@ -94,7 +93,7 @@ class HomeTopAppBar {
 
   List<PopupMenuEntry<String>> _buildPopupMenu(List<String> interfaceApp) {
     return <PopupMenuEntry<String>>[
-      PopupMenuItem<String>(
+      /*PopupMenuItem<String>(
         value: "Verse",
         child: ListTile(
           leading: Icon(Icons.directions),
@@ -120,8 +119,8 @@ class HomeTopAppBar {
             },
           ),
         ),
-      ),
-      PopupMenuItem<String>(
+      ),*/
+      /*PopupMenuItem<String>(
         value: "Workspace",
         child: ListTile(
           leading: Consumer(
@@ -138,8 +137,8 @@ class HomeTopAppBar {
             },
           ),
         ),
-      ),
-      const PopupMenuDivider(),
+      ),*/
+      //const PopupMenuDivider(),
       PopupMenuItem<String>(
         value: "Flags",
         child: ListTile(
@@ -243,8 +242,4 @@ class HomeTopAppBar {
     ];
   }
 
-  Future<void> _openBibleSettings(BuildContext context) async {
-    await Navigator.push(
-        context, MaterialPageRoute(builder: (context) => BibleSettings()));
-  }
 }

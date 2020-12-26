@@ -1,479 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-//import 'dart:io';
+import 'dart:io';
 import 'config.dart';
 import 'app_translation.dart';
 
 class BibleSettings extends StatelessWidget {
 
-  final List<String> fontSizeList = [for (int i = 7; i <= 40; i++) i.toString()];
-  final Map<String, String> interfaceMap = {"English": "ENG", "繁體中文": "TC", "简体中文": "SC"};
-  final Map<String, String> interfaceMapReverse = {"ENG": "English", "TC": "繁體中文", "SC": "简体中文"};
-  final Map<String, List<String>> _instantActionMap = {
-    "ENG": ["Tips", "Interlinear"],
-    "TC": ["提示", "原文逐字翻譯"],
-    "SC": ["提示", "原文逐字翻译"],
-  };
-  final Map<String, String> marvelBibles = {
-    "MAB": "Annotated",
-    "MIB": "Interlinear",
-    "MOB": "Original",
-    "MPB": "Parallel",
-    "MTB": "Trilingual",
-  };
-
   @override
   build(BuildContext context) {
     return Consumer(
       builder: (context, watch, child) {
-        final List<String> _interface = AppTranslation.interfaceBibleSettings[watch(abbreviationsP).state];
+        final List<String> interface =
+            AppTranslation.interfaceBibleSettings[watch(abbreviationsP).state];
         return Theme(
           data: watch(mainThemeP).state,
           child: Scaffold(
             appBar: AppBar(
               backgroundColor: watch(myColorsP).state["background"],
-              title: Text(_interface[0]),
-              /*actions: <Widget>[
-                IconButton(
-                  tooltip: _interface[10],
-                  icon: const Icon(Icons.check),
-                  onPressed: () {
-                    Navigator.pop(
-                        context);
-                  },
-                ),
-              ],*/
+              title: Text(interface[0]),
             ),
-            body: _bibleSettings(context),
+            body: _bibleSettings(context, interface),
           ),
         );
       },
     );
   }
 
-  Widget _bibleSettings(BuildContext context) {
-
-    /*List<String> commentaryAbb = _config.marvelCommentaries.keys.toList()..sort();
-
-    List moduleList = Bibles(this.abbreviations).getALLBibleList();
-    List<Widget> versionRowList = moduleList
-        .map((i) => _buildVersionRow(context, i, dropdownBackground))
-        .toList();*/
-
+  Widget _bibleSettings(BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final List<String> _interface = AppTranslation.interfaceBibleSettings[watch(abbreviationsP).state];
-        final backgroundBrightness = watch(backgroundBrightnessP).state;
-
-        final TextStyle style = (backgroundBrightness >= 500)
-            ? TextStyle(color: Colors.grey[300])
-            : TextStyle(color: Colors.black);
-
-        //final TextStyle subtitleStyle = TextStyle(color: (backgroundBrightness >= 700) ? Colors.grey[400] : _config.myColors["grey"],);
-
-        final Color dropdownBackground = (backgroundBrightness >= 500)
-            ? Colors.blueGrey[backgroundBrightness - 200]
-            : Colors.blueGrey[backgroundBrightness];
-        final Color dropdownBorder = (backgroundBrightness >= 500)
-            ? Colors.grey[400]
-            : Colors.grey[700];
-        final Color dropdownDisabled = (backgroundBrightness >= 500)
-            ? Colors.blueAccent[100]
-            : Colors.blueAccent[700];
-        final Color dropdownEnabled = (backgroundBrightness >= 500)
-            ? Colors.blueAccent[100]
-            : Colors.blueAccent[700];
-
-        final Widget dropdownUnderline = Container(
-          decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: dropdownBorder))),
-        );
-
         return Container(
           color: Colors.blueGrey[watch(backgroundBrightnessP).state],
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: ListView(
               children: <Widget>[
-                ListTile(
-              title: Text(_interface[1], style: style),
-              trailing: DropdownButton<String>(
-                style: style,
-                underline: dropdownUnderline,
-                iconDisabledColor: dropdownDisabled,
-                iconEnabledColor: dropdownEnabled,
-                value: interfaceMapReverse[watch(abbreviationsP).state],
-                onChanged: (String newValue) {
-                  String newValueAbb = interfaceMap[newValue];
-                  if (context.read(abbreviationsP).state != newValueAbb) {
-                    context.read(configProvider).state.save("abbreviations", newValueAbb);
-                    context.refresh(abbreviationsP);
-                  }
-                },
-                items: <String>[...interfaceMap.keys.toList()]
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-            /*ListTile(
-              title: Text(_interface[11], style: style),
-              trailing: DropdownButton<String>(
-                style: style,
-                underline: dropdownUnderline,
-                iconDisabledColor: dropdownDisabled,
-                iconEnabledColor: dropdownEnabled,
-                value: _colorDegreeValue,
-                onChanged: (String newValue) {
-                  if (_colorDegreeValue != newValue) {
-                    setState(() {
-                      _colorDegreeValue = newValue;
-                    });
-                  }
-                },
-                items: <String>[...colorDegree]
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-            ListTile(
-              title: Text(_interface[6], style: style),
-              trailing: DropdownButton<String>(
-                style: style,
-                underline: dropdownUnderline,
-                iconDisabledColor: dropdownDisabled,
-                iconEnabledColor: dropdownEnabled,
-                value: _fontSizeValue,
-                onChanged: (String newValue) {
-                  if (_verseValue != newValue) {
-                    setState(() {
-                      _fontSizeValue = newValue;
-                    });
-                  }
-                },
-                items: <String>[...fontSizeList]
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-            ListTile(
-              title: Text(_interface[2], style: style),
-              subtitle: Text(_config.allBibleMap[_moduleValue], style: subtitleStyle),
-              trailing: DropdownButton<String>(
-                style: style,
-                underline: dropdownUnderline,
-                iconDisabledColor: dropdownDisabled,
-                iconEnabledColor: dropdownEnabled,
-                value: _moduleValue,
-                onChanged: (String newValue) {
-                  if (_moduleValue != newValue) {
-                    onModuleChanged(newValue);
-                  }
-                },
-                items: <String>[...moduleList]
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-            ListTile(
-              title: Text(_interface[18], style: style),
-              subtitle: Text(_config.allBibleMap[_moduleValue2], style: subtitleStyle),
-              trailing: DropdownButton<String>(
-                style: style,
-                underline: dropdownUnderline,
-                iconDisabledColor: dropdownDisabled,
-                iconEnabledColor: dropdownEnabled,
-                value: _moduleValue2,
-                onChanged: (String newValue) {
-                  if (_moduleValue2 != newValue) {
-                    setState(() {
-                      _moduleValue2 = newValue;
-                    });
-                  }
-                },
-                items: <String>[...moduleList]
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-            ExpansionTile(
-              title: Text(_interface[7], style: style),
-              backgroundColor: Theme.of(context).accentColor.withOpacity(0.025),
-              children: versionRowList,
-            ),
-            ListTile(
-              title: Text(_interface[21], style: style),
-              trailing: Switch(
-                  value: _showHeadingVerseNoValue,
-                  onChanged: (bool value) {
-                    setState(() {
-                      _showHeadingVerseNoValue = value;
-                    });
-                  }
-              ),
-            ),
-            ListTile(
-              title: Text(_interface[20], style: style),
-              subtitle: Text(_config.allBibleMap[_iBible], style: subtitleStyle),
-              trailing: DropdownButton<String>(
-                style: style,
-                underline: dropdownUnderline,
-                iconDisabledColor: dropdownDisabled,
-                iconEnabledColor: dropdownEnabled,
-                value: _iBible,
-                onChanged: (String newValue) {
-                  if (_iBible != newValue) {
-                    setState(() {
-                      _iBible = newValue;
-                    });
-                  }
-                },
-                items: _config.interlinearBibles
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-            ListTile(
-              title: Text(_interface[9], style: style),
-              trailing: DropdownButton<String>(
-                style: style,
-                underline: dropdownUnderline,
-                iconDisabledColor: dropdownDisabled,
-                iconEnabledColor: dropdownEnabled,
-                value: _instantActionList[_instantAction],
-                onChanged: (String newValue) {
-                  if (_instantActionList[_instantAction] != newValue) {
-                    setState(() {
-                      _instantAction = _instantActionList.indexOf(newValue);
-                    });
-                  }
-                },
-                items: <String>[..._instantActionList]
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-            ListTile(
-              title: Text(
-                _interface[8],
-                style: style,
-              ),
-              trailing: DropdownButton<String>(
-                style: style,
-                underline: dropdownUnderline,
-                iconDisabledColor: dropdownDisabled,
-                iconEnabledColor: dropdownEnabled,
-                value: _favouriteActionList[_favouriteAction],
-                onChanged: (String newValue) {
-                  if (_favouriteActionList[_favouriteAction] != newValue) {
-                    setState(() {
-                      _favouriteAction = _favouriteActionList.indexOf(newValue);
-                    });
-                  }
-                },
-                items: <String>[..._favouriteActionList]
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-            ListTile(
-              title: Text(
-                _interface[14],
-                style: style,
-              ),
-              trailing: IconButton(
-                tooltip: _interface[15],
-                icon: Icon(Icons.settings_backup_restore,
-                    color: (backgroundBrightness >= 500)
-                        ? Colors.blueAccent[100]
-                        : Colors.blueAccent[700]),
-                onPressed: () {
-                  setState(() {
-                    _speechRateValue = (Platform.isAndroid) ? 1.0 : 0.5;
-                  });
-                },
-              ),
-            ),
-            Slider(
-              activeColor: (backgroundBrightness >= 500)
-                  ? Colors.blueAccent[100]
-                  : Colors.blueAccent[700],
-              min: 0.1,
-              max: (Platform.isAndroid) ? 3.0 : 1.0,
-              onChanged: (newValue) {
-                setState(() {
-                  _speechRateValue = num.parse(newValue.toStringAsFixed(1));
-                });
-              },
-              value: _speechRateValue,
-            ),
-            ListTile(
-              title: Text(_interface[12], style: style),
-              trailing: DropdownButton<String>(
-                style: style,
-                underline: dropdownUnderline,
-                iconDisabledColor: dropdownDisabled,
-                iconEnabledColor: dropdownEnabled,
-                value: _ttsEnglishValue,
-                onChanged: (String newValue) {
-                  if (_ttsEnglishValue != newValue) {
-                    setState(() {
-                      _ttsEnglishValue = newValue;
-                    });
-                  }
-                },
-                items: <String>["en-GB", "en-US"]
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-            ListTile(
-              title: Text(_interface[13], style: style),
-              trailing: DropdownButton<String>(
-                style: style,
-                underline: dropdownUnderline,
-                iconDisabledColor: dropdownDisabled,
-                iconEnabledColor: dropdownEnabled,
-                value: _ttsChineseValue,
-                onChanged: (String newValue) {
-                  if (_ttsChineseValue != newValue) {
-                    setState(() {
-                      _ttsChineseValue = newValue;
-                    });
-                  }
-                },
-                items: <String>[
-                  "zh-CN",
-                  (Platform.isAndroid) ? "yue-HK" : "zh-HK"
-                ].map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-            /*ListTile(
-              title: Text(_interface[16], style: style),
-              trailing: DropdownButton<String>(
-                style: style,
-                underline: dropdownUnderline,
-                iconDisabledColor: dropdownDisabled,
-                iconEnabledColor: dropdownEnabled,
-                value: _ttsGreekValue,
-                onChanged: (String newValue) {
-                  if (_ttsGreekValue != newValue) {
-                    setState(() {
-                      _ttsGreekValue = newValue;
-                    });
-                  }
-                },
-                items: <String>["modern", "Erasmian"]
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),*/
-            ListTile(
-              title: Text(_interface[19], style: style),
-              subtitle: Text("Marvel $_marvelBible Bible", style: subtitleStyle),
-              trailing: DropdownButton<String>(
-                style: style,
-                underline: dropdownUnderline,
-                iconDisabledColor: dropdownDisabled,
-                iconEnabledColor: dropdownEnabled,
-                value: _marvelBible,
-                onChanged: (String newValue) {
-                  if (_marvelBible != newValue) {
-                    setState(() {
-                      _marvelBible = newValue;
-                    });
-                  }
-                },
-                items: <String>["Annotated", "Interlinear", "Original", "Parallel", "Trilingual"]
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-            ListTile(
-              title: Text(_interface[23], style: style),
-              subtitle: Text(_config.marvelCommentaries[_marvelCommentary], style: subtitleStyle),
-              trailing: DropdownButton<String>(
-                style: style,
-                underline: dropdownUnderline,
-                iconDisabledColor: dropdownDisabled,
-                iconEnabledColor: dropdownEnabled,
-                value: _marvelCommentary,
-                onChanged: (String newValue) {
-                  if (_marvelCommentary != newValue) {
-                    setState(() {
-                      _marvelCommentary = newValue;
-                    });
-                  }
-                },
-                items: commentaryAbb.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-            ListTile(
-              title: Text(_interface[22], style: style),
-              trailing: Switch(
-                  value: _alwaysOpenMarvelBibleExternallyValue,
-                  onChanged: (!_config.plus)
-                      ? null
-                      : (bool value) {
-                    setState(() {
-                      _alwaysOpenMarvelBibleExternallyValue = value;
-                    });
-                  }
-              ),
-            ),*/
+                _abbreviations(context, interface),
+                const Divider(),
+                ..._backgroundBrightness(context, interface),
+                ..._fontSize(context, interface),
+                const Divider(),
+                _showHeadingVerseNo(context, interface),
+                const Divider(),
+                _instantAction(context, interface),
+                _favouriteAction(context, interface),
+                const Divider(),
+                ..._ttsOptions(context, interface),
+                const Divider(),
+                ..._marvelBibleOptions(context, interface),
+                const Divider(),
               ],
             ),
           ),
@@ -482,40 +57,502 @@ class BibleSettings extends StatelessWidget {
     );
   }
 
-  /*Widget _buildVersionRow(
-      BuildContext context, String version, Color dropdownBackground) {
-    return Container(
-      color: dropdownBackground,
-      child: CheckboxListTile(
-        title: Text(
-          _config.allBibleMap[version],
-          style: TextStyle(
-              color: (backgroundBrightness >= 700)
-                  ? Colors.blue[300]
-                  : Colors.blue[700]),
-        ),
-        subtitle: Text(
-          version,
-          style: TextStyle(
-            color: (backgroundBrightness >= 700)
-                ? Colors.grey[400]
-                : _config.myColors["grey"],
+  Widget _abbreviations(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final String abbreviations = watch(abbreviationsP).state;
+        final Map<String, String> interfaceMap = {
+          "English": "ENG",
+          "繁體中文": "TC",
+          "简体中文": "SC"
+        };
+        final Map<String, String> interfaceMapReverse = {
+          "ENG": "English",
+          "TC": "繁體中文",
+          "SC": "简体中文"
+        };
+        return ListTile(
+          title:
+              Text(interface[1], style: Theme.of(context).textTheme.bodyText1),
+          trailing: DropdownButton<String>(
+            style: Theme.of(context).textTheme.bodyText1,
+            underline: watch(dropdownUnderlineP).state,
+            iconDisabledColor: watch(myColorsP).state["dropdownDisabled"],
+            iconEnabledColor: watch(myColorsP).state["dropdownEnabled"],
+            value: interfaceMapReverse[abbreviations],
+            onChanged: (String newValue) {
+              String newValueAbb = interfaceMap[newValue];
+              if (newValueAbb != abbreviations) {
+                context
+                    .read(configProvider)
+                    .state
+                    .save("abbreviations", newValueAbb);
+                context.refresh(abbreviationsP);
+              }
+            },
+            items: <String>[...interfaceMap.keys.toList()]
+                .map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
           ),
-        ),
-        value: (_compareBibleList.contains(version)),
-        onChanged: (bool value) {
-          setState(() {
-            if (value) {
-              _compareBibleList.add(version);
-            } else {
-              var versionIndex = _compareBibleList.indexOf(version);
-              _compareBibleList.removeAt(versionIndex);
-            }
-          });
+        );
+      },
+    );
+  }
+
+  List<Widget> _backgroundBrightness(
+      BuildContext context, List<String> interface) {
+    return <Widget>[
+      Consumer(
+        builder: (context, watch, child) {
+          return Text(interface[11],
+              style: Theme.of(context).textTheme.bodyText1);
         },
       ),
+      Consumer(builder: (context, watch, child) {
+        final double backgroundBrightnessDouble =
+            watch(backgroundBrightnessP).state.toDouble();
+        return Slider(
+          activeColor: watch(myColorsP).state["blueAccent"],
+          value: backgroundBrightnessDouble,
+          max: 900.0,
+          divisions: 9,
+          label: backgroundBrightnessDouble.round().toString(),
+          onChanged: (double newValue) {
+            if (newValue != backgroundBrightnessDouble) {
+              final int newValueInt = newValue.round();
+              context
+                  .read(configProvider)
+                  .state
+                  .save("backgroundBrightness", newValueInt);
+              context.refresh(backgroundBrightnessP);
+              context.refresh(mainThemeP);
+              context.refresh(myColorsP);
+              context.refresh(myTextStyleP);
+              context.refresh(dropdownUnderlineP);
+            }
+          },
+        );
+      }),
+    ];
+  }
+
+  List<Widget> _fontSize(BuildContext context, List<String> interface) {
+    return <Widget>[
+      Consumer(
+        builder: (context, watch, child) {
+          return Text(interface[6],
+              style: Theme.of(context).textTheme.bodyText1);
+        },
+      ),
+      Consumer(builder: (context, watch, child) {
+        final double fontSize = watch(fontSizeP).state;
+        return Slider(
+          activeColor: watch(myColorsP).state["blueAccent"],
+          value: fontSize,
+          min: 7.0,
+          max: 40.0,
+          divisions: 33,
+          onChanged: (double newValue) {
+            if (newValue != fontSize) {
+              context.read(configProvider).state.save("fontSize", newValue);
+              context.refresh(fontSizeP);
+              context.refresh(mainThemeP);
+              context.refresh(myColorsP);
+              context.refresh(myTextStyleP);
+              context.refresh(dropdownUnderlineP);
+            }
+          },
+        );
+      }),
+    ];
+  }
+
+  Widget _showHeadingVerseNo(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final bool showHeadingVerseNo = watch(showHeadingVerseNoP).state;
+        return ListTile(
+          title:
+              Text(interface[21], style: Theme.of(context).textTheme.bodyText1),
+          trailing: Switch(
+              value: showHeadingVerseNo,
+              onChanged: (bool newValue) {
+                if (newValue != showHeadingVerseNo) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("showHeadingVerseNo", newValue);
+                  context.refresh(showHeadingVerseNoP);
+                }
+              }),
+        );
+      },
     );
-  }*/
+  }
 
+  Widget _instantAction(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final Map<String, List<String>> _instantActionMap = {
+          "ENG": ["---", "Tips", "Interlinear"],
+          "TC": ["---", "提示", "原文逐字翻譯"],
+          "SC": ["---", "提示", "原文逐字翻译"],
+        };
+        final List<String> _instantActionList =
+            _instantActionMap[watch(abbreviationsP).state];
+        final int instantAction = watch(instantActionP).state;
+        final String instantActionDescription =
+            _instantActionList[instantAction];
+        return ListTile(
+          title:
+              Text(interface[9], style: Theme.of(context).textTheme.bodyText1),
+          trailing: DropdownButton<String>(
+            style: Theme.of(context).textTheme.bodyText1,
+            underline: watch(dropdownUnderlineP).state,
+            iconDisabledColor: watch(myColorsP).state["dropdownDisabled"],
+            iconEnabledColor: watch(myColorsP).state["dropdownEnabled"],
+            value: instantActionDescription,
+            onChanged: (String newValue) {
+              if (newValue != instantActionDescription) {
+                final int newInstantAction =
+                    _instantActionList.indexOf(newValue);
+                context
+                    .read(configProvider)
+                    .state
+                    .save("instantAction", newInstantAction);
+                context.refresh(instantActionP);
+              }
+            },
+            items: <String>[..._instantActionList]
+                .map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _favouriteAction(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final List<String> _favouriteActionList = AppTranslation
+            .interfaceDialog[watch(abbreviationsP).state]
+            .sublist(4);
+        _favouriteActionList.insert(0, "---");
+        final int favouriteAction = watch(favouriteActionP).state;
+        final String favouriteActionDescription =
+            _favouriteActionList[favouriteAction];
+        return ListTile(
+          title: Text(
+            interface[8],
+            style: Theme.of(context).textTheme.bodyText1,
+          ),
+          trailing: DropdownButton<String>(
+            style: Theme.of(context).textTheme.bodyText1,
+            underline: watch(dropdownUnderlineP).state,
+            iconDisabledColor: watch(myColorsP).state["dropdownDisabled"],
+            iconEnabledColor: watch(myColorsP).state["dropdownEnabled"],
+            value: favouriteActionDescription,
+            onChanged: (String newValue) {
+              if (newValue != favouriteActionDescription) {
+                final int newFavouriteAction =
+                    _favouriteActionList.indexOf(newValue);
+                context
+                    .read(configProvider)
+                    .state
+                    .save("favouriteAction", newFavouriteAction);
+                context.refresh(favouriteActionP);
+              }
+            },
+            items: <String>[..._favouriteActionList]
+                .map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  List<Widget> _ttsOptions(BuildContext context, List<String> interface) {
+    return <Widget>[
+      Consumer(
+        builder: (context, watch, child) {
+          return ListTile(
+            title: Text(
+              interface[14],
+              style: Theme.of(context).textTheme.bodyText1,
+            ),
+            trailing: IconButton(
+              tooltip: interface[15],
+              icon: Icon(Icons.settings_backup_restore,
+                  color: watch(myColorsP).state["blueAccent"]),
+              onPressed: () {
+                context
+                    .read(configProvider)
+                    .state
+                    .save("speechRate", (Platform.isAndroid) ? 1.0 : 0.5);
+                context.refresh(speechRateP);
+              },
+            ),
+          );
+        },
+      ),
+      Consumer(
+        builder: (context, watch, child) {
+          final double speechRate = watch(speechRateP).state;
+          return Slider(
+            activeColor: watch(myColorsP).state["blueAccent"],
+            value: speechRate,
+            min: 0.1,
+            max: (Platform.isAndroid) ? 3.0 : 1.0,
+            onChanged: (newValue) {
+              if (newValue != speechRate) {
+                context.read(configProvider).state.save("speechRate", newValue);
+                context.refresh(speechRateP);
+              }
+            },
+          );
+        },
+      ),
+      Consumer(
+        builder: (context, watch, child) {
+          final String ttsEnglish = watch(ttsEnglishP).state;
+          return ListTile(
+            title: Text(interface[12],
+                style: Theme.of(context).textTheme.bodyText1),
+            trailing: DropdownButton<String>(
+              style: Theme.of(context).textTheme.bodyText1,
+              underline: watch(dropdownUnderlineP).state,
+              iconDisabledColor: watch(myColorsP).state["dropdownDisabled"],
+              iconEnabledColor: watch(myColorsP).state["dropdownEnabled"],
+              value: ttsEnglish,
+              onChanged: (String newValue) {
+                if (newValue != ttsEnglish) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("ttsEnglish", newValue);
+                  context.refresh(ttsEnglishP);
+                }
+              },
+              items: <String>["en-GB", "en-US"]
+                  .map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
+          );
+        },
+      ),
+      Consumer(
+        builder: (context, watch, child) {
+          final String ttsChinese = watch(ttsChineseP).state;
+          return ListTile(
+            title: Text(interface[13],
+                style: Theme.of(context).textTheme.bodyText1),
+            trailing: DropdownButton<String>(
+              style: Theme.of(context).textTheme.bodyText1,
+              underline: watch(dropdownUnderlineP).state,
+              iconDisabledColor: watch(myColorsP).state["dropdownDisabled"],
+              iconEnabledColor: watch(myColorsP).state["dropdownEnabled"],
+              value: ttsChinese,
+              onChanged: (String newValue) {
+                if (newValue != ttsChinese) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("ttsChinese", newValue);
+                  context.refresh(ttsChineseP);
+                }
+              },
+              items: <String>[
+                "zh-CN",
+                (Platform.isAndroid) ? "yue-HK" : "zh-HK"
+              ].map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
+          );
+        },
+      ),
+    ];
+  }
+
+  List<Widget> _marvelBibleOptions(
+      BuildContext context, List<String> interface) {
+    return <Widget>[
+      Consumer(
+        builder: (context, watch, child) {
+          final bool alwaysOpenMarvelBibleExternallyValue =
+              watch(alwaysOpenMarvelBibleExternallyP).state;
+          return ListTile(
+            title: Text(interface[22],
+                style: Theme.of(context).textTheme.bodyText1),
+            trailing: Switch(
+                value: alwaysOpenMarvelBibleExternallyValue,
+                onChanged: (bool newValue) {
+                  if (newValue != alwaysOpenMarvelBibleExternallyValue) {
+                    context
+                        .read(configProvider)
+                        .state
+                        .save("alwaysOpenMarvelBibleExternally", newValue);
+                    context.refresh(alwaysOpenMarvelBibleExternallyP);
+                  }
+                }),
+          );
+        },
+      ),
+      Consumer(
+        builder: (context, watch, child) {
+          final Map<String, String> marvelBibles = {
+            "MAB": "Annotated",
+            "MIB": "Interlinear",
+            "MOB": "Original",
+            "MPB": "Parallel",
+            "MTB": "Trilingual",
+          };
+          final Map<String, String> marvelBiblesReverse = {
+            "Annotated": "MAB",
+            "Interlinear": "MIB",
+            "Original": "MOB",
+            "Parallel": "MPB",
+            "Trilingual": "MTB",
+          };
+          final String marvelBible = marvelBibles[watch(marvelBibleP).state];
+          return ListTile(
+            title: Text(interface[19],
+                style: Theme.of(context).textTheme.bodyText1),
+            subtitle: Text("Marvel $marvelBible Bible",
+                style: Theme.of(context).textTheme.subtitle1),
+            trailing: DropdownButton<String>(
+              style: Theme.of(context).textTheme.bodyText1,
+              underline: watch(dropdownUnderlineP).state,
+              iconDisabledColor: watch(myColorsP).state["dropdownDisabled"],
+              iconEnabledColor: watch(myColorsP).state["dropdownEnabled"],
+              value: marvelBible,
+              onChanged: (String newValue) {
+                if (newValue != marvelBible) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("marvelBible", marvelBiblesReverse[newValue]);
+                  context.refresh(marvelBibleP);
+                }
+              },
+              items: <String>[
+                "Annotated",
+                "Interlinear",
+                "Original",
+                "Parallel",
+                "Trilingual"
+              ].map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
+          );
+        },
+      ),
+      Consumer(
+        builder: (context, watch, child) {
+          final Map<String, String> marvelCommentaries = {
+            "Barnes": "Notes on the Old and New Testaments (Barnes) [26 vol.]",
+            "Benson":
+                "Commentary on the Old and New Testaments (Benson) [5 vol.]",
+            "BI": "Biblical Illustrator (Exell) [58 vol.]",
+            "Brooks": "Complete Summary of the Bible (Brooks) [2 vol.]",
+            "Calvin": "John Calvin's Commentaries (Calvin) [22 vol.]",
+            "Clarke": "Commentary on the Bible (Clarke) [6 vol.]",
+            "CBSC":
+                "Cambridge Bible for Schools and Colleges (Cambridge) [57 vol.]",
+            "CECNT":
+                "Critical And Exegetical Commentary on the NT (Meyer) [20 vol.]",
+            "CGrk":
+                "Cambridge Greek Testament for Schools and Colleges (Cambridge) [21 vol.]",
+            "CHP": "Church Pulpit Commentary (Nisbet) [12 vol.]",
+            "CPBST":
+                "College Press Bible Study Textbook Series (College) [59 vol.]",
+            "EBC": "Expositor's Bible Commentary (Nicoll) [49 vol.]",
+            "ECER": "Commentary for English Readers (Ellicott) [8 vol.]",
+            "EGNT": "Expositor's Greek New Testament (Nicoll) [5 vol.]",
+            "GCT": "Greek Testament Commentary (Alford) [4 vol.]",
+            "Gill": "Exposition of the Entire Bible (Gill) [9 vol.]",
+            "Henry":
+                "Exposition of the Old and New Testaments (Henry) [6 vol.]",
+            "HH": "Horæ Homileticæ (Simeon) [21 vol.]",
+            "ICCNT":
+                "International Critical Commentary, NT (1896-1929) [16 vol.]",
+            "JFB": "Jamieson, Fausset, and Brown Commentary (JFB) [6 vol.]",
+            "KD":
+                "Commentary on the Old Testament (Keil & Delitzsch) [10 vol.]",
+            "Lange":
+                "Commentary on the Holy Scriptures: Critical, Doctrinal, and Homiletical (Lange) [25 vol.]",
+            "MacL": "Expositions of Holy Scripture (MacLaren) [32 vol.]",
+            "PHC":
+                "Preacher's Complete Homiletical Commentary (Exell) [37 vol.]",
+            "Pulpit": "Pulpit Commentary (Spence) [23 vol.]",
+            "Rob": "Word Pictures in the New Testament (Robertson) [6 vol.]",
+            "Spur": "Spurgeon's Expositions on the Bible (Spurgeon) [3 vol.]",
+            "Vincent": "Word Studies in the New Testament (Vincent) [4 vol.]",
+            "Wesley":
+                "John Wesley's Notes on the Whole Bible (Wesley) [3 vol.]",
+            "Whedon":
+                "Commentary on the Old and New Testaments (Whedon) [14 vol.]",
+          };
+          final List<String> commentaryAbb = marvelCommentaries.keys.toList()
+            ..sort();
+          final String marvelCommentary =
+              watch(marvelCommentaryP).state.substring(1);
+          return ListTile(
+            title: Text(interface[23],
+                style: Theme.of(context).textTheme.bodyText1),
+            subtitle: Text(marvelCommentaries[marvelCommentary],
+                style: Theme.of(context).textTheme.subtitle1),
+            trailing: DropdownButton<String>(
+              style: Theme.of(context).textTheme.bodyText1,
+              underline: watch(dropdownUnderlineP).state,
+              iconDisabledColor: watch(myColorsP).state["dropdownDisabled"],
+              iconEnabledColor: watch(myColorsP).state["dropdownEnabled"],
+              value: marvelCommentary,
+              onChanged: (String newValue) {
+                if (newValue != marvelCommentary) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("marvelCommentary", "c$newValue");
+                  context.refresh(marvelCommentaryP);
+                }
+              },
+              items:
+                  commentaryAbb.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
+          );
+        },
+      ),
+    ];
+  }
 }
-
