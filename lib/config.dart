@@ -6,10 +6,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 // My libraries
 import 'module_description.dart';
+import 'bible.dart';
+import 'file_mx.dart';
 
 final configurationsProvider = FutureProvider<Configurations>((ref) async {
   final Configurations configurations = Configurations();
-  await configurations.setDefault();
+  await configurations.setup();
   return configurations;
 });
 
@@ -156,6 +158,12 @@ class Configurations {
     ],
   };
 
+  // Variables to work with bibles
+  String marvelData;
+  FileMx fileMx;
+  Map<String, String> allBibles;
+  Bible bibleDB1, bibleDB2, bibleDB3, iBibleDB, tBibleDB, headingsDB;
+
   // Functions to work with "settings" or preferences
 
   List<List<int>> convertListStringToListListInt(List<String> listString) =>
@@ -166,6 +174,13 @@ class Configurations {
   List<String> convertListListIntToListString(List<List<int>> listListInt) =>
       [for (List<int> i in listListInt) i.join(".")];
   // same as listListInt.map((i) => i.join(".")).toList()
+
+  Future<void> setup() async {
+    // Set up share preferences.
+    await setDefault();
+    // Set up bibles.
+    await setupBibles();
+  }
 
   Future<void> setDefault() async {
     // Get an instance of SharedPreferences.
@@ -229,8 +244,6 @@ class Configurations {
 
     // Update text styles, colours, theme data
     updateTheme();
-
-    print("Settings are ready!");
   }
 
   Future<void> changeWorkspaceLayout() async {
@@ -466,6 +479,37 @@ class Configurations {
   static Future<void> goTo(BuildContext context, Widget widget) async {
     await Navigator.push(
         context, MaterialPageRoute(builder: (context) => widget));
+  }
+
+  // Bibles-related functions
+
+  Future<void> setupBibles() async {
+    marvelData = await StorageMx.getUserDirectoryPath();
+    fileMx = FileMx(marvelData);
+    await copyAssetsBibles();
+    allBibles = await checkInstalledBibles();
+    final String bible1 = stringValues["bible1"];
+    bibleDB1 = Bible(bible1, allBibles[bible1], fileMx);
+    await bibleDB1.openDatabase();
+    final String bible2 = stringValues["bible2"];
+    bibleDB2 = Bible(bible2, allBibles[bible2], fileMx);
+    await bibleDB2.openDatabase();
+  }
+
+  Future<void> copyAssetsBibles() async {
+    Map<String, List<String>> resources = {
+      "bibles": ["KJV.bible", "NET.bible"],
+    };
+    for (String resource in resources.keys) {
+      resources[resource].forEach((filename) async {
+        await fileMx.copyAssetsFileToUserDirectory(resource, filename);
+      });
+    }
+  }
+
+  Future<Map<String, String>> checkInstalledBibles() async {
+    final String biblesFolder = await fileMx.getUserDirectoryFolder("bibles");
+    return fileMx.getDirectoryItems(biblesFolder);
   }
 
 }
