@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 // Core libraries
 import 'dart:io';
 // My libraries
 import 'config.dart';
 import 'app_translation.dart';
-import 'bible_settings.dart';
 // ui
 import 'ui_home_bottom_app_bar.dart';
 import 'ui_home_top_app_bar.dart';
@@ -26,6 +26,8 @@ class UiHome extends HookWidget {
       interfaceMessage = AppTranslation.interfaceMessage,
       interfaceDialog = AppTranslation.interfaceDialog,
       interfaceBibleSearch = AppTranslation.interfaceBibleSearch;
+  ItemScrollController verseScrollController;
+  ItemPositionsListener versePositionsListener;
 
   // Constructor
   UiHome() {
@@ -190,7 +192,72 @@ class UiHome extends HookWidget {
   }
 
   Widget _buildBibleChapter(BuildContext context) {
-    return _dummyWidget("Bible Reading HERE!");
+    verseScrollController = ItemScrollController();
+    versePositionsListener = ItemPositionsListener.create();
+    return Consumer(
+      builder: (context, watch, child) {
+        final List<List<dynamic>> chapterData = watch(chapterDataP).state;
+        final int activeScrollIndex = watch(activeScrollIndexP).state;
+        return ScrollablePositionedList.builder(
+          padding: EdgeInsets.zero,
+          itemCount: chapterData.length,
+          itemBuilder: (context, i) => _buildVerseRow(context, i, activeScrollIndex, chapterData[i]),
+          initialScrollIndex: activeScrollIndex,
+          //initialAlignment: 0.0,
+          itemScrollController: verseScrollController,
+          itemPositionsListener: versePositionsListener,
+        );
+      },
+    );
+  }
+
+  Widget _buildVerseRow(BuildContext context, int i, int activeScrollIndex, List<dynamic> data) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
+        TextStyle verseStyle = (i == activeScrollIndex) ? myTextStyle["activeVerseFont"] : myTextStyle["verseFont"];
+        return ListTile(
+          title: Text(data[1], style: verseStyle,),
+          //subtitle: nonEnglishSubtitle,
+          /*leading: ((this.config.showFlags) &&
+          (chapterHeadingsList.contains(bcvList[2])))
+          ? IconButton(
+          tooltip: chapterHeadings[
+          chapterHeadingsList.indexOf(bcvList[2])][1],
+          icon: Icon(
+            Icons.outlined_flag,
+            color: this.config.myColors["grey"],
+          ),
+          onPressed: () {
+            showSnackbarMessage(chapterHeadings[
+            chapterHeadingsList.indexOf(bcvList[2])][1]);
+          })
+          : null,*/
+          /*trailing: (!this.config.showNotes)
+          ? null
+          : IconButton(
+          tooltip: (_noteList.contains(bcvList[2]))
+              ? interfaceApp[this.abbreviations][16]
+              : interfaceApp[this.abbreviations][15],
+          icon: Icon(
+            (_noteList.contains(bcvList[2]))
+                ? Icons.edit
+                : Icons.note_add,
+            color: this.config.myColors["blueAccent"],
+          ),
+          onPressed: () {
+            _launchNotePad(context, bcvList);
+          }),*/
+          onTap: () {
+            print("tap");
+          },
+          onLongPress: () {
+            print("long press");
+            //_longPressedActiveVerse(context, _data[i]);
+          },
+        );
+      },
+    );
   }
 
   Widget _buildWorkspace(BuildContext context) {

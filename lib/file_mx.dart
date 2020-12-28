@@ -71,14 +71,18 @@ class FileMx {
   // Note that "list" and "listSync" are different.
   // list: https://api.flutter.dev/flutter/dart-io/Directory/list.html
   // listSync: https://api.flutter.dev/flutter/dart-io/Directory/listSync.html
-  Map<String, String> getDirectoryItems(String folderPath) {
+  Map<String, String> getDirectoryItems(String folderPath, {String filter = ""}) {
     Map<String, String> directoryItems = {};
     final Directory targetDirectory = Directory(folderPath);
     final List<FileSystemEntity> directoryItemList = targetDirectory.listSync(followLinks: false);
     for (FileSystemEntity item in directoryItemList) {
       if (item is File) {
         final String filePath = item.path;
-        directoryItems[basename(filePath)] = filePath;
+        if (filter.isEmpty) {
+          directoryItems[basename(filePath)] = filePath;
+        } else if (extension(filePath) == filter) {
+          directoryItems[basenameWithoutExtension(filePath)] = filePath;
+        }
       }
     }
     return directoryItems;

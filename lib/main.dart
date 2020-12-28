@@ -33,7 +33,7 @@ class UniqueBibleApp extends HookWidget {
 
     return config.when(
       loading: () => _dummyApp("Loading ..."),
-      error: (error, stack) => _dummyApp("Failed to load preferences!"),
+      error: (error, stack) => _dummyApp("Failed to load configurations!"),
       data: (config) => _mainApp(),
     );
   }

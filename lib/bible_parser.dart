@@ -196,7 +196,8 @@ class BibleParser {
     RegExp searchPattern = RegExp(r'bcv\(([0-9]+?,[0-9]+?,[0-9]+?[^\)\(]*?)\)');
     for (RegExpMatch match in searchPattern.allMatches(taggedText)) {
       final List<String> stringList = match.group(1).split(",");
-      verseReferenceList.add(stringList.map((i) => int.parse(i)).toList());
+      //verseReferenceList.add(stringList.map((i) => int.parse(i)).toList());
+      verseReferenceList.add([for (String i in stringList) int.parse(i)]);
     }
 
     return verseReferenceList;

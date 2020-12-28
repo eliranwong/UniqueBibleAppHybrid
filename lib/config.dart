@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path/path.dart';
 // Core libraries
 import 'dart:io';
 // My libraries
@@ -95,6 +96,11 @@ final myColorsP = StateProvider<Map<String, Color>>((ref) => ref.watch(configPro
 final myTextStyleP = StateProvider<Map<String, TextStyle>>((ref) => ref.watch(configProvider).state.myTextStyle);
 final dropdownUnderlineP = StateProvider<Container>((ref) => ref.watch(configProvider).state.dropdownUnderline);
 
+final bibleDB1P = StateProvider<Bible>((ref) => ref.watch(configProvider).state.bibleDB1),
+    bibleDB2P = StateProvider<Bible>((ref) => ref.watch(configProvider).state.bibleDB2);
+final chapterDataP = StateProvider<List<List<dynamic>>>((ref) => ref.watch(configProvider).state.chapterData);
+final activeScrollIndexP = StateProvider<int>((ref) => ref.watch(configProvider).state.activeScrollIndex);
+
 class Configurations {
   SharedPreferences prefs;
 
@@ -161,8 +167,10 @@ class Configurations {
   // Variables to work with bibles
   String marvelData;
   FileMx fileMx;
-  Map<String, String> allBibles;
+  Map<String, List<String>> allBibles, allBiblesByLanguages = {};
   Bible bibleDB1, bibleDB2, bibleDB3, iBibleDB, tBibleDB, headingsDB;
+  List<List<dynamic>> chapterData;
+  int activeScrollIndex;
 
   // Functions to work with "settings" or preferences
 
@@ -179,7 +187,7 @@ class Configurations {
     // Set up share preferences.
     await setDefault();
     // Set up bibles.
-    await setupBibles();
+    await setupResources();
   }
 
   Future<void> setDefault() async {
@@ -330,8 +338,6 @@ class Configurations {
 
   // Run the following function when intValues["backgroundBrightness"] or doubleValues["fontSize"] is changed.
   void updateTheme() {
-
-    print("updating theme");
     Color backgroundColor, canvasColor, cardColor,
         blueAccent, indigo, black, blue, deepOrange, grey,
         appBarColor, floatingButtonColor, bottomAppBarColor,
@@ -481,22 +487,66 @@ class Configurations {
         context, MaterialPageRoute(builder: (context) => widget));
   }
 
+  // Set up resources
+  Future<void> setupResources() async {
+    marvelData = await StorageMx.getUserDirectoryPath();
+    fileMx = FileMx(marvelData);
+    // pending: message to Android users for not granting storage permission
+    // copied required resources for loading
+    await copyAssetsResources();
+
+    await setupBibles();
+  }
+
   // Bibles-related functions
 
   Future<void> setupBibles() async {
-    marvelData = await StorageMx.getUserDirectoryPath();
-    fileMx = FileMx(marvelData);
-    await copyAssetsBibles();
-    allBibles = await checkInstalledBibles();
-    final String bible1 = stringValues["bible1"];
-    bibleDB1 = Bible(bible1, allBibles[bible1], fileMx);
-    await bibleDB1.openDatabase();
-    final String bible2 = stringValues["bible2"];
-    bibleDB2 = Bible(bible2, allBibles[bible2], fileMx);
-    await bibleDB2.openDatabase();
+    final Map<String, String> bibleFiles = await checkInstalledBibles();
+    allBibles = {for (MapEntry i in bibleFiles.entries) basenameWithoutExtension(i.key): [(extension(i.key).isNotEmpty) ? extension(i.key) : "en", await getBibleInfo(i.value), i.value]};
+    allBibles.forEach((k, v) => allBiblesByLanguages[v.first] = (allBiblesByLanguages.containsKey(v.first) ? [...allBiblesByLanguages[v.first], ...[k]] : [k]));
+    // Load bible databases.
+    final List<int> activeVerse = listListIntValues["historyActiveVerse"].first;
+    await loadBible1DB(activeVerse);
+    await loadBible2DB(activeVerse);
+    loadChapterData(activeVerse);
   }
 
-  Future<void> copyAssetsBibles() async {
+  void loadChapterData(List<int> activeVerse) {
+    chapterData = bibleDB1.chapterData;
+    // useful references on finding index
+    // https://api.flutter.dev/flutter/dart-core/Iterable/firstWhere.html
+    // https://fireship.io/snippets/dart-how-to-get-the-index-on-array-loop-map/
+    // https://coflutter.com/dart-how-to-find-an-item-in-a-list/
+    // Note that lists cannot be tested for equality.
+    // Therefore, cannot use (data.first == activeVerse.sublist(0, 3)) for test.
+    // Use activeVerse[2] instead of activeVerse.last for test below, because activeVerse.length could be greater than 3.
+    int activeVerseIndex = chapterData.indexWhere((data) => data.first.last == activeVerse[2]);
+    activeScrollIndex = (activeVerseIndex == -1) ? 0 : activeVerseIndex;
+  }
+
+  Future<String> getBibleInfo(String fullPath) async {
+    final String query = "SELECT Scripture FROM Verses WHERE Book=0 AND Chapter=0 AND Verse=0";
+    final List<Map<String, dynamic>> results = await fileMx.querySqliteDB("FULLPATH", fullPath, query, []);
+    return (results.isNotEmpty) ? results.first["Scripture"] : "";
+  }
+
+  Future<void> loadBible1DB(List<int> activeVerse) async {
+    final String bible1 = stringValues["bible1"];
+    bibleDB1 = Bible(bible1, allBibles[bible1].last, fileMx);
+    await bibleDB1.openDatabase();
+    await bibleDB1.updateBCVMenu(activeVerse);
+    await bibleDB1.updateChapterData(activeVerse);
+  }
+
+  Future<void> loadBible2DB(List<int> activeVerse) async {
+    final String bible2 = stringValues["bible2"];
+    bibleDB2 = Bible(bible2, allBibles[bible2].last, fileMx);
+    await bibleDB2.openDatabase();
+    await bibleDB2.updateBCVMenu(activeVerse);
+    await bibleDB2.updateChapterData(activeVerse);
+  }
+
+  Future<void> copyAssetsResources() async {
     Map<String, List<String>> resources = {
       "bibles": ["KJV.bible", "NET.bible"],
     };
@@ -509,7 +559,7 @@ class Configurations {
 
   Future<Map<String, String>> checkInstalledBibles() async {
     final String biblesFolder = await fileMx.getUserDirectoryFolder("bibles");
-    return fileMx.getDirectoryItems(biblesFolder);
+    return fileMx.getDirectoryItems(biblesFolder, filter: ".bible");
   }
 
 }
