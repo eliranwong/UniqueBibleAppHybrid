@@ -33,6 +33,7 @@ class AppTranslation {
       "Flags",
       "Pinyin",
       "Transliteration", //30
+      "Restart", //31
     ],
     "TC": [
       "跨平台聖經工具",
@@ -66,6 +67,7 @@ class AppTranslation {
       "標題提示",
       "漢語拼音",
       "原文譯音", // 30
+      "重新啓動", // 31
     ],
     "SC": [
       "跨平台圣经工具",
@@ -99,6 +101,7 @@ class AppTranslation {
       "标题提示",
       "汉语拼音",
       "原文译音", // 30
+      "重新启动", // 31
     ],
   };
 
@@ -258,7 +261,8 @@ class AppTranslation {
       "Instant Interlinear",
       "Show Heading Verse No.",
       "Open Marvel.Bible Externally",
-      "Default Marvel Commentary", // 23
+      "Default Marvel Commentary",
+      "Keep Menu Open", //24
     ],
     "TC": [
       "設定",
@@ -284,7 +288,8 @@ class AppTranslation {
       "即時原文逐字翻譯",
       "在標題前顯示節數",
       "使用外置瀏覽器開啟 Marvel.Bible",
-      "預設 Marvel 釋經書", // 23
+      "預設 Marvel 釋經書",
+      "持續開啓菜單", //24
     ],
     "SC": [
       "设定",
@@ -310,7 +315,8 @@ class AppTranslation {
       "即时原文逐字翻译",
       "在标题前显示节数",
       "使用外置浏览器开启 Marvel.Bible",
-      "预设 Marvel 释经书", // 23
+      "预设 Marvel 释经书",
+      "持续开启菜单", //24
     ],
   };
 

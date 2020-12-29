@@ -13,8 +13,12 @@ class HomeTopAppBar {
         return IconButton(
           tooltip: AppTranslation.interfaceApp[watch(abbreviationsP).state][3],
           icon: const Icon(Icons.swap_calls),
-          onPressed: () {
-            print("switch button pressed");
+          onPressed: () async {
+            await context.read(configProvider).state.swapBibles();
+            context.refresh(bible1P);
+            context.refresh(bible2P);
+            context.refresh(chapterDataP);
+            context.refresh(activeScrollIndexP);
           },
         );
       },
@@ -81,6 +85,9 @@ class HomeTopAppBar {
                 break;
               case "Settings":
                 Configurations.goTo(context, BibleSettings());
+                break;
+              case "Restart":
+                context.refresh(configurationsProvider);
                 break;
               case "Manual":
                 print("Manual");
@@ -246,6 +253,14 @@ class HomeTopAppBar {
         child: ListTile(
           leading: Icon(Icons.alternate_email),
           title: Text(interfaceApp[14]),
+        ),
+      ),
+      const PopupMenuDivider(),
+      PopupMenuItem<String>(
+        value: "Restart",
+        child: ListTile(
+          leading: Icon(Icons.replay),
+          title: Text(interfaceApp[31]),
         ),
       ),
     ];

@@ -40,7 +40,7 @@ class BibleSettings extends StatelessWidget {
                 ..._backgroundBrightness(context, interface),
                 ..._fontSize(context, interface),
                 const Divider(),
-                _showHeadingVerseNo(context, interface),
+                _keepDrawerOpen(context, interface),
                 const Divider(),
                 _instantAction(context, interface),
                 _favouriteAction(context, interface),
@@ -171,22 +171,22 @@ class BibleSettings extends StatelessWidget {
     ];
   }
 
-  Widget _showHeadingVerseNo(BuildContext context, List<String> interface) {
+  Widget _keepDrawerOpen(BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final bool showHeadingVerseNo = watch(showHeadingVerseNoP).state;
+        final bool keepDrawerOpen = watch(keepDrawerOpenP).state;
         return ListTile(
           title:
-              Text(interface[21], style: Theme.of(context).textTheme.bodyText1),
+              Text(interface[24], style: Theme.of(context).textTheme.bodyText1),
           trailing: Switch(
-              value: showHeadingVerseNo,
+              value: keepDrawerOpen,
               onChanged: (bool newValue) {
-                if (newValue != showHeadingVerseNo) {
+                if (newValue != keepDrawerOpen) {
                   context
                       .read(configProvider)
                       .state
-                      .save("showHeadingVerseNo", newValue);
-                  context.refresh(showHeadingVerseNoP);
+                      .save("keepDrawerOpen", newValue);
+                  context.refresh(keepDrawerOpenP);
                 }
               }),
         );

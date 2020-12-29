@@ -9,6 +9,7 @@ import 'dart:io';
 import 'module_description.dart';
 import 'bible.dart';
 import 'file_mx.dart';
+import 'bible_parser.dart';
 
 final configurationsProvider = FutureProvider<Configurations>((ref) async {
   final Configurations configurations = Configurations();
@@ -29,6 +30,10 @@ final configProvider = StateProvider<Configurations>((ref) {
 
 final showDrawerP = StateProvider<bool>(
         (ref) => ref.watch(configProvider).state.boolValues["showDrawer"]),
+    keepDrawerOpenP = StateProvider<bool>(
+            (ref) => ref.watch(configProvider).state.boolValues["keepDrawerOpen"]),
+    parallelVersesP = StateProvider<bool>(
+            (ref) => ref.watch(configProvider).state.boolValues["parallelVerses"]),
     bigScreenP = StateProvider<bool>(
         (ref) => ref.watch(configProvider).state.boolValues["bigScreen"]),
     showNotesP = StateProvider<bool>(
@@ -47,7 +52,7 @@ final showDrawerP = StateProvider<bool>(
 final abbreviationsP = StateProvider<String>(
         (ref) => ref.watch(configProvider).state.stringValues["abbreviations"]),
     bible1P = StateProvider<String>(
-            (ref) => ref.watch(configProvider).state.stringValues["bigScreen"]),
+            (ref) => ref.watch(configProvider).state.stringValues["bible1"]),
     bible2P = StateProvider<String>(
             (ref) => ref.watch(configProvider).state.stringValues["bible2"]),
     iBibleP = StateProvider<String>(
@@ -96,10 +101,10 @@ final myColorsP = StateProvider<Map<String, Color>>((ref) => ref.watch(configPro
 final myTextStyleP = StateProvider<Map<String, TextStyle>>((ref) => ref.watch(configProvider).state.myTextStyle);
 final dropdownUnderlineP = StateProvider<Container>((ref) => ref.watch(configProvider).state.dropdownUnderline);
 
-final bibleDB1P = StateProvider<Bible>((ref) => ref.watch(configProvider).state.bibleDB1),
-    bibleDB2P = StateProvider<Bible>((ref) => ref.watch(configProvider).state.bibleDB2);
 final chapterDataP = StateProvider<List<List<dynamic>>>((ref) => ref.watch(configProvider).state.chapterData);
 final activeScrollIndexP = StateProvider<int>((ref) => ref.watch(configProvider).state.activeScrollIndex);
+final parserP = StateProvider<BibleParser>((ref) => BibleParser(ref.watch(abbreviationsP).state));
+final activeVerseReferenceP = StateProvider<String>((ref) => ref.watch(configProvider).state.activeVerseReference);
 
 class Configurations {
   SharedPreferences prefs;
@@ -120,8 +125,10 @@ class Configurations {
     "showPinyin": false,
     "showTransliteration": false,
     "showDrawer": true,
+    "keepDrawerOpen": false,
     "showHeadingVerseNo": false,
     "alwaysOpenMarvelBibleExternally": false,
+    "parallelVerses": false,
   };
   // Default String values.
   Map<String, String> stringValues = {
@@ -165,12 +172,13 @@ class Configurations {
   };
 
   // Variables to work with bibles
-  String marvelData;
+  String marvelData, activeVerseReference;
   FileMx fileMx;
   Map<String, List<String>> allBibles, allBiblesByLanguages = {};
   Bible bibleDB1, bibleDB2, bibleDB3, iBibleDB, tBibleDB, headingsDB;
-  List<List<dynamic>> chapterData;
+  List<List<dynamic>> chapterData, chapterDataParallel;
   int activeScrollIndex;
+  BibleParser parser;
 
   // Functions to work with "settings" or preferences
 
@@ -181,11 +189,12 @@ class Configurations {
 
   List<String> convertListListIntToListString(List<List<int>> listListInt) =>
       [for (List<int> i in listListInt) i.join(".")];
-  // same as listListInt.map((i) => i.join(".")).toList()
 
   Future<void> setup() async {
     // Set up share preferences.
     await setDefault();
+    // Set up bible parser
+    parser = BibleParser(stringValues["abbreviations"]);
     // Set up bibles.
     await setupResources();
   }
@@ -293,33 +302,34 @@ class Configurations {
         await prefs.setStringList(feature, newSetting as List<String>);
       }
     } else if (listListIntValues.containsKey(feature)) {
-      if (listListIntValues[feature] != newSetting) {
-        listListIntValues[feature] = newSetting;
-        await prefs.setStringList(
-            feature, convertListListIntToListString(newSetting));
-      }
+      listListIntValues[feature] = newSetting;
+      await prefs.setStringList(
+          feature, convertListListIntToListString(newSetting));
     }
   }
 
-  Future<void> add(String feature, List<int> newItem) async {
+  Future<void> add(String feature, List<dynamic> newItemDynamic) async {
+    List<int> newItem = [for (dynamic i in newItemDynamic) i as int];
     switch (feature) {
       case "historyActiveVerse":
         List<List<int>> historyActiveVerse = listListIntValues[feature];
-        if (newItem != historyActiveVerse.first) {
+        if (newItem.join(".") != historyActiveVerse.first.join(".")) {
           historyActiveVerse.insert(0, newItem);
           if (historyActiveVerse.length > 20) historyActiveVerse.sublist(0, 20);
-          save(feature, historyActiveVerse);
+          await save(feature, historyActiveVerse);
+          updateVerseReference(newItem);
+          updateActiveScrollIndex(newItem);
         }
         break;
       case "favouriteVerse":
         List<List<int>> favouriteVerse = listListIntValues[feature];
-        if ((favouriteVerse.isEmpty) || (newItem != favouriteVerse.first)) {
+        if ((favouriteVerse.isEmpty) || (newItem.join(".") != favouriteVerse.first.join("."))) {
           // avoid duplication in favourite records:
           final int indexFound = favouriteVerse.indexOf(newItem);
           if (indexFound != -1) favouriteVerse.removeAt(indexFound);
           favouriteVerse.insert(0, newItem);
           if (favouriteVerse.length > 20) favouriteVerse.sublist(0, 20);
-          save(feature, favouriteVerse);
+          await save(feature, favouriteVerse);
         }
         break;
     }
@@ -506,21 +516,111 @@ class Configurations {
     allBibles.forEach((k, v) => allBiblesByLanguages[v.first] = (allBiblesByLanguages.containsKey(v.first) ? [...allBiblesByLanguages[v.first], ...[k]] : [k]));
     // Load bible databases.
     final List<int> activeVerse = listListIntValues["historyActiveVerse"].first;
-    await loadBible1DB(activeVerse);
-    await loadBible2DB(activeVerse);
-    loadChapterData(activeVerse);
+    await openBibleDatabase();
+    await updateBCVMenu(activeVerse);
+    await updateDBChapterData(activeVerse);
+    updateVerseReference(activeVerse);
+    updateActiveScrollIndex(activeVerse);
   }
 
-  void loadChapterData(List<int> activeVerse) {
-    chapterData = bibleDB1.chapterData;
+  Future<void> newVerseSelected(List<dynamic> bcvList) async {
+    final List<int> activeVerse = listListIntValues["historyActiveVerse"].first;
+    if (bcvList.sublist(0, 3).join(".") != activeVerse.sublist(0, 3).join(".")) {
+      if (bcvList.sublist(0, 2).join(".") != activeVerse.sublist(0, 2).join(".")) {
+        await updateBCVMenu(bcvList);
+        await updateDBChapterData(bcvList);
+      }
+      await add("historyActiveVerse", bcvList);
+    }
+  }
+
+  Future<void> openBibleDatabase() async {
+    await openBibleDB1();
+    await openBibleDB2();
+  }
+
+  Future<void> openBibleDB1({String module = ""}) async {
+    await bibleDB1?.db?.close();
+    final String bible = (module.isEmpty) ? stringValues["bible1"] : module;
+    bibleDB1 = Bible(bible, allBibles[bible].last, fileMx);
+    await bibleDB1.openDatabase();
+    if (module.isNotEmpty) await save("bible1", module);
+  }
+
+  Future<void> openBibleDB2({String module = ""}) async {
+    await bibleDB2?.db?.close();
+    final String bible = (module.isEmpty) ? stringValues["bible2"] : module;
+    bibleDB2 = Bible(bible, allBibles[bible].last, fileMx);
+    await bibleDB2.openDatabase();
+    if (module.isNotEmpty) await save("bible2", module);
+  }
+
+  Future<void> swapBibles() async {
+    final Bible tempBible = bibleDB1;
+    bibleDB1 = bibleDB2;
+    bibleDB2 = tempBible;
+
+    // update preferences
+    await save("bible1", bibleDB1.module);
+    await save("bible2", bibleDB2.module);
+
+    // Update chapter data for display
+    updateDisplayChapterData();
+
+    final List<int> activeVerse = listListIntValues["historyActiveVerse"].first;
+    updateActiveScrollIndex(activeVerse);
+  }
+
+  Future<void> updateBCVMenu(List<int> activeVerse) async {
+    // Update bibleDB1
+    await bibleDB1.updateBCVMenu(activeVerse);
+    // Update bibleDB2
+    await bibleDB2.updateBCVMenu(activeVerse);
+  }
+
+  Future<void> updateDBChapterData(List<int> activeVerse) async {
+    // Update bibleDB1
+    await bibleDB1.updateChapterData(activeVerse);
+    // Update bibleDB2
+    await bibleDB2.updateChapterData(activeVerse);
+
+    // Update chapter data for display
+    updateDisplayChapterData();
+  }
+
+  void updateDisplayChapterData() {
+    // Setup chapterDataParallel
+    int vs1 = bibleDB1.verseList.first;
+    int ve1 = bibleDB1.verseList.last;
+
+    int vs2 = bibleDB2.verseList.first;
+    int ve2 = bibleDB2.verseList.last;
+
+    int vs, ve;
+    vs = (vs1 <= vs2) ? vs1 : vs2;
+    ve = (ve1 >= ve2) ? ve1 : ve2;
+
+    chapterDataParallel = [];
+    for (var i = vs; i <= ve; i++) {
+      int indexInBibleDB1 = bibleDB1.verseList.indexOf(i);
+      if (indexInBibleDB1 != -1) chapterDataParallel.add(bibleDB1.chapterData[indexInBibleDB1]);
+      int indexInBibleDB2 = bibleDB2.verseList.indexOf(i);
+      if (indexInBibleDB2 != -1) chapterDataParallel.add(bibleDB2.chapterData[indexInBibleDB2]);
+    }
+
+    chapterData = (boolValues["parallelVerses"]) ? chapterDataParallel : bibleDB1.chapterData;
+  }
+
+  void updateVerseReference(List<int> activeVerse) => activeVerseReference = parser.bcvToVerseReference(activeVerse.sublist(0, 3));
+
+  void updateActiveScrollIndex(List<int> activeVerse) {
     // useful references on finding index
     // https://api.flutter.dev/flutter/dart-core/Iterable/firstWhere.html
     // https://fireship.io/snippets/dart-how-to-get-the-index-on-array-loop-map/
     // https://coflutter.com/dart-how-to-find-an-item-in-a-list/
     // Note that lists cannot be tested for equality.
     // Therefore, cannot use (data.first == activeVerse.sublist(0, 3)) for test.
-    // Use activeVerse[2] instead of activeVerse.last for test below, because activeVerse.length could be greater than 3.
-    int activeVerseIndex = chapterData.indexWhere((data) => data.first.last == activeVerse[2]);
+    int activeVerseIndex = chapterData.indexWhere((data) => data.first.join(".") == activeVerse.sublist(0, 3).join("."));
     activeScrollIndex = (activeVerseIndex == -1) ? 0 : activeVerseIndex;
   }
 
@@ -528,22 +628,6 @@ class Configurations {
     final String query = "SELECT Scripture FROM Verses WHERE Book=0 AND Chapter=0 AND Verse=0";
     final List<Map<String, dynamic>> results = await fileMx.querySqliteDB("FULLPATH", fullPath, query, []);
     return (results.isNotEmpty) ? results.first["Scripture"] : "";
-  }
-
-  Future<void> loadBible1DB(List<int> activeVerse) async {
-    final String bible1 = stringValues["bible1"];
-    bibleDB1 = Bible(bible1, allBibles[bible1].last, fileMx);
-    await bibleDB1.openDatabase();
-    await bibleDB1.updateBCVMenu(activeVerse);
-    await bibleDB1.updateChapterData(activeVerse);
-  }
-
-  Future<void> loadBible2DB(List<int> activeVerse) async {
-    final String bible2 = stringValues["bible2"];
-    bibleDB2 = Bible(bible2, allBibles[bible2].last, fileMx);
-    await bibleDB2.openDatabase();
-    await bibleDB2.updateBCVMenu(activeVerse);
-    await bibleDB2.updateChapterData(activeVerse);
   }
 
   Future<void> copyAssetsResources() async {
