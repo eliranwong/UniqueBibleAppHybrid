@@ -10,7 +10,7 @@ import 'dart:io';
 // My libraries
 import 'config.dart';
 import 'app_translation.dart';
-import 'bibles_scroll_controller.dart';
+import 'bibles_scroll_coordinator.dart';
 // ui
 import 'ui_home_bottom_app_bar.dart';
 import 'ui_home_top_app_bar.dart';
