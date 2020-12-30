@@ -17,8 +17,10 @@ class HomeTopAppBar {
             await context.read(configProvider).state.swapBibles();
             context.refresh(bible1P);
             context.refresh(bible2P);
-            context.refresh(chapterDataP);
-            context.refresh(activeScrollIndexP);
+            context.refresh(chapterData1P);
+            context.refresh(chapterData2P);
+            context.refresh(activeScrollIndex1P);
+            context.refresh(activeScrollIndex2P);
           },
         );
       },

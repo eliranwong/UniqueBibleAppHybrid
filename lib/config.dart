@@ -101,8 +101,10 @@ final myColorsP = StateProvider<Map<String, Color>>((ref) => ref.watch(configPro
 final myTextStyleP = StateProvider<Map<String, TextStyle>>((ref) => ref.watch(configProvider).state.myTextStyle);
 final dropdownUnderlineP = StateProvider<Container>((ref) => ref.watch(configProvider).state.dropdownUnderline);
 
-final chapterDataP = StateProvider<List<List<dynamic>>>((ref) => ref.watch(configProvider).state.chapterData);
-final activeScrollIndexP = StateProvider<int>((ref) => ref.watch(configProvider).state.activeScrollIndex);
+final chapterData1P = StateProvider<List<List<dynamic>>>((ref) => ref.watch(configProvider).state.chapterData1);
+final chapterData2P = StateProvider<List<List<dynamic>>>((ref) => ref.watch(configProvider).state.chapterData2);
+final activeScrollIndex1P = StateProvider<int>((ref) => ref.watch(configProvider).state.activeScrollIndex1);
+final activeScrollIndex2P = StateProvider<int>((ref) => ref.watch(configProvider).state.activeScrollIndex2);
 final parserP = StateProvider<BibleParser>((ref) => BibleParser(ref.watch(abbreviationsP).state));
 final activeVerseReferenceP = StateProvider<String>((ref) => ref.watch(configProvider).state.activeVerseReference);
 
@@ -176,8 +178,8 @@ class Configurations {
   FileMx fileMx;
   Map<String, List<String>> allBibles, allBiblesByLanguages = {};
   Bible bibleDB1, bibleDB2, bibleDB3, iBibleDB, tBibleDB, headingsDB;
-  List<List<dynamic>> chapterData, chapterDataParallel;
-  int activeScrollIndex;
+  List<List<dynamic>> chapterData1, chapterData1Parallel, chapterData2;
+  int activeScrollIndex1, activeScrollIndex2;
   BibleParser parser;
 
   // Functions to work with "settings" or preferences
@@ -589,7 +591,7 @@ class Configurations {
   }
 
   void updateDisplayChapterData() {
-    // Setup chapterDataParallel
+    // Setup chapterData1Parallel
     int vs1 = bibleDB1.verseList.first;
     int ve1 = bibleDB1.verseList.last;
 
@@ -600,15 +602,18 @@ class Configurations {
     vs = (vs1 <= vs2) ? vs1 : vs2;
     ve = (ve1 >= ve2) ? ve1 : ve2;
 
-    chapterDataParallel = [];
+    chapterData1Parallel = [];
     for (var i = vs; i <= ve; i++) {
       int indexInBibleDB1 = bibleDB1.verseList.indexOf(i);
-      if (indexInBibleDB1 != -1) chapterDataParallel.add(bibleDB1.chapterData[indexInBibleDB1]);
+      if (indexInBibleDB1 != -1) chapterData1Parallel.add(bibleDB1.chapterData[indexInBibleDB1]);
       int indexInBibleDB2 = bibleDB2.verseList.indexOf(i);
-      if (indexInBibleDB2 != -1) chapterDataParallel.add(bibleDB2.chapterData[indexInBibleDB2]);
+      if (indexInBibleDB2 != -1) chapterData1Parallel.add(bibleDB2.chapterData[indexInBibleDB2]);
     }
 
-    chapterData = (boolValues["parallelVerses"]) ? chapterDataParallel : bibleDB1.chapterData;
+    // chapterData1 changes when users turn on or off parallel verses.
+    chapterData1 = (boolValues["parallelVerses"]) ? chapterData1Parallel : bibleDB1.chapterData;
+    // chapterData2 always use secondary bible data.
+    chapterData2 = bibleDB2.chapterData;
   }
 
   void updateVerseReference(List<int> activeVerse) => activeVerseReference = parser.bcvToVerseReference(activeVerse.sublist(0, 3));
@@ -620,8 +625,10 @@ class Configurations {
     // https://coflutter.com/dart-how-to-find-an-item-in-a-list/
     // Note that lists cannot be tested for equality.
     // Therefore, cannot use (data.first == activeVerse.sublist(0, 3)) for test.
-    int activeVerseIndex = chapterData.indexWhere((data) => data.first.join(".") == activeVerse.sublist(0, 3).join("."));
-    activeScrollIndex = (activeVerseIndex == -1) ? 0 : activeVerseIndex;
+    int activeVerseIndex1 = chapterData1.indexWhere((data) => data.first.join(".") == activeVerse.sublist(0, 3).join("."));
+    activeScrollIndex1 = (activeVerseIndex1 == -1) ? 0 : activeVerseIndex1;
+    int activeVerseIndex2 = chapterData2.indexWhere((data) => data.first.join(".") == activeVerse.sublist(0, 3).join("."));
+    activeScrollIndex2 = (activeVerseIndex2 == -1) ? 0 : activeVerseIndex2;
   }
 
   Future<String> getBibleInfo(String fullPath) async {
