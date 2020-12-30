@@ -625,9 +625,9 @@ class Configurations {
     // https://coflutter.com/dart-how-to-find-an-item-in-a-list/
     // Note that lists cannot be tested for equality.
     // Therefore, cannot use (data.first == activeVerse.sublist(0, 3)) for test.
-    int activeVerseIndex1 = chapterData1.indexWhere((data) => data.first.join(".") == activeVerse.sublist(0, 3).join("."));
+    final int activeVerseIndex1 = chapterData1.indexWhere((data) => data.first.join(".") == activeVerse.sublist(0, 3).join("."));
     activeScrollIndex1 = (activeVerseIndex1 == -1) ? 0 : activeVerseIndex1;
-    int activeVerseIndex2 = chapterData2.indexWhere((data) => data.first.join(".") == activeVerse.sublist(0, 3).join("."));
+    final int activeVerseIndex2 = chapterData2.indexWhere((data) => data.first.join(".") == activeVerse.sublist(0, 3).join("."));
     activeScrollIndex2 = (activeVerseIndex2 == -1) ? 0 : activeVerseIndex2;
   }
 

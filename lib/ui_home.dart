@@ -47,6 +47,8 @@ class UiHome extends HookWidget {
     // Lemmatizer
     //lemmatizer =  Lemmatizer();
     // _text = lemmatizer.lemma(_controller.text);
+
+    // Setup scroll controllers for reading parallel chapters.
     verseScrollController1 = ItemScrollController();
     versePositionsListener1 = ItemPositionsListener.create();
     verseScrollController2 = ItemScrollController();
@@ -55,11 +57,11 @@ class UiHome extends HookWidget {
 
   void setupAtmosphere() {
     abbreviations = configState.stringValues["abbreviations"];
-    setupBiblesScrollCoordinator();
   }
 
   @override
   build(BuildContext context) {
+    setupBiblesScrollCoordinator(context);
     return Theme(
       data: useProvider(mainThemeP).state,
       child: Scaffold(
@@ -438,8 +440,8 @@ class UiHome extends HookWidget {
     );
   }
 
-  void setupBiblesScrollCoordinator() {
-    biblesScrollCoordinator = BiblesScrollCoordinator((List<int> data) async {
+  void setupBiblesScrollCoordinator(BuildContext context) {
+    biblesScrollCoordinator = BiblesScrollCoordinator(context, (List<int> data) async {
       // data.first tells which bible to scroll
       // data.last tells which index to go
 
