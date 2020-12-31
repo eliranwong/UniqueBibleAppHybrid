@@ -7,7 +7,7 @@ In this hybrid project, we are rewriting everthing to integrate our best two app
 
 Let us first review two different versions of "Unique Bible App" we have already developed:
 
-<b>Desktop version:<b>
+<b>Desktop version:</b>
 
 Plaforms: Windows, macOS, Linux, Chrome OS
 
@@ -23,7 +23,7 @@ Pros: Comprehensive features for bible studies, offline marvel.bible resources, 
 
 Cons: Difficult to install for non-technical users.  General users don't know how to setup python and dependencies.
 
-<b>Mobile version:<b>
+<b>Mobile version:</b>
 
 Plaforms: iOS, Android, Chrome OS; can also be installed on Windows, macOS through 3rd-party "BlueStacks"
 
