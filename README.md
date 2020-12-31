@@ -68,6 +68,14 @@ what have been done in this hybrid project:
 * codes on reading parallel verses
 * codes on reading parallel chapters
 * codes on scrolling parallel chapters with exact corresponding verses
+* codes on search bible, display results book by book
+* codes on piechart to present search result
 
-<img src="screenshot_ui_layout.png">
+#Screenshots
+
+<img src="screenshots/screenshot_ui_layout.png">
 [screenshot_ui_layout.png]
+
+
+<img src="screenshots/screenshot_search_results.png">
+[screenshot_search_results.png]
