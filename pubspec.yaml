@@ -46,6 +46,7 @@ dependencies:
   lemmatizer: ^0.0.1
   flutter_hooks: ^0.14.0
   hooks_riverpod: ^0.12.1
+  pie_chart: ^4.0.1
 
 # Run the following command:
 # flutter pub run flutter_launcher_icons:main
