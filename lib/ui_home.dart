@@ -18,6 +18,7 @@ import 'ui_home_top_app_bar.dart';
 import 'ui_drawer.dart';
 import 'ui_workspace.dart';
 import 'ui_workspace_bible_search_result.dart';
+import 'ui_html_content.dart';
 
 class UiHome extends HookWidget {
   // A global key
@@ -197,7 +198,7 @@ class UiHome extends HookWidget {
           return Container();
         } else {
           List<Widget> pages = _buildWorkspacePages(context);
-          return _wrap( DefaultTabController(
+          return _wrap(DefaultTabController(
             initialIndex: 0,
             length: pages.length,
             child: Builder(
@@ -242,7 +243,7 @@ class UiHome extends HookWidget {
     return <Widget>[
       _bible2ChapterContent(context),
       BibleSearchResults(),
-      workspace.dummyWidget("Tab 2"),
+      TestWebView(),
       workspace.dummyWidget("Tab 3"),
     ];
   }
