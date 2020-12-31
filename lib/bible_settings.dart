@@ -88,6 +88,7 @@ class BibleSettings extends StatelessWidget {
                     .state
                     .save("abbreviations", newValueAbb);
                 context.refresh(abbreviationsP);
+                context.refresh(parserP);
               }
             },
             items: <String>[...interfaceMap.keys.toList()]

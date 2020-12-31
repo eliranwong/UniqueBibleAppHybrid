@@ -11,11 +11,13 @@ import 'dart:io';
 import 'config.dart';
 import 'app_translation.dart';
 import 'bibles_scroll_coordinator.dart';
+import 'bible.dart';
 // ui
 import 'ui_home_bottom_app_bar.dart';
 import 'ui_home_top_app_bar.dart';
 import 'ui_drawer.dart';
 import 'ui_workspace.dart';
+import 'ui_workspace_bible_search_result.dart';
 
 class UiHome extends HookWidget {
   // A global key
@@ -225,13 +227,6 @@ class UiHome extends HookWidget {
             ),
           ),
           2);
-          //return _wrap(_bible2ChapterContent(context), 2);
-          /*return _wrap(Workspace((List<dynamic> data) {
-            Map<String, Function> actions = {
-              "scroll": scrollToBibleVerse1,
-            };
-            actions[data.first](data.last);
-          }), 2);*/
         }
       }),
     ];
@@ -246,7 +241,7 @@ class UiHome extends HookWidget {
     });
     return <Widget>[
       _bible2ChapterContent(context),
-      workspace.dummyWidget("Tab 1"),
+      BibleSearchResults(),
       workspace.dummyWidget("Tab 2"),
       workspace.dummyWidget("Tab 3"),
     ];
@@ -381,9 +376,7 @@ class UiHome extends HookWidget {
             : myTextStyle["verseFont"];
         final String displayVersion =
         (context.read(parallelVersesP).state) ? " [${data.last}]" : "";
-        String verseText = data[1].trim();
-        if (verseText.contains("<zh>"))
-          verseText = verseText.replaceAll(RegExp("<zh>|</zh>"), "");
+        String verseText = Bible.processVerseText(data[1]);
         return ListTile(
           title: Text(
             "[${data.first.last}]$displayVersion $verseText",

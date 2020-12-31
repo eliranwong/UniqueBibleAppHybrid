@@ -6,9 +6,9 @@ import 'config.dart';
 
 class BibleDrawer extends StatelessWidget {
 
-  final Function onCallBack;
+  final Function callBack;
 
-  BibleDrawer(this.onCallBack);
+  BibleDrawer(this.callBack);
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,7 @@ class BibleDrawer extends StatelessWidget {
           children: [
             _buildDrawerTab1(context),
             _buildDrawerTab2(context),
-            Icon(Icons.search),
+            _buildDrawerTab3(context),
           ],
         ),
       ),
@@ -43,6 +43,49 @@ class BibleDrawer extends StatelessWidget {
       children: <Widget>[
         _buildVerseReferenceField(context),
       ],
+    );
+  }
+
+  Widget _buildDrawerTab2(BuildContext context) {
+    return ListView(
+      //padding
+      children: <Widget>[
+        _buildBookVersionField1(context),
+        _buildBookVersionField2(context),
+      ],
+    );
+  }
+
+  Widget _buildDrawerTab3(BuildContext context) {
+    return ListView(
+      //padding
+      children: <Widget>[
+        _buildSearchBibleField(context),
+      ],
+    );
+  }
+
+  Widget _buildSearchBibleField(BuildContext context) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
+        final String lastBibleSearchEntry = watch(lastBibleSearchEntryP).state;
+        return TextField(
+          decoration: InputDecoration.collapsed(hintText: lastBibleSearchEntry, hintStyle: myTextStyle["activeVerseFont"]),
+          onSubmitted: (String value) async {
+            if (value != lastBibleSearchEntry) {
+              await context.read(configProvider).state.bibleDB1.searchMultipleBooks(value);
+              context.refresh(lastBibleSearchHitP);
+              context.refresh(lastBibleSearchEntryP);
+              context.refresh(lastBibleSearchResultsP);
+              _completeDrawerAction(context);
+            }
+          },
+          //onChanged: ,
+          //onTap: ,
+          //onEditingComplete: ,
+        );
+      },
     );
   }
 
@@ -67,16 +110,6 @@ class BibleDrawer extends StatelessWidget {
           //onEditingComplete: ,
         );
       },
-    );
-  }
-
-  Widget _buildDrawerTab2(BuildContext context) {
-    return ListView(
-      //padding
-      children: <Widget>[
-        _buildBookVersionField1(context),
-        _buildBookVersionField2(context),
-      ],
     );
   }
 
@@ -158,7 +191,7 @@ class BibleDrawer extends StatelessWidget {
   }
 
   void _completeDrawerAction(BuildContext context) {
-    onCallBack(["scroll", context.read(activeScrollIndex1P).state]);
+    callBack(["scroll", context.read(activeScrollIndex1P).state]);
     if (!context.read(keepDrawerOpenP).state) {
       context.read(configProvider).state.save("showDrawer", !context.read(showDrawerP).state);
       context.refresh(showDrawerP);

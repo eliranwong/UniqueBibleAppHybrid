@@ -5,10 +5,10 @@ import 'config.dart';
 class BiblesScrollCoordinator {
 
   final BuildContext context;
-  final Function onCallBack;
+  final Function callBack;
   int bible1Index, bible2Index, bibleToBeScrolled = 0;
 
-  BiblesScrollCoordinator(this.context, this.onCallBack);
+  BiblesScrollCoordinator(this.context, this.callBack);
 
   void updateBible1Index(int index) {
     if (index != bible1Index) {
@@ -43,12 +43,12 @@ class BiblesScrollCoordinator {
       case 1:
         final String verseBCV = chapterData2[bible2Index].first.join(".");
         final int correspondingIndex = chapterData1.indexWhere((data) => data.first.join(".") == verseBCV);
-        if ((correspondingIndex != -1) && (correspondingIndex != bible1Index)) onCallBack([1, correspondingIndex]);
+        if ((correspondingIndex != -1) && (correspondingIndex != bible1Index)) callBack([1, correspondingIndex]);
         break;
       case 2:
         final String verseBCV = chapterData1[bible1Index].first.join(".");
         final int correspondingIndex = chapterData2.indexWhere((data) => data.first.join(".") == verseBCV);
-        if ((correspondingIndex != -1) && (correspondingIndex != bible2Index)) onCallBack([2, correspondingIndex]);
+        if ((correspondingIndex != -1) && (correspondingIndex != bible2Index)) callBack([2, correspondingIndex]);
         break;
       default:
         break;

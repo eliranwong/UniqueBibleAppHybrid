@@ -8,8 +8,17 @@ class Bible {
   Database db;
   List<int> bookList, chapterList, verseList;
   List<List<dynamic>> chapterData;
+  String lastBibleSearchEntry = "";
+  int lastBibleSearchHit = 0;
+  Map<int, List<List<dynamic>>> lastBibleSearchResults = {};
 
   Bible(this.module, this.filePath, this.fileMx);
+
+  static String processVerseText(String verseText) {
+    verseText = verseText.trim();
+    if (verseText.contains("<zh>")) verseText = verseText.replaceAll(RegExp("<zh>|</zh>"), "");
+    return verseText;
+  }
 
   Future<void> openDatabase() async {
     db = await fileMx.openSqliteDB("FULLPATH", filePath);
@@ -54,6 +63,33 @@ class Bible {
   Future<List<List<dynamic>>> getChapterData(List<int> bcvList) async {
     final String query = "SELECT * FROM Verses WHERE Book=? AND Chapter=? ORDER BY Verse";
     final List<Map<String, dynamic>> results = await fileMx.queryOpenedSqliteDB(db, query, bcvList.sublist(0, 2));
+    return [for (Map<String, dynamic> result in results) verseDataToList(result)];
+  }
+
+  Future<void> searchMultipleBooks(String searchEntry, {List<int> filter = const []}) async {
+    lastBibleSearchEntry = searchEntry;
+    lastBibleSearchResults = {};
+    lastBibleSearchHit = 0;
+    List<int> searchBooks = (filter.isEmpty) ? bookList : filter;
+    for (int book in searchBooks) {
+      final result = await getSearchData(searchEntry, book: book);
+      if (result.isNotEmpty) {
+        lastBibleSearchResults[book] = result;
+        lastBibleSearchHit = lastBibleSearchHit + result.length;
+      }
+    }
+  }
+
+  Future<List<List<dynamic>>> getSearchData(String searchEntry, {int book = 0}) async {
+    String query;
+    List<Map<String, dynamic>> results;
+    if (book == 0) {
+      query = "SELECT * FROM Verses WHERE Scripture LIKE ?";
+      results = await fileMx.queryOpenedSqliteDB(db, query, [searchEntry]);
+    } else {
+      query = "SELECT * FROM Verses WHERE Book = ? AND Scripture LIKE ?";
+      results = await fileMx.queryOpenedSqliteDB(db, query, [book, "%$searchEntry%"]);
+    }
     return [for (Map<String, dynamic> result in results) verseDataToList(result)];
   }
 

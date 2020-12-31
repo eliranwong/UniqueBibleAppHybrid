@@ -101,6 +101,9 @@ final myColorsP = StateProvider<Map<String, Color>>((ref) => ref.watch(configPro
 final myTextStyleP = StateProvider<Map<String, TextStyle>>((ref) => ref.watch(configProvider).state.myTextStyle);
 final dropdownUnderlineP = StateProvider<Container>((ref) => ref.watch(configProvider).state.dropdownUnderline);
 
+final lastBibleSearchHitP = StateProvider<int>((ref) => ref.watch(configProvider).state.bibleDB1.lastBibleSearchHit);
+final lastBibleSearchEntryP = StateProvider<String>((ref) => ref.watch(configProvider).state.bibleDB1.lastBibleSearchEntry);
+final lastBibleSearchResultsP = StateProvider<Map<int, List<List<dynamic>>>>((ref) => ref.watch(configProvider).state.bibleDB1.lastBibleSearchResults);
 final chapterData1P = StateProvider<List<List<dynamic>>>((ref) => ref.watch(configProvider).state.chapterData1);
 final chapterData2P = StateProvider<List<List<dynamic>>>((ref) => ref.watch(configProvider).state.chapterData2);
 final activeScrollIndex1P = StateProvider<int>((ref) => ref.watch(configProvider).state.activeScrollIndex1);
