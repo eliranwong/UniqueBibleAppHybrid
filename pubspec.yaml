@@ -39,7 +39,6 @@ dependencies:
   flutter_tts: ^1.3.0
   #large_file_copy: ^0.0.1
   path_provider: ^1.6.24
-  webview_flutter: ^1.0.7
   permission_handler: ^5.0.1+1
   connectivity: ^2.0.2
   lpinyin: ^1.1.0
@@ -47,6 +46,11 @@ dependencies:
   flutter_hooks: ^0.14.0
   hooks_riverpod: ^0.12.1
   pie_chart: ^4.0.1
+  webview_flutter: ^1.0.7
+  flutter_html: ^1.1.1
+  flutter_inappwebview: ^4.0.0+4
+  webview_flutter_plus: ^0.1.1+10
+  dynamic_text_highlighting: ^2.2.0
 
 # Run the following command:
 # flutter pub run flutter_launcher_icons:main
@@ -78,6 +82,9 @@ flutter:
   #   - images/a_dot_ham.jpeg
     - assets/bibles/
     - assets/images/
+    - assets/default.js
+    - assets/default.css
+    - assets/index.html
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
