@@ -70,6 +70,8 @@ what have been done in this hybrid project:
 * codes on scrolling parallel chapters with exact corresponding verses
 * codes on search bible, display results book by book
 * codes on piechart to present search result
+* navigation drawer ui finished
+* advanced bible search function added
 
 #Screenshots
 
