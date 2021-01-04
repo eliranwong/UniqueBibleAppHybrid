@@ -5,7 +5,6 @@ import 'config.dart';
 import 'app_translation.dart';
 
 class BibleSettings extends StatelessWidget {
-
   @override
   build(BuildContext context) {
     return Consumer(
@@ -87,8 +86,12 @@ class BibleSettings extends StatelessWidget {
                     .read(configProvider)
                     .state
                     .save("abbreviations", newValueAbb);
+                context.read(configProvider).state.updateParserAbbreviations();
+                context.read(configProvider).state.updateActiveVerseReference(
+                    context.read(historyActiveVerseP).state.first);
                 context.refresh(abbreviationsP);
                 context.refresh(parserP);
+                context.refresh(activeVerseReferenceP);
               }
             },
             items: <String>[...interfaceMap.keys.toList()]
@@ -159,7 +162,10 @@ class BibleSettings extends StatelessWidget {
           divisions: 33,
           onChanged: (double newValue) async {
             if (newValue != fontSize) {
-              await context.read(configProvider).state.save("fontSize", newValue);
+              await context
+                  .read(configProvider)
+                  .state
+                  .save("fontSize", newValue);
               context.refresh(fontSizeP);
               context.refresh(mainThemeP);
               context.refresh(myColorsP);

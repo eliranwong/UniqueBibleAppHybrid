@@ -5,7 +5,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'config.dart';
 
 class BibleDrawer extends StatelessWidget {
-
   final Function callBack;
 
   BibleDrawer(this.callBack);
@@ -39,54 +38,56 @@ class BibleDrawer extends StatelessWidget {
 
   Widget _buildDrawerTab1(BuildContext context) {
     return ListView(
-      //padding
+      padding: const EdgeInsets.all(3),
       children: <Widget>[
+        Container(height: 5),
         _buildVerseReferenceField(context),
+        _buildMultipleReferenceSwitch(context),
+        _buildBookMenuList(context),
+        _buildChapterMenuList(context),
+        _buildShowVerseSwitch(context),
+        _buildVerseMenuList(context),
       ],
     );
   }
 
-  Widget _buildDrawerTab2(BuildContext context) {
-    return ListView(
-      //padding
-      children: <Widget>[
-        _buildBookVersionField1(context),
-        _buildBookVersionField2(context),
-      ],
-    );
+  Widget _buildMultipleReferenceSwitch(BuildContext context) {
+    return Consumer(builder: (context, watch, child) {
+      final bool searchMultipleReference = watch(searchMultipleReferenceP).state;
+      return ListTile(
+        title: Text("Multiple References"),
+        //Text(interface[24], style: Theme.of(context).textTheme.bodyText1),
+        trailing: Switch(
+            value: searchMultipleReference,
+            onChanged: (bool newValue) {
+              if (newValue != searchMultipleReference) {
+                context.read(configProvider).state.searchMultipleReference = newValue;
+                context.refresh(searchMultipleReferenceP);
+              }
+            }),
+      );
+    });
   }
 
-  Widget _buildDrawerTab3(BuildContext context) {
-    return ListView(
-      //padding
-      children: <Widget>[
-        _buildSearchBibleField(context),
-      ],
-    );
-  }
-
-  Widget _buildSearchBibleField(BuildContext context) {
-    return Consumer(
-      builder: (context, watch, child) {
-        final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
-        final String lastBibleSearchEntry = watch(lastBibleSearchEntryP).state;
-        return TextField(
-          decoration: InputDecoration.collapsed(hintText: lastBibleSearchEntry, hintStyle: myTextStyle["activeVerseFont"]),
-          onSubmitted: (String value) async {
-            if (value != lastBibleSearchEntry) {
-              await context.read(configProvider).state.bibleDB1.searchMultipleBooks(value);
-              context.refresh(lastBibleSearchHitP);
-              context.refresh(lastBibleSearchEntryP);
-              context.refresh(lastBibleSearchResultsP);
-              _completeDrawerAction(context);
-            }
-          },
-          //onChanged: ,
-          //onTap: ,
-          //onEditingComplete: ,
-        );
-      },
-    );
+  Widget _buildShowVerseSwitch(BuildContext context) {
+    return Consumer(builder: (context, watch, child) {
+      final bool showVerseSelection = watch(showVerseSelectionP).state;
+      return ListTile(
+        title: Text("Verse Selection"),
+        //Text(interface[24], style: Theme.of(context).textTheme.bodyText1),
+        trailing: Switch(
+            value: showVerseSelection,
+            onChanged: (bool newValue) {
+              if (newValue != showVerseSelection) {
+                context
+                    .read(configProvider)
+                    .state
+                    .save("showVerseSelection", newValue);
+                context.refresh(showVerseSelectionP);
+              }
+            }),
+      );
+    });
   }
 
   Widget _buildVerseReferenceField(BuildContext context) {
@@ -94,14 +95,36 @@ class BibleDrawer extends StatelessWidget {
       builder: (context, watch, child) {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
         final String activeVerseReference = watch(activeVerseReferenceP).state;
-        final List<int> activeVerse = context.read(configProvider).state.listListIntValues["historyActiveVerse"].first;
+        final List<int> activeVerse = context
+            .read(configProvider)
+            .state
+            .listListIntValues["historyActiveVerse"]
+            .first;
         return TextField(
-          decoration: InputDecoration.collapsed(hintText: activeVerseReference, hintStyle: myTextStyle["activeVerseFont"]),
+          //controller: ,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: "Go to",
+            //labelStyle: ,
+            hintText: activeVerseReference,
+            hintStyle: myTextStyle["subtitleStyle"],
+            //errorText: _searchInputValid ? null : 'Invalid input!',
+            //prefixIcon: Icon(Icons.search),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+          ),
           onSubmitted: (String value) async {
-            final List<List<dynamic>> references = context.read(parserP).state.extractAllReferences(value);
+            final List<List<dynamic>> references =
+                context.read(parserP).state.extractAllReferences(value);
             if (references.first.join(".") != activeVerse.join(".")) {
-              await context.read(configProvider).state.newVerseSelected(references.first);
-              refreshProvidersOnNewChapter(context);
+              await callBack([
+                (references.first.sublist(0, 2).join(".") ==
+                        activeVerse.sublist(0, 2).join("."))
+                    ? "newVerseSelectedSameChapter"
+                    : "newVerseSelected",
+                references.first
+              ]);
               _completeDrawerAction(context);
             }
           },
@@ -111,6 +134,356 @@ class BibleDrawer extends StatelessWidget {
         );
       },
     );
+  }
+
+  Widget _buildBookMenuList(BuildContext context) {
+    return Consumer(builder: (context, watch, child) {
+      final List<int> activeVerse = watch(historyActiveVerseP).state.first;
+      final int menuBook = watch(menuBookP).state;
+      final List<int> bookList = watch(configProvider).state.bibleDB1.bookList;
+      final Map<String, String> standardBookname =
+          watch(parserP).state.standardBookname;
+      final Map<String, String> standardAbbreviation =
+          watch(parserP).state.standardAbbreviation;
+      final int activeBookNo = activeVerse.first;
+      final int activeChapterNo = activeVerse[1];
+      final String currentBookName = standardBookname[activeBookNo.toString()];
+      final String currentMenuBookName = standardBookname[menuBook.toString()];
+      return ExpansionTile(
+        leading: IconButton(
+          tooltip: "Clear",
+          icon: const Icon(Icons.settings_backup_restore),
+          onPressed: () async {
+            await context.read(configProvider).state.bibleDB1.updateMenuBook(activeBookNo, chapter: activeChapterNo);
+            await context.read(configProvider).state.bibleDB1.updateMenuChapter(activeChapterNo);
+            context.refresh(menuBookP);
+            context.refresh(menuChapterListP);
+            context.refresh(menuChapterP);
+            context.refresh(menuVerseListP);
+          },
+        ),
+        title: Text("$currentBookName -> ${(currentMenuBookName != currentBookName) ? currentMenuBookName : ''}"),
+        /*title: Text(this.interfaceApp[this.abbreviations][12],
+          style: _generalTextStyle),*/
+        initiallyExpanded: false,
+        backgroundColor: Theme.of(context).accentColor.withOpacity(0.025),
+        children: <Widget>[
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 5.0),
+            child: Wrap(
+              spacing: 3.0,
+              children: _buildBookMenuChips(context, bookList, standardBookname,
+                  standardAbbreviation, menuBook),
+            ),
+          )
+        ],
+        //onExpansionChanged: ,
+      );
+    });
+  }
+
+  List<Widget> _buildBookMenuChips(
+      BuildContext context,
+      List<int> bookList,
+      Map<String, String> standardBookname,
+      Map<String, String> standardAbbreviation,
+      int menuBook) {
+    return List<Widget>.generate(
+      bookList.length,
+      (int index) {
+        int bookNo = bookList[index];
+        String bookName = standardBookname[bookNo.toString()];
+        String bookAbb = standardAbbreviation[bookNo.toString()];
+        return ChoiceChip(
+          backgroundColor: Colors.teal[50],
+          label: Tooltip(
+              message: bookName,
+              child: Text(
+                bookAbb,
+                style: TextStyle(fontSize: 14),
+              )),
+          selected: (bookNo == menuBook),
+          onSelected: (bool selected) async {
+            if (selected) {
+              await context.read(configProvider).state.bibleDB1.updateMenuBook(bookNo);
+              context.refresh(menuBookP);
+              context.refresh(menuChapterListP);
+              context.refresh(menuChapterP);
+              context.refresh(menuVerseListP);
+            }
+          },
+        );
+      },
+    ).toList();
+  }
+
+  Widget _buildChapterMenuList(BuildContext context) {
+    return Consumer(builder: (context, watch, child) {
+      final List<int> activeVerse = watch(historyActiveVerseP).state.first;
+      final int activeBookNo = activeVerse.first;
+      final int activeChapterNo = activeVerse[1];
+      final int currentChapterNo = activeVerse[1];
+      final int menuChapter = watch(menuChapterP).state;
+      final List<int> chapterList = watch(menuChapterListP).state;
+      return ExpansionTile(
+        leading: IconButton(
+          tooltip: "Clear",
+          icon: const Icon(Icons.settings_backup_restore),
+          onPressed: () async {
+            await context.read(configProvider).state.bibleDB1.updateMenuBook(activeBookNo, chapter: activeChapterNo);
+            await context.read(configProvider).state.bibleDB1.updateMenuChapter(activeChapterNo);
+            context.refresh(menuBookP);
+            context.refresh(menuChapterListP);
+            context.refresh(menuChapterP);
+            context.refresh(menuVerseListP);
+          },
+        ),
+        title: Text("$currentChapterNo -> ${(menuChapter != currentChapterNo) ? menuChapter : ''}"),
+        /*title: Text(this.interfaceApp[this.abbreviations][12],
+          style: _generalTextStyle),*/
+        initiallyExpanded: true,
+        backgroundColor: Theme.of(context).accentColor.withOpacity(0.025),
+        children: <Widget>[
+          Container(
+              margin: const EdgeInsets.symmetric(horizontal: 5.0),
+              child: Wrap(
+                spacing: 3.0,
+                children: _buildChapterMenuChips(context, chapterList, menuChapter,
+                ),
+              )
+          )
+        ],
+        //onExpansionChanged: ,
+      );
+    });
+  }
+
+  List<Widget> _buildChapterMenuChips(
+      BuildContext context, List<int> chapterList, int menuChapter) {
+    return List<Widget>.generate(
+      chapterList.length,
+      (int index) {
+        int chapterNo = chapterList[index];
+        return ChoiceChip(
+          backgroundColor: Colors.teal[50],
+          label: Text(
+            chapterNo.toString(),
+            style: TextStyle(fontSize: 14),
+          ),
+          selected: (chapterNo == menuChapter),
+          onSelected: (bool selected) async {
+            if (selected) {
+              if (context.read(showVerseSelectionP).state) {
+                await context.read(configProvider).state.bibleDB1.updateMenuChapter(chapterNo);
+                context.refresh(menuChapterP);
+                context.refresh(menuVerseListP);
+              } else if ("${context.read(menuBookP).state}.$chapterNo" != "") {
+                await context.read(configProvider).state.bibleDB1.updateMenuChapter(chapterNo);
+                final int firstVerseNo = context.read(configProvider).state.bibleDB1.menuVerseList.first;
+                await callBack(["newVerseSelected", [context.read(menuBookP).state, chapterNo, firstVerseNo]]);
+              }
+            }
+          },
+        );
+      },
+    ).toList();
+  }
+
+  Widget _buildVerseMenuList(BuildContext context) {
+    return Consumer(builder: (context, watch, child) {
+      final bool showVerseSelection = watch(showVerseSelectionP).state;
+      if (showVerseSelection) {
+        final List<int> activeVerse = watch(historyActiveVerseP).state.first;
+        final int activeBookNo = activeVerse.first;
+        final int activeChapterNo = activeVerse[1];
+        final List<int> verseList = watch(menuVerseListP).state;
+        return ExpansionTile(
+          leading: IconButton(
+            tooltip: "Clear",
+            icon: const Icon(Icons.settings_backup_restore),
+            onPressed: () async {
+              await context.read(configProvider).state.bibleDB1.updateMenuBook(activeBookNo, chapter: activeChapterNo);
+              await context.read(configProvider).state.bibleDB1.updateMenuChapter(activeChapterNo);
+              context.refresh(menuBookP);
+              context.refresh(menuChapterListP);
+              context.refresh(menuChapterP);
+              context.refresh(menuVerseListP);
+            },
+          ),
+          title: Text(activeVerse[2].toString()),
+          /*title: Text(this.interfaceApp[this.abbreviations][12],
+          style: _generalTextStyle),*/
+          initiallyExpanded: true,
+          backgroundColor: Theme.of(context).accentColor.withOpacity(0.025),
+          children: <Widget>[
+            Container(
+                margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                child: Wrap(
+                  spacing: 3.0,
+                  children: _buildVerseMenuChips(context, verseList),
+                )
+            ),
+          ],
+          //onExpansionChanged: ,
+        );
+      }
+      return Container();
+    });
+  }
+
+  List<Widget> _buildVerseMenuChips(
+      BuildContext context, List<int> verseList) {
+    return List<Widget>.generate(
+      verseList.length,
+      (int index) {
+        int verseNo = verseList[index];
+        return ChoiceChip(
+          backgroundColor: Colors.teal[50],
+          label: Text(
+            verseNo.toString(),
+            style: TextStyle(fontSize: 14),
+          ),
+          selected: false,
+          onSelected: (bool selected) async {
+            if (selected) {
+              final int menuBook = context.read(menuBookP).state;
+              final int menuChapter = context.read(menuChapterP).state;
+              await callBack(["newVerseSelected", [menuBook, menuChapter, verseNo]]);
+            }
+          },
+        );
+      },
+    ).toList();
+  }
+
+  Widget _buildDrawerTab2(BuildContext context) {
+    return ListView(
+      children: <Widget>[
+        _buildVersionList(context, true),
+        _buildVersionList(context, false),
+        _buildVersionFilterChipsList(context),
+      ],
+    );
+  }
+
+  Widget _buildVersionFilterChipsList(BuildContext context) {
+    List<Widget> versionRowList = [
+      Consumer(builder: (context, watch, child) {
+        final List<String> compareBibleList =
+            watch(compareBibleListP).state;
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 5.0),
+          child: Wrap(
+            spacing: 3.0,
+            children: _buildVersionFilterChips(context, compareBibleList),
+          ),
+        );
+      }),
+    ];
+    return ExpansionTile(
+      title: Text("Verse Comparison"),
+      /*title: Text(this.interfaceApp[this.abbreviations][12],
+          style: _generalTextStyle),*/
+      initiallyExpanded: false,
+      backgroundColor: Theme.of(context).accentColor.withOpacity(0.025),
+      children: versionRowList,
+      //onExpansionChanged: ,
+    );
+  }
+
+  List<Widget> _buildVersionFilterChips(
+      BuildContext context, List<String> compareBibleList) {
+    final Map<String, List<String>> allBibles =
+        context.read(configProvider).state.allBibles;
+    final List<String> allBiblesList = allBibles.keys.toList()..sort();
+    return List<Widget>.generate(
+      allBiblesList.length,
+          (int index) {
+        String module = allBiblesList[index];
+        return FilterChip(
+          selectedColor: Colors.blue[100],
+          backgroundColor: Colors.blue[50],
+          label: Tooltip(
+              message: allBibles[module][1],
+              child: Text(
+                module,
+                style: TextStyle(fontSize: 14),
+              )),
+          selected: (compareBibleList.contains(module)),
+          onSelected: (bool selected) async {
+            if (selected) {
+              // TODO:
+              print("inc $module");
+            } else {
+              // TODO:
+              print("excl $module");
+            }
+          },
+        );
+      },
+    ).toList();
+  }
+
+  Widget _buildVersionList(BuildContext context, bool primaryBible) {
+    List<Widget> versionRowList = [
+      Container(height: 5),
+      (primaryBible)
+          ? _buildBookVersionField1(context)
+          : _buildBookVersionField2(context),
+      Consumer(builder: (context, watch, child) {
+        final String activeModule =
+            (primaryBible) ? watch(bible1P).state : watch(bible2P).state;
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 5.0),
+          child: Wrap(
+            spacing: 3.0,
+            children: _buildVersionChips(context, primaryBible, activeModule),
+          ),
+        );
+      }),
+    ];
+    return ExpansionTile(
+      title: Text((primaryBible) ? "Primary Bible" : "Secondary Bible"),
+      /*title: Text(this.interfaceApp[this.abbreviations][12],
+          style: _generalTextStyle),*/
+      initiallyExpanded: (primaryBible) ? true : false,
+      backgroundColor: Theme.of(context).accentColor.withOpacity(0.025),
+      children: versionRowList,
+      childrenPadding: const EdgeInsets.all(3),
+      //onExpansionChanged: ,
+    );
+  }
+
+  List<Widget> _buildVersionChips(
+      BuildContext context, bool primaryBible, String activeModule) {
+    final Map<String, List<String>> allBibles =
+        context.read(configProvider).state.allBibles;
+    final List<String> allBiblesList = allBibles.keys.toList()..sort();
+    return List<Widget>.generate(
+      allBiblesList.length,
+      (int index) {
+        String module = allBiblesList[index];
+        return ChoiceChip(
+          //tooltip: config.allBibleMap[abb],
+          backgroundColor: Colors.grey[200],
+          label: Tooltip(
+              message: allBibles[module][1],
+              child: Text(
+                module,
+                style: TextStyle(fontSize: 14),
+              )),
+          selected: (module == activeModule),
+          onSelected: (bool selected) async {
+            if ((selected) && (module != activeModule)) {
+              (primaryBible)
+                  ? await callBack(["changeBible1Version", module])
+                  : await callBack(["changeBible2Version", module]);
+              _completeDrawerAction(context);
+            }
+          },
+        );
+      },
+    ).toList();
   }
 
   Widget _buildBookVersionField1(BuildContext context) {
@@ -119,9 +492,24 @@ class BibleDrawer extends StatelessWidget {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
         final String bible1 = watch(bible1P).state;
         return TextField(
-          decoration: InputDecoration.collapsed(hintText: bible1, hintStyle: myTextStyle["activeVerseFont"]),
+          //controller: ,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: "Primary Bible",
+            //labelStyle: ,
+            hintText: bible1,
+            hintStyle: myTextStyle["subtitleStyle"],
+            //errorText: _searchInputValid ? null : 'Invalid input!',
+            //prefixIcon: Icon(Icons.search),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+          ),
           onSubmitted: (String value) async {
-            if (value != bible1) await _changeBible1Version(context, value);
+            if (value != bible1) {
+              await callBack(["changeBible1Version", value]);
+              _completeDrawerAction(context);
+            }
           },
           //onChanged: ,
           //onTap: ,
@@ -137,9 +525,24 @@ class BibleDrawer extends StatelessWidget {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
         final String bible2 = watch(bible2P).state;
         return TextField(
-          decoration: InputDecoration.collapsed(hintText: bible2, hintStyle: myTextStyle["activeVerseFont"]),
+          //controller: ,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: "Secondary Bible",
+            //labelStyle: ,
+            hintText: bible2,
+            hintStyle: myTextStyle["subtitleStyle"],
+            //errorText: _searchInputValid ? null : 'Invalid input!',
+            //prefixIcon: Icon(Icons.search),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+          ),
           onSubmitted: (String value) async {
-            if (value != bible2) await _changeBible2Version(context, value);
+            if (value != bible2) {
+              await callBack(["changeBible2Version", value]);
+              _completeDrawerAction(context);
+            }
           },
           //onChanged: ,
           //onTap: ,
@@ -149,54 +552,284 @@ class BibleDrawer extends StatelessWidget {
     );
   }
 
-  Future<void> _changeBible1Version(BuildContext context, String module) async {
-    final List<String> allBiblesList = context.read(configProvider).state.allBibles.keys.toList();
-    final List<int> activeVerse = context.read(configProvider).state.listListIntValues["historyActiveVerse"].first;
-    if (allBiblesList.contains(module)) {
-      await context.read(configProvider).state.openBibleDB1(module: module);
-      await context.read(configProvider).state.bibleDB1.updateBCVMenu(activeVerse);
-      await context.read(configProvider).state.bibleDB1.updateChapterData(activeVerse);
-      context.read(configProvider).state.updateActiveScrollIndex(activeVerse);
-      context.read(configProvider).state.updateDisplayChapterData();
-      context.refresh(bible1P);
-      context.refresh(chapterData1P);
-      context.refresh(activeScrollIndex1P);
-      _completeDrawerAction(context);
-    }
+  Widget _buildDrawerTab3(BuildContext context) {
+    return Consumer(builder: (context, watch, child) {
+      final bool searchWholeBible = watch(searchWholeBibleP).state;
+      return ListView(
+        padding: const EdgeInsets.all(3),
+        children: <Widget>[
+          Container(height: 5),
+          _buildSearchBibleField(context),
+          Container(height: 5),
+          _buildSearchEntryOptionDescription(context),
+          _buildSearchEntryOption(context),
+          _buildSearchRegexOption(context),
+          _buildSearchWholeBibleOption(context, searchWholeBible),
+          (searchWholeBible) ? Container() : _buildBookCollectionList(context),
+          (searchWholeBible) ? Container() : _buildBookFilterChipsList(context),
+        ],
+      );
+    });
   }
 
-  Future<void> _changeBible2Version(BuildContext context, String module) async {
-    final List<String> allBiblesList = context.read(configProvider).state.allBibles.keys.toList();
-    final List<int> activeVerse = context.read(configProvider).state.listListIntValues["historyActiveVerse"].first;
-    if (allBiblesList.contains(module)) {
-      await context.read(configProvider).state.openBibleDB2(module: module);
-      await context.read(configProvider).state.bibleDB2.updateBCVMenu(activeVerse);
-      await context.read(configProvider).state.bibleDB2.updateChapterData(activeVerse);
-      context.read(configProvider).state.updateActiveScrollIndex(activeVerse);
-      context.read(configProvider).state.updateDisplayChapterData();
-      context.refresh(bible2P);
-      context.refresh(chapterData2P);
-      context.refresh(activeScrollIndex2P);
-      _completeDrawerAction(context);
-    }
+  Widget _buildSearchEntryOptionDescription(BuildContext context) {
+    Map<String, List<String>> description = {
+      "ENG": ["Basic", "AND (separator: |)", "OR (separator: |)", "Advanced"],
+      "TC": ["基本", "全部組合", "任何組合", "進階"],
+      "SC": ["基本", "全部组合", "任何组合", "进阶"],
+    };
+    return Consumer(builder: (context, watch, child) {
+      final String abbreviations = watch(abbreviationsP).state;
+      final int searchEntryOption = watch(searchEntryOptionP).state;
+      return Text(description[abbreviations][searchEntryOption]);
+    });
   }
 
-  void refreshProvidersOnNewChapter(BuildContext context) {
-    context.refresh(chapterData1P);
-    context.refresh(chapterData2P);
-    context.refresh(historyActiveVerseP);
-    context.refresh(activeVerseReferenceP);
-    context.refresh(activeScrollIndex1P);
-    context.refresh(activeScrollIndex2P);
+  Widget _buildSearchEntryOption(BuildContext context) {
+    return Consumer(builder: (context, watch, child) {
+      final int searchEntryOption = watch(searchEntryOptionP).state;
+      return Row(
+        children: [0, 1, 2, 3]
+            .map((int index) => Radio<int>(
+                  value: index,
+                  groupValue: searchEntryOption,
+                  onChanged: (int value) {
+                    if (value != searchEntryOption) {
+                      context.read(configProvider).state.searchEntryOption =
+                          value;
+                      context.refresh(searchEntryOptionP);
+                    }
+                  },
+                ))
+            .toList(),
+      );
+    });
   }
 
-  void _completeDrawerAction(BuildContext context) {
-    callBack(["scroll", context.read(activeScrollIndex1P).state]);
+  Widget _buildSearchRegexOption(BuildContext context) {
+    return Consumer(builder: (context, watch, child) {
+      final bool searchRegex = watch(searchRegexP).state;
+      return ListTile(
+        title: Text("Enable Regex"),
+        //Text(interface[24], style: Theme.of(context).textTheme.bodyText1),
+        trailing: Switch(
+            value: searchRegex,
+            onChanged: (bool newValue) {
+              if (newValue != searchRegex) {
+                context.read(configProvider).state.searchRegex = newValue;
+                context.refresh(searchRegexP);
+              }
+            }),
+      );
+    });
+  }
+
+  Widget _buildSearchWholeBibleOption(
+      BuildContext context, bool searchWholeBible) {
+    return ListTile(
+      title: Text("Search whole bible?"),
+      //Text(interface[24], style: Theme.of(context).textTheme.bodyText1),
+      trailing: Switch(
+          value: searchWholeBible,
+          onChanged: (bool newValue) {
+            if (newValue != searchWholeBible) {
+              context.read(configProvider).state.searchWholeBible = newValue;
+              context.refresh(searchWholeBibleP);
+            }
+          }),
+    );
+  }
+
+  Widget _buildBookCollectionList(BuildContext context) {
+    List<Widget> versionRowList = [
+      Consumer(builder: (context, watch, child) {
+        final Map<String, Set<int>> bookCollections =
+            watch(parserP).state.bookCollections;
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 5.0),
+          child: Wrap(
+            spacing: 3.0,
+            children: _buildBookCollectionChips(context, bookCollections),
+          ),
+        );
+      }),
+    ];
+    return ExpansionTile(
+      title: Text("Book Collections"),
+      /*title: Text(this.interfaceApp[this.abbreviations][12],
+          style: _generalTextStyle),*/
+      initiallyExpanded: false,
+      backgroundColor: Theme.of(context).accentColor.withOpacity(0.025),
+      children: versionRowList,
+      //onExpansionChanged: ,
+    );
+  }
+
+  List<Widget> _buildBookCollectionChips(
+      BuildContext context, Map<String, Set<int>> bookCollections) {
+    final List<String> bookCollectionsList = bookCollections.keys.toList();
+    return List<Widget>.generate(
+      bookCollectionsList.length,
+      (int index) {
+        String bookCollection = bookCollectionsList[index];
+        return ChoiceChip(
+          backgroundColor: Colors.teal[50],
+          label: Tooltip(
+              message: bookCollection,
+              child: Text(
+                bookCollection,
+                style: TextStyle(fontSize: 14),
+              )),
+          selected: false,
+          onSelected: (bool selected) async {
+            if (selected) {
+              context
+                  .read(configProvider)
+                  .state
+                  .bibleDB1
+                  .bibleSearchBookFilter
+                  .addAll(bookCollections[bookCollection]);
+              context.refresh(bibleSearchBookFilterP);
+            }
+          },
+        );
+      },
+    ).toList();
+  }
+
+  Widget _buildBookFilterChipsList(BuildContext context) {
+    List<Widget> versionRowList = [
+      Consumer(builder: (context, watch, child) {
+        final Set<int> bibleSearchBookFilter =
+            watch(bibleSearchBookFilterP).state;
+        final Map<String, String> standardAbbreviation =
+            watch(parserP).state.standardAbbreviation;
+        final Map<String, String> standardBookname =
+            watch(parserP).state.standardBookname;
+        final List<int> bookList =
+            watch(configProvider).state.bibleDB1.bookList;
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 5.0),
+          child: Wrap(
+            spacing: 3.0,
+            children: _buildBookFilterChips(context, bookList,
+                bibleSearchBookFilter, standardBookname, standardAbbreviation),
+          ),
+        );
+      }),
+    ];
+    return ExpansionTile(
+      leading: IconButton(
+        tooltip: "Clear",
+        icon: const Icon(Icons.settings_backup_restore),
+        onPressed: () {
+          context
+              .read(configProvider)
+              .state
+              .bibleDB1
+              .bibleSearchBookFilter
+              .clear();
+          context.refresh(bibleSearchBookFilterP);
+        },
+      ),
+      title: Text("Filters"),
+      /*title: Text(this.interfaceApp[this.abbreviations][12],
+          style: _generalTextStyle),*/
+      initiallyExpanded: true,
+      backgroundColor: Theme.of(context).accentColor.withOpacity(0.025),
+      children: versionRowList,
+      //onExpansionChanged: ,
+    );
+  }
+
+  List<Widget> _buildBookFilterChips(
+      BuildContext context,
+      List<int> bookList,
+      Set<int> bibleSearchBookFilter,
+      Map<String, String> standardBookname,
+      Map<String, String> standardAbbreviation) {
+    return List<Widget>.generate(
+      bookList.length,
+      (int index) {
+        int bookNo = bookList[index];
+        String bookName = standardBookname[bookNo.toString()];
+        String bookAbb = standardAbbreviation[bookNo.toString()];
+        return FilterChip(
+          selectedColor: Colors.blue[100],
+          backgroundColor: Colors.blue[50],
+          label: Tooltip(
+              message: bookName,
+              child: Text(
+                bookAbb,
+                style: TextStyle(fontSize: 14),
+              )),
+          selected: (bibleSearchBookFilter.contains(bookNo)),
+          onSelected: (bool selected) async {
+            if (selected) {
+              context
+                  .read(configProvider)
+                  .state
+                  .bibleDB1
+                  .bibleSearchBookFilter
+                  .add(bookNo);
+            } else {
+              context
+                  .read(configProvider)
+                  .state
+                  .bibleDB1
+                  .bibleSearchBookFilter
+                  .remove(bookNo);
+            }
+            context.refresh(bibleSearchBookFilterP);
+          },
+        );
+      },
+    ).toList();
+  }
+
+  Widget _buildSearchBibleField(BuildContext context) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
+        final String lastBibleSearchEntry = watch(lastBibleSearchEntryP).state;
+        return TextField(
+          //controller: ,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: "Search",
+            //labelStyle: ,
+            hintText: lastBibleSearchEntry,
+            hintStyle: myTextStyle["subtitleStyle"],
+            //errorText: _searchInputValid ? null : 'Invalid input!',
+            //prefixIcon: Icon(Icons.search),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+          ),
+          onSubmitted: (String value) async {
+            if (value != lastBibleSearchEntry) {
+              await callBack([
+                "searchBible1",
+                [value]
+              ]);
+              _completeDrawerAction(context);
+            }
+          },
+          //onChanged: ,
+          //onTap: ,
+          //onEditingComplete: ,
+        );
+      },
+    );
+  }
+
+  Future<void> _completeDrawerAction(BuildContext context) async {
     if (!context.read(keepDrawerOpenP).state) {
-      context.read(configProvider).state.save("showDrawer", !context.read(showDrawerP).state);
+      context
+          .read(configProvider)
+          .state
+          .save("showDrawer", !context.read(showDrawerP).state);
       context.refresh(showDrawerP);
     }
-    //onCallBack(["scroll", context.read(activeScrollIndex1P).state]);
   }
-
 }

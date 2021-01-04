@@ -10,6 +10,7 @@ import 'module_description.dart';
 import 'bible.dart';
 import 'file_mx.dart';
 import 'bible_parser.dart';
+//import 'bible_books.dart';
 
 final configurationsProvider = FutureProvider<Configurations>((ref) async {
   final Configurations configurations = Configurations();
@@ -32,6 +33,8 @@ final showDrawerP = StateProvider<bool>(
         (ref) => ref.watch(configProvider).state.boolValues["showDrawer"]),
     keepDrawerOpenP = StateProvider<bool>(
             (ref) => ref.watch(configProvider).state.boolValues["keepDrawerOpen"]),
+    showVerseSelectionP = StateProvider<bool>(
+            (ref) => ref.watch(configProvider).state.boolValues["showVerseSelection"]),
     parallelVersesP = StateProvider<bool>(
             (ref) => ref.watch(configProvider).state.boolValues["parallelVerses"]),
     bigScreenP = StateProvider<bool>(
@@ -101,9 +104,20 @@ final myColorsP = StateProvider<Map<String, Color>>((ref) => ref.watch(configPro
 final myTextStyleP = StateProvider<Map<String, TextStyle>>((ref) => ref.watch(configProvider).state.myTextStyle);
 final dropdownUnderlineP = StateProvider<Container>((ref) => ref.watch(configProvider).state.dropdownUnderline);
 
+final menuBookP = StateProvider<int>((ref) => ref.watch(configProvider).state.bibleDB1.menuBook);
+final menuChapterP = StateProvider<int>((ref) => ref.watch(configProvider).state.bibleDB1.menuChapter);
+final menuChapterListP = StateProvider<List<int>>((ref) => ref.watch(configProvider).state.bibleDB1.menuChapterList);
+final menuVerseListP = StateProvider<List<int>>((ref) => ref.watch(configProvider).state.bibleDB1.menuVerseList);
+
+final searchEntryOptionP = StateProvider<int>((ref) => ref.watch(configProvider).state.searchEntryOption);
+final searchRegexP = StateProvider<bool>((ref) => ref.watch(configProvider).state.searchRegex);
+final searchWholeBibleP = StateProvider<bool>((ref) => ref.watch(configProvider).state.searchWholeBible);
+final searchMultipleReferenceP = StateProvider<bool>((ref) => ref.watch(configProvider).state.searchMultipleReference);
+final bibleSearchBookFilterP = StateProvider<Set<int>>((ref) => ref.watch(configProvider).state.bibleDB1.bibleSearchBookFilter);
 final lastBibleSearchHitP = StateProvider<int>((ref) => ref.watch(configProvider).state.bibleDB1.lastBibleSearchHit);
 final lastBibleSearchEntryP = StateProvider<String>((ref) => ref.watch(configProvider).state.bibleDB1.lastBibleSearchEntry);
 final lastBibleSearchResultsP = StateProvider<Map<int, List<List<dynamic>>>>((ref) => ref.watch(configProvider).state.bibleDB1.lastBibleSearchResults);
+final lastBibleSearchResultsLazyP = StateProvider<Map<int, List<List<dynamic>>>>((ref) => ref.watch(configProvider).state.bibleDB1.lastBibleSearchResultsLazy);
 final chapterData1P = StateProvider<List<List<dynamic>>>((ref) => ref.watch(configProvider).state.chapterData1);
 final chapterData2P = StateProvider<List<List<dynamic>>>((ref) => ref.watch(configProvider).state.chapterData2);
 final activeScrollIndex1P = StateProvider<int>((ref) => ref.watch(configProvider).state.activeScrollIndex1);
@@ -120,11 +134,16 @@ class Configurations {
   Map<String, Color> myColors;
   Container dropdownUnderline;
 
+  // Variables which are not stored in preferences.
+  bool searchWholeBible = true, searchRegex = false, searchMultipleReference = false;
+  int searchEntryOption = 0;
+
   // Default values.
 
   // Default bool values.
   Map<String, bool> boolValues = {
     "bigScreen": true,
+    "showVerseSelection": false,
     "showNotes": false,
     "showFlags": false,
     "showPinyin": false,
@@ -207,6 +226,8 @@ class Configurations {
   Future<void> setDefault() async {
     // Get an instance of SharedPreferences.
     prefs = await SharedPreferences.getInstance();
+    // Clear all preferences ONLY for debug purpose
+    //prefs.clear();
 
     // Preferences with bool values
     for (String key in boolValues.keys) {
@@ -322,7 +343,7 @@ class Configurations {
           historyActiveVerse.insert(0, newItem);
           if (historyActiveVerse.length > 20) historyActiveVerse.sublist(0, 20);
           await save(feature, historyActiveVerse);
-          updateVerseReference(newItem);
+          updateActiveVerseReference(newItem);
           updateActiveScrollIndex(newItem);
         }
         break;
@@ -485,6 +506,9 @@ class Configurations {
       accentColor: myColors["blueAccent"],
       dividerColor: myColors["grey"],
       cardColor: myColors["cardColor"],
+      /*chipTheme: ChipThemeData(
+          backgroundColor: Colors.lightBlue,
+      ),*/
       textTheme: TextTheme(
         bodyText1: verseFont,
         subtitle1: subtitleStyle,
@@ -524,7 +548,7 @@ class Configurations {
     await openBibleDatabase();
     await updateBCVMenu(activeVerse);
     await updateDBChapterData(activeVerse);
-    updateVerseReference(activeVerse);
+    updateActiveVerseReference(activeVerse);
     updateActiveScrollIndex(activeVerse);
   }
 
@@ -583,6 +607,12 @@ class Configurations {
     await bibleDB2.updateBCVMenu(activeVerse);
   }
 
+  void restoreMenuBookChapter() {
+    final List<int> activeVerse = listListIntValues["historyActiveVerse"].first;
+    bibleDB1.menuBook = activeVerse.first;
+    bibleDB1.menuChapter = activeVerse[1];
+  }
+
   Future<void> updateDBChapterData(List<int> activeVerse) async {
     // Update bibleDB1
     await bibleDB1.updateChapterData(activeVerse);
@@ -619,7 +649,8 @@ class Configurations {
     chapterData2 = bibleDB2.chapterData;
   }
 
-  void updateVerseReference(List<int> activeVerse) => activeVerseReference = parser.bcvToVerseReference(activeVerse.sublist(0, 3));
+  void updateParserAbbreviations() => parser.updateAbbreviations(stringValues["abbreviations"]);
+  void updateActiveVerseReference(List<int> activeVerse) => activeVerseReference = parser.bcvToVerseReference(activeVerse.sublist(0, 3));
 
   void updateActiveScrollIndex(List<int> activeVerse) {
     // useful references on finding index

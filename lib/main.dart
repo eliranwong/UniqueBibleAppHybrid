@@ -56,16 +56,3 @@ class UniqueBibleApp extends HookWidget {
     );
   }
 }
-
-/* an example of consumer widget
-    return Consumer(
-      builder: (context, watch, child) {
-        return Text(watch(bible1P).state);
-      },
-    );
-    return Consumer(
-      builder: (context, watch, child) {
-        return ...;
-      },
-    );
-* */

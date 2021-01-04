@@ -7,6 +7,10 @@ import 'bible_settings.dart';
 
 class HomeTopAppBar {
 
+  final Function callBack;
+
+  HomeTopAppBar(this.callBack);
+
   Widget buildSwitchButton(BuildContext context) {
     return Consumer(
       builder: (context, watch, child) {
@@ -27,15 +31,25 @@ class HomeTopAppBar {
     );
   }
 
-  Widget buildWorkspaceButton(BuildContext context) {
+  Widget parallelVersesButton(BuildContext context) {
     return Consumer(
       builder: (context, watch, child) {
+        final bool parallelVerses = watch(parallelVersesP).state;
         return IconButton(
-          tooltip: AppTranslation.interfaceBottom[watch(abbreviationsP).state][9],
-          icon: const Icon(Icons.workspaces_outline),
+          tooltip: AppTranslation.interfaceApp[watch(abbreviationsP).state][5],
+          icon: Icon((parallelVerses) ? Icons.layers_clear_outlined : Icons.layers_outlined),
           onPressed: () async {
-            await context.read(configProvider).state.changeWorkspaceLayout();
-            context.refresh(workspaceLayoutP);
+            context
+                .read(configProvider)
+                .state
+                .save("parallelVerses", !parallelVerses);
+            context.refresh(parallelVersesP);
+            context.read(configProvider).state.updateDisplayChapterData();
+            context.refresh(chapterData1P);
+            context.read(configProvider).state.updateActiveScrollIndex(
+                context.read(historyActiveVerseP).state.first);
+            context.refresh(activeScrollIndex1P);
+            callBack(["scrollToBibleVerse", ""]);
           },
         );
       },

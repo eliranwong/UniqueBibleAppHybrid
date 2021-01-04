@@ -5,11 +5,15 @@ class BibleParser {
   Map<String, String> bibleBookNo;
   Map<String, String> standardBookname = {};
   Map<String, String> standardAbbreviation = {};
+  Map<String, Set<int>> bookCollections = {};
 
   // constructor
   BibleParser(String abbreviations) {
     bibleBookNo = BibleBooks.bibleBookNo;
+    updateAbbreviations(abbreviations);
+  }
 
+  void updateAbbreviations(String abbreviations) {
     // set standard abbreviation
     final Map<String, Map<String, String>> standardAbbreviationsMap = {
       "ENG": BibleBooks.standardAbbreviationENG,
@@ -24,6 +28,13 @@ class BibleParser {
       "SC": BibleBooks.standardBooknameSC,
     };
     standardBookname = standardBookNameMap[abbreviations];
+    // set book collections
+    final Map<String, Map<String, Set<int>>> bookCollectionsMap = {
+      "ENG": BibleBooks.bookCollectionsENG,
+      "TC": BibleBooks.bookCollectionsTC,
+      "SC": BibleBooks.bookCollectionsSC,
+    };
+    bookCollections = bookCollectionsMap[abbreviations];
   }
 
   // function for converting b c v integers to verse reference string
