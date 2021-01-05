@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:swipedetector/swipedetector.dart';
+import 'package:flutter_parsed_text/flutter_parsed_text.dart';
 // Core libraries
 import 'dart:io';
 // My libraries
@@ -18,7 +19,8 @@ import 'ui_home_top_app_bar.dart';
 import 'ui_drawer.dart';
 import 'ui_workspace.dart';
 import 'ui_workspace_bible_search_result.dart';
-import 'ui_html_content_testing.dart';
+import 'ui_workspace_multiple_verses.dart';
+//import 'ui_html_content_testing.dart';
 
 class UiHome extends HookWidget {
   // A global key
@@ -234,9 +236,10 @@ class UiHome extends HookWidget {
         Workspace((List<dynamic> data) async => await callBack(context, data));
     return <Widget>[
       _bible2ChapterContent(context),
-      BibleSearchResults(),
-      TestFlutterHTML(),
-      workspace.dummyWidget("Tab 3"),
+      BibleSearchResults((List<dynamic> data) async => await callBack(context, data)),
+      MultipleVerses((List<dynamic> data) async => await callBack(context, data)),
+      //TestFlutterHTML(),
+      //workspace.dummyWidget("Tab 3"),
     ];
   }
 
@@ -365,11 +368,19 @@ class UiHome extends HookWidget {
             : myTextStyle["verseFont"];
         final String displayVersion =
             (context.read(parallelVersesP).state) ? " [${data.last}]" : "";
-        String verseText = Bible.processVerseText(data[1]);
+        final String verseText = Bible.processVerseText(data[1]);
         return ListTile(
-          title: Text(
-            "[${data.first.last}]$displayVersion $verseText",
+          title: ParsedText(
+            //selectable: true, //selectable option breaks the listener for parallel scrolling
+            alignment: TextAlign.start,
+            text: "[${data.first.last}]$displayVersion $verseText",
             style: verseStyle,
+              parse: <MatchText>[
+                MatchText(
+                  pattern: r"\[[0-9]+?\]",
+                  style: myTextStyle["verseNoFont"],
+                ),
+              ],
           ),
           onTap: () async {
             if (i != activeScrollIndex)
@@ -547,7 +558,13 @@ class UiHome extends HookWidget {
   }
 
   // Workspace
-  void changeWorkspaceTab(int i) {
+  Future<void> changeWorkspaceTab(BuildContext context, int i) async {
+    // Open workspace if it is closed.
+    if (context.read(configProvider).state.intValues["workspaceLayout"] == 0) {
+      await context.read(configProvider).state.changeWorkspaceLayout();
+      context.refresh(workspaceLayoutP);
+    }
+
     workSpaceTabIndex = i;
     if ((workSpaceTabController != null) &&
         (!workSpaceTabController.indexIsChanging))
@@ -558,16 +575,28 @@ class UiHome extends HookWidget {
 
   Future<void> callBack(BuildContext context, List<dynamic> data) async {
     Map<String, Function> actions = {
+      "newVersionVerseSelected": newVersionVerseSelected,
       "newVerseSelected": newVerseSelected,
       "newVerseSelectedSameChapter": newVerseSelectedSameChapter,
       "changeBible1Version": changeBible1Version,
       "changeBible2Version": changeBible2Version,
       "searchBible1": searchBible1,
+      "loadMultipleVerses": loadMultipleVerses,
       "scrollToBibleVerse": scrollToBibleVerse, // non-future function
     };
     (data.last.isEmpty)
         ? actions[data.first](context)
         : await actions[data.first](context, data.last);
+  }
+
+  Future<void> newVersionVerseSelected(
+      BuildContext context, List<dynamic> data) async {
+    final String module = data.last;
+    final String activeModule = context.read(bible1P).state;
+    if (module != activeModule) await changeBible1Version(context, module);
+    final List<int> bcvList = [for (int i in data.first) i];
+    final List<int> activeVerse = context.read(configProvider).state.listListIntValues["historyActiveVerse"].first;
+    if (bcvList.join(".") != activeVerse.join(".")) await newVerseSelected(context, bcvList);
   }
 
   Future<void> newVerseSelectedSameChapter(
@@ -659,7 +688,7 @@ class UiHome extends HookWidget {
   }
 
   Future<void> searchBible1(BuildContext context, List<dynamic> data) async {
-    changeWorkspaceTab(1);
+    await changeWorkspaceTab(context, 1);
 
     final int searchEntryOption = context.read(searchEntryOptionP).state;
     final bool searchWholeBible = context.read(searchWholeBibleP).state;
@@ -668,10 +697,17 @@ class UiHome extends HookWidget {
         .read(configProvider)
         .state
         .bibleDB1
-        .searchMultipleBooks(data.first, searchEntryOption, filter: filter);
-    context.refresh(lastBibleSearchHitP);
-    context.refresh(lastBibleSearchEntryP);
-    context.refresh(lastBibleSearchResultsP);
-    context.refresh(lastBibleSearchResultsLazyP);
+        .searchMultipleBooks(data.first, searchEntryOption, filter: filter, exclusion: data.last);
+    context.refresh(bibleSearchDataP);
   }
+
+  Future<void> loadMultipleVerses(BuildContext context, List<dynamic> data) async {
+    // Remove empty .removeWhere((i) => i.isEmpty);
+    Bible bible = context.read(configProvider).state.bibleDB1;
+    List<List<dynamic>> newData = [for (List<dynamic> item in data) (item.length > 3) ? await bible.getSingleVerseDataRange(item) : await bible.getSingleVerseData(item)];
+    context.read(configProvider).state.updateMultipleVersesData(newData);
+    context.read(configProvider).state.updateMultipleVersesShowVersion(false);
+    context.refresh(multipleVersesP);
+  }
+
 }

@@ -3,23 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:unique_bible_app_expanded/bible_parser.dart';
 import 'package:pie_chart/pie_chart.dart';
-import 'package:dynamic_text_highlighting/dynamic_text_highlighting.dart';
+import 'package:flutter_parsed_text/flutter_parsed_text.dart';
 // My libraries
 import 'config.dart';
 import 'bible.dart';
 
 class BibleSearchResults extends StatelessWidget {
+
+  final Function callBack;
+  BibleSearchResults(this.callBack);
+
   @override
   Widget build(BuildContext context) {
     return Consumer(
       builder: (context, watch, child) {
         final BibleParser parser = watch(parserP).state;
-        final int lastBibleSearchHit = watch(lastBibleSearchHitP).state;
-        final String lastBibleSearchEntry = watch(lastBibleSearchEntryP).state;
+        final int lastBibleSearchHit = watch(bibleSearchDataP).state["lastBibleSearchHit"];
+        final String lastBibleSearchEntry = watch(bibleSearchDataP).state["lastBibleSearchEntry"];
         final Map<int, List<List<dynamic>>> lastSearchResults =
-            watch(lastBibleSearchResultsP).state;
+            watch(bibleSearchDataP).state["lastBibleSearchResults"];
         final Map<int, List<List<dynamic>>> lastSearchResultsLazy =
-            watch(lastBibleSearchResultsLazyP).state;
+            watch(bibleSearchDataP).state["lastBibleSearchResultsLazy"];
         final List<int> bookList = lastSearchResults.keys.toList()..sort();
         Map<String, double> pieChartDataMap = {
           for (MapEntry i in lastSearchResults.entries)
@@ -88,12 +92,14 @@ class BibleSearchResults extends StatelessWidget {
   Widget _buildVerseRow(BuildContext context, int i, List<dynamic> data, int bookNo) {
     if (data.isEmpty)
       return ListTile(
-        title: Text(
-          "[Read more ...]",
+        title: Center(
+          child: Text(
+            "[Read more ...]",
+          ),
         ),
         onTap: () {
           context.read(configProvider).state.bibleDB1.updateLastBibleSearchResultsLazy(bookNo);
-          context.refresh(lastBibleSearchResultsLazyP);
+          context.refresh(bibleSearchDataP);
         },
         onLongPress: () {
           print("long press");
@@ -102,20 +108,36 @@ class BibleSearchResults extends StatelessWidget {
     return Consumer(
       builder: (context, watch, child) {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
-        final TextStyle verseStyle = myTextStyle["verseFont"];
         final String displayVersion =
             (context.read(parallelVersesP).state) ? " [${data.last}]" : "";
-        String verseText = Bible.processVerseText(data[1]);
+        final String verseText = Bible.processVerseText(data[1]);
+        final String lastBibleSearchEntry = context.read(bibleSearchDataP).state["lastBibleSearchEntry"];
+        final int searchEntryOption = context.read(searchEntryOptionP).state;
+        final String searchEntry = (searchEntryOption == 4) ? [for (var match in RegExp(r"%(.*?)%").allMatches(lastBibleSearchEntry)) match.group(1)].join("|") : lastBibleSearchEntry;
         return ListTile(
-          title: DynamicTextHighlighting(
-            text: "[${data.first.last}]$displayVersion $verseText",
-            highlights: context.read(lastBibleSearchEntryP).state.split("|"),
-            color: Colors.redAccent,
-            style: verseStyle,
-            caseSensitive: false,
+          title: ParsedText(
+            selectable: true,
+            alignment: TextAlign.start,
+            text: "[${data.first[1]}:${data.first.last}]$displayVersion $verseText",
+            style: myTextStyle["verseFont"],
+            parse: <MatchText>[
+              MatchText(
+                pattern: r"\[[0-9]+?:[0-9]+?\]",
+                style: myTextStyle["verseNoFont"],
+                onTap: (url) async => await callBack(["newVersionVerseSelected", data]),
+              ),
+              MatchText(
+                pattern: searchEntry,
+                regexOptions: RegexOptions(
+                    caseSensitive : false,
+                    unicode : true,
+                ),
+                style: TextStyle(backgroundColor: Colors.red[300]),
+              ),
+            ],
           ),
           onTap: () async {
-            print("tap action");
+            await callBack(["newVersionVerseSelected", data]);
           },
           onLongPress: () {
             print("long press");

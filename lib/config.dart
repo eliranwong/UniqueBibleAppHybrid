@@ -109,15 +109,31 @@ final menuChapterP = StateProvider<int>((ref) => ref.watch(configProvider).state
 final menuChapterListP = StateProvider<List<int>>((ref) => ref.watch(configProvider).state.bibleDB1.menuChapterList);
 final menuVerseListP = StateProvider<List<int>>((ref) => ref.watch(configProvider).state.bibleDB1.menuVerseList);
 
+final bibleSearchDataP = StateProvider<Map<String, dynamic>>(
+    (ref) {
+      Map<String, dynamic> data = {};
+      data["module"] = ref.watch(configProvider).state.bibleDB1.module;
+      data["lastBibleSearchHit"] = ref.watch(configProvider).state.bibleDB1.lastBibleSearchHit;
+      data["lastBibleSearchEntry"] = ref.watch(configProvider).state.bibleDB1.lastBibleSearchEntry;
+      data["lastBibleSearchResults"] = ref.watch(configProvider).state.bibleDB1.lastBibleSearchResults;
+      data["lastBibleSearchResultsLazy"] = ref.watch(configProvider).state.bibleDB1.lastBibleSearchResultsLazy;
+      return data;
+    }
+);
+final multipleVersesP = StateProvider<Map<String, dynamic>>(
+        (ref) {
+      Map<String, dynamic> data = {};
+      data["multipleVersesShowVersion"] = ref.watch(configProvider).state.multipleVersesShowVersion;
+      //data["multipleVersesData"] = ref.watch(configProvider).state.multipleVersesData;
+      data["multipleVersesDataLazy"] = ref.watch(configProvider).state.multipleVersesDataLazy;
+      return data;
+    }
+);
+
 final searchEntryOptionP = StateProvider<int>((ref) => ref.watch(configProvider).state.searchEntryOption);
-final searchRegexP = StateProvider<bool>((ref) => ref.watch(configProvider).state.searchRegex);
+final searchEntryExclusionP = StateProvider<bool>((ref) => ref.watch(configProvider).state.searchEntryExclusion);
 final searchWholeBibleP = StateProvider<bool>((ref) => ref.watch(configProvider).state.searchWholeBible);
-final searchMultipleReferenceP = StateProvider<bool>((ref) => ref.watch(configProvider).state.searchMultipleReference);
 final bibleSearchBookFilterP = StateProvider<Set<int>>((ref) => ref.watch(configProvider).state.bibleDB1.bibleSearchBookFilter);
-final lastBibleSearchHitP = StateProvider<int>((ref) => ref.watch(configProvider).state.bibleDB1.lastBibleSearchHit);
-final lastBibleSearchEntryP = StateProvider<String>((ref) => ref.watch(configProvider).state.bibleDB1.lastBibleSearchEntry);
-final lastBibleSearchResultsP = StateProvider<Map<int, List<List<dynamic>>>>((ref) => ref.watch(configProvider).state.bibleDB1.lastBibleSearchResults);
-final lastBibleSearchResultsLazyP = StateProvider<Map<int, List<List<dynamic>>>>((ref) => ref.watch(configProvider).state.bibleDB1.lastBibleSearchResultsLazy);
 final chapterData1P = StateProvider<List<List<dynamic>>>((ref) => ref.watch(configProvider).state.chapterData1);
 final chapterData2P = StateProvider<List<List<dynamic>>>((ref) => ref.watch(configProvider).state.chapterData2);
 final activeScrollIndex1P = StateProvider<int>((ref) => ref.watch(configProvider).state.activeScrollIndex1);
@@ -135,11 +151,16 @@ class Configurations {
   Container dropdownUnderline;
 
   // Variables which are not stored in preferences.
-  bool searchWholeBible = true, searchRegex = false, searchMultipleReference = false;
+  // Search
+  bool searchWholeBible = true, searchEntryExclusion = false;
   int searchEntryOption = 0;
+  // Multiple verses
+  bool multipleVersesShowVersion = false;
+  List<List<dynamic>> multipleVersesData = [], multipleVersesDataLazy = [];
+  int searchItemsPerPage = 20;
 
+  // Variables which are stored in preferences.
   // Default values.
-
   // Default bool values.
   Map<String, bool> boolValues = {
     "bigScreen": true,
@@ -440,7 +461,7 @@ class Configurations {
 
     // update various font text style here
     TextStyle verseNoFont =
-        TextStyle(fontSize: (doubleValues["fontSize"] - 3), color: blueAccent),
+        TextStyle(fontSize: (doubleValues["fontSize"] - 3), color: blueAccent, decoration: TextDecoration.underline),
     verseFont = TextStyle(fontSize: doubleValues["fontSize"], color: black),
     verseFontHebrew = TextStyle(
         fontFamily: "Ezra SIL",
@@ -685,6 +706,18 @@ class Configurations {
   Future<Map<String, String>> checkInstalledBibles() async {
     final String biblesFolder = await fileMx.getUserDirectoryFolder("bibles");
     return fileMx.getDirectoryItems(biblesFolder, filter: ".bible");
+  }
+
+  void updateMultipleVersesShowVersion(bool value) => multipleVersesShowVersion = value;
+  void updateMultipleVersesData(List<List<dynamic>> data) {
+    multipleVersesData = data;
+    multipleVersesDataLazy = (multipleVersesData.length > searchItemsPerPage) ? [...multipleVersesData.sublist(0, searchItemsPerPage), []] : multipleVersesData;
+  }
+  void updateMultipleVersesDataLazy() {
+    int currentLazyItemsNo = multipleVersesDataLazy.length - 1;
+    int currentLazyItemsMoreNo = currentLazyItemsNo + searchItemsPerPage;
+    multipleVersesDataLazy = (multipleVersesData.length > currentLazyItemsMoreNo)
+        ? [...multipleVersesData.sublist(0, currentLazyItemsMoreNo), []] : multipleVersesData;
   }
 
 }

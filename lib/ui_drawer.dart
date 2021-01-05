@@ -3,11 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 // My libraries
 import 'config.dart';
+import 'text_transformer.dart';
 
 class BibleDrawer extends StatelessWidget {
   final Function callBack;
+  TextEditingController searchFieldController, excludeFromSearchController;
 
-  BibleDrawer(this.callBack);
+  BibleDrawer(this.callBack) {
+    searchFieldController = TextEditingController();
+    excludeFromSearchController = TextEditingController();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +47,7 @@ class BibleDrawer extends StatelessWidget {
       children: <Widget>[
         Container(height: 5),
         _buildVerseReferenceField(context),
-        _buildMultipleReferenceSwitch(context),
+        //_buildMultipleReferenceSwitch(context),
         _buildBookMenuList(context),
         _buildChapterMenuList(context),
         _buildShowVerseSwitch(context),
@@ -51,7 +56,7 @@ class BibleDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildMultipleReferenceSwitch(BuildContext context) {
+  /*Widget _buildMultipleReferenceSwitch(BuildContext context) {
     return Consumer(builder: (context, watch, child) {
       final bool searchMultipleReference = watch(searchMultipleReferenceP).state;
       return ListTile(
@@ -67,7 +72,7 @@ class BibleDrawer extends StatelessWidget {
             }),
       );
     });
-  }
+  }*/
 
   Widget _buildShowVerseSwitch(BuildContext context) {
     return Consumer(builder: (context, watch, child) {
@@ -115,6 +120,9 @@ class BibleDrawer extends StatelessWidget {
             ),
           ),
           onSubmitted: (String value) async {
+            // Convert full-width punctuations
+            value = TextTransformer.removeFullWidthPunctuation(value);
+            // Parse the entered reference(s)
             final List<List<dynamic>> references =
                 context.read(parserP).state.extractAllReferences(value);
             if (references.first.join(".") != activeVerse.join(".")) {
@@ -195,7 +203,7 @@ class BibleDrawer extends StatelessWidget {
         String bookName = standardBookname[bookNo.toString()];
         String bookAbb = standardAbbreviation[bookNo.toString()];
         return ChoiceChip(
-          backgroundColor: Colors.teal[50],
+          backgroundColor: Colors.blue[50],
           label: Tooltip(
               message: bookName,
               child: Text(
@@ -265,7 +273,7 @@ class BibleDrawer extends StatelessWidget {
       (int index) {
         int chapterNo = chapterList[index];
         return ChoiceChip(
-          backgroundColor: Colors.teal[50],
+          backgroundColor: Colors.blue[50],
           label: Text(
             chapterNo.toString(),
             style: TextStyle(fontSize: 14),
@@ -338,7 +346,7 @@ class BibleDrawer extends StatelessWidget {
       (int index) {
         int verseNo = verseList[index];
         return ChoiceChip(
-          backgroundColor: Colors.teal[50],
+          backgroundColor: Colors.blue[50],
           label: Text(
             verseNo.toString(),
             style: TextStyle(fontSize: 14),
@@ -555,6 +563,7 @@ class BibleDrawer extends StatelessWidget {
   Widget _buildDrawerTab3(BuildContext context) {
     return Consumer(builder: (context, watch, child) {
       final bool searchWholeBible = watch(searchWholeBibleP).state;
+      final bool searchEntryExclusion = watch(searchEntryExclusionP).state;
       return ListView(
         padding: const EdgeInsets.all(3),
         children: <Widget>[
@@ -563,7 +572,8 @@ class BibleDrawer extends StatelessWidget {
           Container(height: 5),
           _buildSearchEntryOptionDescription(context),
           _buildSearchEntryOption(context),
-          _buildSearchRegexOption(context),
+          _buildSearchEntryExclusionOption(context),
+          (searchEntryExclusion) ? _buildSearchExclusionField(context) : Container(),
           _buildSearchWholeBibleOption(context, searchWholeBible),
           (searchWholeBible) ? Container() : _buildBookCollectionList(context),
           (searchWholeBible) ? Container() : _buildBookFilterChipsList(context),
@@ -574,9 +584,9 @@ class BibleDrawer extends StatelessWidget {
 
   Widget _buildSearchEntryOptionDescription(BuildContext context) {
     Map<String, List<String>> description = {
-      "ENG": ["Basic", "AND (separator: |)", "OR (separator: |)", "Advanced"],
-      "TC": ["基本", "全部組合", "任何組合", "進階"],
-      "SC": ["基本", "全部组合", "任何组合", "进阶"],
+      "ENG": ["Basic", "Regex pattern", "AND combo (separator: |)", "OR combo (separator: |)", "Custom SQL"],
+      "TC": ["基本", "正規表示式", "并存組合", "任何一個", "自定 SQL"],
+      "SC": ["基本", "正规表示式", "并存组合", "任何一个", "自定 SQL"],
     };
     return Consumer(builder: (context, watch, child) {
       final String abbreviations = watch(abbreviationsP).state;
@@ -589,7 +599,7 @@ class BibleDrawer extends StatelessWidget {
     return Consumer(builder: (context, watch, child) {
       final int searchEntryOption = watch(searchEntryOptionP).state;
       return Row(
-        children: [0, 1, 2, 3]
+        children: [0, 1, 2, 3, 4]
             .map((int index) => Radio<int>(
                   value: index,
                   groupValue: searchEntryOption,
@@ -606,18 +616,18 @@ class BibleDrawer extends StatelessWidget {
     });
   }
 
-  Widget _buildSearchRegexOption(BuildContext context) {
+  Widget _buildSearchEntryExclusionOption(BuildContext context) {
     return Consumer(builder: (context, watch, child) {
-      final bool searchRegex = watch(searchRegexP).state;
+      final bool searchEntryExclusion = watch(searchEntryExclusionP).state;
       return ListTile(
-        title: Text("Enable Regex"),
+        title: Text("Enable Exclusion"),
         //Text(interface[24], style: Theme.of(context).textTheme.bodyText1),
         trailing: Switch(
-            value: searchRegex,
+            value: searchEntryExclusion,
             onChanged: (bool newValue) {
-              if (newValue != searchRegex) {
-                context.read(configProvider).state.searchRegex = newValue;
-                context.refresh(searchRegexP);
+              if (newValue != searchEntryExclusion) {
+                context.read(configProvider).state.searchEntryExclusion = newValue;
+                context.refresh(searchEntryExclusionP);
               }
             }),
       );
@@ -791,9 +801,9 @@ class BibleDrawer extends StatelessWidget {
     return Consumer(
       builder: (context, watch, child) {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
-        final String lastBibleSearchEntry = watch(lastBibleSearchEntryP).state;
+        final String lastBibleSearchEntry = watch(bibleSearchDataP).state["lastBibleSearchEntry"];
         return TextField(
-          //controller: ,
+          controller: searchFieldController,
           autofocus: true,
           decoration: InputDecoration(
             labelText: "Search",
@@ -807,10 +817,51 @@ class BibleDrawer extends StatelessWidget {
             ),
           ),
           onSubmitted: (String value) async {
-            if (value != lastBibleSearchEntry) {
+            if (value.isEmpty) value = lastBibleSearchEntry;
+            if (value.isNotEmpty) {
+              List<String> data = ((context.read(searchEntryExclusionP).state) && (excludeFromSearchController.text.isNotEmpty)) ? [value, excludeFromSearchController.text] : [value, ""];
               await callBack([
                 "searchBible1",
-                [value]
+                data
+              ]);
+              _completeDrawerAction(context);
+            }
+          },
+          //onChanged: ,
+          //onTap: ,
+          //onEditingComplete: ,
+        );
+      },
+    );
+  }
+
+  Widget _buildSearchExclusionField(BuildContext context) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
+        final String lastBibleSearchEntry = watch(bibleSearchDataP).state["lastBibleSearchEntry"];
+        return TextField(
+          controller: excludeFromSearchController,
+          autofocus: false,
+          decoration: InputDecoration(
+            labelText: "Exclude (separator |)",
+            //labelStyle: ,
+            hintText: "exclude these words",
+            hintStyle: myTextStyle["subtitleStyle"],
+            //errorText: _searchInputValid ? null : 'Invalid input!',
+            //prefixIcon: Icon(Icons.search),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+          ),
+          onSubmitted: (String value) async {
+            String searchValue = searchFieldController.text;
+            if (searchValue.isEmpty) searchValue = lastBibleSearchEntry;
+            if (searchValue.isNotEmpty) {
+              List<String> data = (value.isNotEmpty) ? [searchValue, value] : [searchValue, ""];
+              await callBack([
+                "searchBible1",
+                data
               ]);
               _completeDrawerAction(context);
             }
