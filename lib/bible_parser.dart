@@ -42,8 +42,8 @@ class BibleParser {
     final int b = bcvList[0], c = bcvList[1], v = bcvList[2];
     int c2, v2;
     if (bcvList.length == 5) {
-      int c2 = bcvList[3];
-      int v2 = bcvList[4];
+      c2 = bcvList[3];
+      v2 = bcvList[4];
     }
 
     final String bookNo = "$b";

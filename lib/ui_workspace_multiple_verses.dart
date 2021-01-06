@@ -105,22 +105,40 @@ class MultipleVerses extends StatelessWidget{
           title: ParsedText(
             selectable: true,
             alignment: TextAlign.start,
-            text: "[${data.first[1]}:${data.first.last}]$displayVersion $verseText",
+            text: "[${context.read(parserP).state.bcvToVerseReference([for (int i in data.first) i])}]$displayVersion $verseText",
             style: myTextStyle["verseFont"],
             parse: <MatchText>[
               MatchText(
-                pattern: r"\[[0-9]+?:[0-9]+?\]",
+                pattern: r"\[[A-Za-z0-9]+? [0-9\-:]+?\]",
                 style: myTextStyle["verseNoFont"],
                 onTap: (url) async => await callBack(["newVersionVerseSelected", data]),
               ),
               MatchText(
+                pattern: r"\[[0-9]+?:[0-9]+?\]",
+                style: myTextStyle["verseNoFont"],
+                onTap: (url) async {
+                  List<String> cvList = url.substring(1, url.length - 1).split(":");
+                  List<dynamic> newData = [[data.first.first, int.parse(cvList.first), int.parse(cvList.last)], ...data.sublist(1, 3)];
+                  await callBack(["newVersionVerseSelected", newData]);
+                },
+              ),
+              MatchText(
+                pattern: r"\[[0-9]+?\]",
+                style: myTextStyle["verseNoFont"],
+                onTap: (url) async {
+                  int v = int.parse(url.substring(1, url.length - 1));
+                  List<dynamic> newData = [[...data.first.sublist(0, 2), v], ...data.sublist(1, 3)];
+                  await callBack(["newVersionVerseSelected", newData]);
+                },
+              ),
+              /*MatchText(
                 pattern: searchEntry,
                 regexOptions: RegexOptions(
                   caseSensitive : false,
                   unicode : true,
                 ),
                 style: TextStyle(backgroundColor: Colors.red[300]),
-              ),
+              ),*/
             ],
           ),
           onTap: () async {
