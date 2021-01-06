@@ -71,7 +71,9 @@ what have been done in this hybrid project:
 * codes on search bible, display results book by book
 * codes on piechart to present search result
 * navigation drawer ui finished
-* advanced bible search function added
+* five modes of searching bibles are added (basic, regular express, words with AND combination, words with OR combination, custom SQL)
+* added option to exclude word for bible search result
+* added feature of loading multiple verses
 
 #Screenshots
 
