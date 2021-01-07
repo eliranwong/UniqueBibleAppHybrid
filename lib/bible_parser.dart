@@ -2,39 +2,42 @@ import 'helpers.dart';
 import 'bible_books.dart';
 
 class BibleParser {
+
+  String language;
   Map<String, String> bibleBookNo;
   Map<String, String> standardBookname = {};
   Map<String, String> standardAbbreviation = {};
   Map<String, Set<int>> bookCollections = {};
 
   // constructor
-  BibleParser(String abbreviations) {
-    bibleBookNo = BibleBooks.bibleBookNo;
-    updateAbbreviations(abbreviations);
+  BibleParser(this.language) {
+    bibleBookNo = BibleBooks.bibleBookNo; // bibleBookNo must include all languages for parsing references.
+    updateLanguage(language);
   }
 
-  void updateAbbreviations(String abbreviations) {
+  void updateLanguage(String language) {
+    this.language = language;
     // set standard abbreviation
     final Map<String, Map<String, String>> standardAbbreviationsMap = {
       "ENG": BibleBooks.standardAbbreviationENG,
       "TC": BibleBooks.standardAbbreviationTC,
       "SC": BibleBooks.standardAbbreviationSC,
     };
-    standardAbbreviation = standardAbbreviationsMap[abbreviations];
+    standardAbbreviation = standardAbbreviationsMap[language];
     // set standard book name
     final Map<String, Map<String, String>> standardBookNameMap = {
       "ENG": BibleBooks.standardBooknameENG,
       "TC": BibleBooks.standardBooknameTC,
       "SC": BibleBooks.standardBooknameSC,
     };
-    standardBookname = standardBookNameMap[abbreviations];
+    standardBookname = standardBookNameMap[language];
     // set book collections
     final Map<String, Map<String, Set<int>>> bookCollectionsMap = {
       "ENG": BibleBooks.bookCollectionsENG,
       "TC": BibleBooks.bookCollectionsTC,
       "SC": BibleBooks.bookCollectionsSC,
     };
-    bookCollections = bookCollectionsMap[abbreviations];
+    bookCollections = bookCollectionsMap[language];
   }
 
   // function for converting b c v integers to verse reference string

@@ -10,8 +10,8 @@ class AppTranslation {
       "Parallel mode",
       "Favourites",
       "History",
-      "Books",
-      "Chapters",
+      "Book",
+      "Chapter",
       "Timelines",
       "Big Screen Layout",
       "Small Screen Layout",
@@ -33,7 +33,11 @@ class AppTranslation {
       "Flags",
       "Pinyin",
       "Transliteration", //30
-      "Restart", //31
+      "Restart",
+      "Select a Different Book",//32
+      "ch. ", //33
+      "v. ", //34
+      "Search Result Analysis",
     ],
     "TC": [
       "跨平台聖經工具",
@@ -45,7 +49,7 @@ class AppTranslation {
       "收藏",
       "歷史",
       "書卷",
-      "章",
+      "章數",
       "時序圖",
       "大屏幕設定",
       "小屏幕設定",
@@ -68,6 +72,10 @@ class AppTranslation {
       "漢語拼音",
       "原文譯音", // 30
       "重新啓動", // 31
+      "選擇其他書卷",//32
+      "章數：", //33
+      "節數：", //34
+      "搜索結果分析",
     ],
     "SC": [
       "跨平台圣经工具",
@@ -79,7 +87,7 @@ class AppTranslation {
       "收藏",
       "历史",
       "书卷",
-      "章",
+      "章数",
       "时序图",
       "大屏幕设定",
       "小屏幕设定",
@@ -102,6 +110,10 @@ class AppTranslation {
       "汉语拼音",
       "原文译音", // 30
       "重新启动", // 31
+      "选择其他书卷",//32
+      "章数：", //33
+      "節数：", //34
+      "搜索结果分析",
     ],
   };
 

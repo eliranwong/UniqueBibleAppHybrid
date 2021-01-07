@@ -15,7 +15,7 @@ class HomeTopAppBar {
     return Consumer(
       builder: (context, watch, child) {
         return IconButton(
-          tooltip: AppTranslation.interfaceApp[watch(abbreviationsP).state][3],
+          tooltip: watch(interfaceAppP).state[3],
           icon: const Icon(Icons.swap_calls),
           onPressed: () async {
             await context.read(configProvider).state.swapBibles();
@@ -36,7 +36,7 @@ class HomeTopAppBar {
       builder: (context, watch, child) {
         final bool parallelVerses = watch(parallelVersesP).state;
         return IconButton(
-          tooltip: AppTranslation.interfaceApp[watch(abbreviationsP).state][5],
+          tooltip: watch(interfaceAppP).state[5],
           icon: Icon((parallelVerses) ? Icons.layers_clear_outlined : Icons.layers_outlined),
           onPressed: () async {
             context
@@ -59,9 +59,7 @@ class HomeTopAppBar {
   Widget buildPopupMenuButton(BuildContext context) {
     return Consumer(
       builder: (context, watch, child) {
-        final String abbreviations = watch(abbreviationsP).state;
-        final List<String> interfaceApp =
-            AppTranslation.interfaceApp[abbreviations];
+        final List<String> interfaceApp = watch(interfaceAppP).state;
         return PopupMenuButton<String>(
           icon: Icon(Icons.more_vert),
           tooltip: interfaceApp[21],
@@ -125,52 +123,6 @@ class HomeTopAppBar {
 
   List<PopupMenuEntry<String>> _buildPopupMenu(List<String> interfaceApp) {
     return <PopupMenuEntry<String>>[
-      /*PopupMenuItem<String>(
-        value: "Verse",
-        child: ListTile(
-          leading: Icon(Icons.directions),
-          title: Text(interfaceApp[24]),
-        ),
-      ),
-      const PopupMenuDivider(),
-      PopupMenuItem<String>(
-        value: "Big",
-        child: ListTile(
-          leading: Consumer(
-            builder: (context, watch, child) {
-              return Icon((watch(bigScreenP).state)
-                  ? Icons.phone_android
-                  : Icons.laptop);
-            },
-          ),
-          title: Consumer(
-            builder: (context, watch, child) {
-              return Text((watch(bigScreenP).state)
-                  ? interfaceApp[18]
-                  : interfaceApp[17]);
-            },
-          ),
-        ),
-      ),*/
-      /*PopupMenuItem<String>(
-        value: "Workspace",
-        child: ListTile(
-          leading: Consumer(
-            builder: (context, watch, child) {
-              return Icon((watch(showWorkspaceP).state)
-                  ? Icons.visibility_off
-                  : Icons.visibility);
-            },
-          ),
-          title: Consumer(
-            builder: (context, watch, child) {
-              return Text(
-                  "${(watch(showWorkspaceP).state) ? interfaceApp[20] : interfaceApp[19]}${AppTranslation.interfaceBottom[watch(abbreviationsP).state][9]}");
-            },
-          ),
-        ),
-      ),*/
-      //const PopupMenuDivider(),
       PopupMenuItem<String>(
         value: "Flags",
         child: ListTile(
@@ -258,8 +210,7 @@ class HomeTopAppBar {
           leading: Icon(Icons.help_outline),
           title: Consumer(
             builder: (context, watch, child) {
-              return Text(AppTranslation
-                  .interfaceBottom[watch(abbreviationsP).state][8]);
+              return Text(watch(interfaceBottomP).state[8]);
             },
           ),
         ),

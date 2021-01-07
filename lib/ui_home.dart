@@ -20,7 +20,6 @@ import 'ui_drawer.dart';
 import 'ui_workspace.dart';
 import 'ui_workspace_bible_search_result.dart';
 import 'ui_workspace_multiple_verses.dart';
-//import 'ui_html_content_testing.dart';
 
 class UiHome extends HookWidget {
   // A global key
@@ -28,12 +27,12 @@ class UiHome extends HookWidget {
   // To work with provider
   final configState = useProvider(configProvider).state;
   // variable to work with translations
-  String abbreviations;
+  /*String language;
   final Map<String, List<String>> interfaceApp = AppTranslation.interfaceApp,
       interfaceBottom = AppTranslation.interfaceBottom,
       interfaceMessage = AppTranslation.interfaceMessage,
       interfaceDialog = AppTranslation.interfaceDialog,
-      interfaceBibleSearch = AppTranslation.interfaceBibleSearch;
+      interfaceBibleSearch = AppTranslation.interfaceBibleSearch;*/
   ItemScrollController verseScrollController1, verseScrollController2;
   ItemPositionsListener versePositionsListener1, versePositionsListener2;
   BiblesScrollCoordinator biblesScrollCoordinator;
@@ -43,7 +42,7 @@ class UiHome extends HookWidget {
   // Constructor
   UiHome() {
     setupPackages();
-    setupAtmosphere();
+    //setupAtmosphere();
   }
 
   void setupPackages() {
@@ -62,9 +61,9 @@ class UiHome extends HookWidget {
     versePositionsListener2 = ItemPositionsListener.create();
   }
 
-  void setupAtmosphere() {
-    abbreviations = configState.stringValues["abbreviations"];
-  }
+  /*void setupAtmosphere() {
+    language = configState.stringValues["language"];
+  }*/
 
   @override
   build(BuildContext context) {
@@ -80,16 +79,18 @@ class UiHome extends HookWidget {
           title: Text(useProvider(activeVerseReferenceP).state),
           leading: Builder(
             builder: (BuildContext context) {
-              return IconButton(
-                tooltip: interfaceApp[configState.stringValues["abbreviations"]]
-                    [1],
-                icon: const Icon(Icons.menu),
-                onPressed: () {
-                  configState.save(
-                      "showDrawer", !context.read(showDrawerP).state);
-                  context.refresh(showDrawerP);
-                },
-              );
+              return Consumer(
+                builder: (context, watch, child) {
+                  return IconButton(
+                    tooltip: watch(interfaceAppP).state[1],
+                    icon: const Icon(Icons.menu),
+                    onPressed: () {
+                      configState.save(
+                          "showDrawer", !context.read(showDrawerP).state);
+                      context.refresh(showDrawerP);
+                    },
+                  );
+                });
             },
           ),
           actions: <Widget>[
@@ -115,7 +116,7 @@ class UiHome extends HookWidget {
       builder: (context, watch, child) {
         return FloatingActionButton(
           backgroundColor: watch(myColorsP).state["floatingButtonColor"],
-          tooltip: interfaceBottom[watch(abbreviationsP).state][9],
+          tooltip: watch(interfaceBottomP).state[9],
           onPressed: () async {
             await context.read(configProvider).state.changeWorkspaceLayout();
             context.refresh(workspaceLayoutP);
@@ -238,6 +239,7 @@ class UiHome extends HookWidget {
       _bible2ChapterContent(context),
       BibleSearchResults((List<dynamic> data) async => await callBack(context, data)),
       MultipleVerses((List<dynamic> data) async => await callBack(context, data)),
+      //TestChart(),
       //TestFlutterHTML(),
       //workspace.dummyWidget("Tab 3"),
     ];
@@ -607,7 +609,6 @@ class UiHome extends HookWidget {
       {bool sameChapter = false}) async {
     await context.read(configProvider).state.newVerseSelected(bcvList);
     context.refresh(historyActiveVerseP);
-    context.refresh(activeVerseReferenceP);
     context.refresh(activeScrollIndex1P);
     context.refresh(activeScrollIndex2P);
     if (!sameChapter) {
@@ -702,9 +703,9 @@ class UiHome extends HookWidget {
   }
 
   Future<void> loadMultipleVerses(BuildContext context, List<dynamic> data) async {
-    // Remove empty .removeWhere((i) => i.isEmpty);
+    // Remove empty item .removeWhere((i) => i.isEmpty);
     Bible bible = context.read(configProvider).state.bibleDB1;
-    List<List<dynamic>> newData = [for (List<dynamic> item in data) (item.length > 3) ? await bible.getSingleVerseDataRange(item) : await bible.getSingleVerseData(item)];
+    List<List<dynamic>> newData = [for (List<dynamic> item in data) (item.length > 3) ? await bible.getSingleVerseDataRange(item) : await bible.getSingleVerseData(item)]..removeWhere((i) => (i).isEmpty);
     context.read(configProvider).state.updateMultipleVersesData(newData);
     context.read(configProvider).state.updateMultipleVersesShowVersion(false);
     context.refresh(multipleVersesP);

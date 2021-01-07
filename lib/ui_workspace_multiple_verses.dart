@@ -31,9 +31,9 @@ class MultipleVerses extends StatelessWidget{
         final String activeVerseReference = watch(activeVerseReferenceP).state;
         return TextField(
           //controller: ,
-          autofocus: true,
+          autofocus: false,
           decoration: InputDecoration(
-            labelText: "Go to",
+            labelText: "Exclude (separator: |)",
             //labelStyle: ,
             hintText: activeVerseReference,
             hintStyle: myTextStyle["subtitleStyle"],

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart';
+import 'package:unique_bible_app_expanded/app_translation.dart';
 // Core libraries
 import 'dart:io';
 // My libraries
@@ -10,7 +11,6 @@ import 'module_description.dart';
 import 'bible.dart';
 import 'file_mx.dart';
 import 'bible_parser.dart';
-//import 'bible_books.dart';
 
 final configurationsProvider = FutureProvider<Configurations>((ref) async {
   final Configurations configurations = Configurations();
@@ -52,8 +52,8 @@ final showDrawerP = StateProvider<bool>(
     alwaysOpenMarvelBibleExternallyP = StateProvider<bool>(
             (ref) => ref.watch(configProvider).state.boolValues["alwaysOpenMarvelBibleExternally"]);
 
-final abbreviationsP = StateProvider<String>(
-        (ref) => ref.watch(configProvider).state.stringValues["abbreviations"]),
+final languageP = StateProvider<String>(
+        (ref) => ref.watch(configProvider).state.stringValues["language"]),
     bible1P = StateProvider<String>(
             (ref) => ref.watch(configProvider).state.stringValues["bible1"]),
     bible2P = StateProvider<String>(
@@ -112,7 +112,7 @@ final menuVerseListP = StateProvider<List<int>>((ref) => ref.watch(configProvide
 final bibleSearchDataP = StateProvider<Map<String, dynamic>>(
     (ref) {
       Map<String, dynamic> data = {};
-      data["module"] = ref.watch(configProvider).state.bibleDB1.module;
+      data["lastBibleSearchModule"] = ref.watch(configProvider).state.bibleDB1.module;
       data["lastBibleSearchHit"] = ref.watch(configProvider).state.bibleDB1.lastBibleSearchHit;
       data["lastBibleSearchEntry"] = ref.watch(configProvider).state.bibleDB1.lastBibleSearchEntry;
       data["lastBibleSearchResults"] = ref.watch(configProvider).state.bibleDB1.lastBibleSearchResults;
@@ -130,6 +130,8 @@ final multipleVersesP = StateProvider<Map<String, dynamic>>(
     }
 );
 
+final displayAllMenuBookP = StateProvider<bool>((ref) => ref.watch(configProvider).state.displayAllMenuBook);
+
 final searchEntryOptionP = StateProvider<int>((ref) => ref.watch(configProvider).state.searchEntryOption);
 final searchEntryExclusionP = StateProvider<bool>((ref) => ref.watch(configProvider).state.searchEntryExclusion);
 final searchWholeBibleP = StateProvider<bool>((ref) => ref.watch(configProvider).state.searchWholeBible);
@@ -138,8 +140,22 @@ final chapterData1P = StateProvider<List<List<dynamic>>>((ref) => ref.watch(conf
 final chapterData2P = StateProvider<List<List<dynamic>>>((ref) => ref.watch(configProvider).state.chapterData2);
 final activeScrollIndex1P = StateProvider<int>((ref) => ref.watch(configProvider).state.activeScrollIndex1);
 final activeScrollIndex2P = StateProvider<int>((ref) => ref.watch(configProvider).state.activeScrollIndex2);
-final parserP = StateProvider<BibleParser>((ref) => BibleParser(ref.watch(abbreviationsP).state));
-final activeVerseReferenceP = StateProvider<String>((ref) => ref.watch(configProvider).state.activeVerseReference);
+
+// The following providers depend on language settings.
+final parserP = StateProvider<BibleParser>((ref) => BibleParser(ref.watch(languageP).state));
+final interfaceAppP = StateProvider<List<String>>((ref) => AppTranslation.interfaceApp[ref.watch(languageP).state]);
+final interfaceBottomP = StateProvider<List<String>>((ref) => AppTranslation.interfaceBottom[ref.watch(languageP).state]);
+final interfaceMessageP = StateProvider<List<String>>((ref) => AppTranslation.interfaceMessage[ref.watch(languageP).state]);
+final interfaceDialogP = StateProvider<List<String>>((ref) => AppTranslation.interfaceDialog[ref.watch(languageP).state]);
+final interfaceBibleSearchP = StateProvider<List<String>>((ref) => AppTranslation.interfaceBibleSearch[ref.watch(languageP).state]);
+final interfaceBibleSettingsP = StateProvider<List<String>>((ref) => AppTranslation.interfaceBibleSettings[ref.watch(languageP).state]);
+final activeVerseReferenceP = StateProvider<String>(
+    (ref) {
+      final BibleParser parser = ref.watch(parserP).state;
+      final List<int> activeVerse = ref.watch(historyActiveVerseP).state.first;
+      return parser.bcvToVerseReference(activeVerse.sublist(0, 3));
+    }
+);
 
 class Configurations {
   SharedPreferences prefs;
@@ -152,7 +168,8 @@ class Configurations {
 
   // Variables which are not stored in preferences.
   // Search
-  bool searchWholeBible = true, searchEntryExclusion = false;
+  bool searchWholeBible = true, searchEntryExclusion = false, displayAllMenuBook = false;
+  void updateDisplayAllMenuBook() => displayAllMenuBook = !displayAllMenuBook;
   int searchEntryOption = 0;
   // Multiple verses
   bool multipleVersesShowVersion = false;
@@ -177,7 +194,7 @@ class Configurations {
   };
   // Default String values.
   Map<String, String> stringValues = {
-    "abbreviations": "ENG",
+    "language": "ENG",
     "bible1": "KJV",
     "bible2": "NET",
     "iBible": "OHGBi",
@@ -217,13 +234,12 @@ class Configurations {
   };
 
   // Variables to work with bibles
-  String marvelData, activeVerseReference;
+  String marvelData;
   FileMx fileMx;
   Map<String, List<String>> allBibles, allBiblesByLanguages = {};
   Bible bibleDB1, bibleDB2, bibleDB3, iBibleDB, tBibleDB, headingsDB;
   List<List<dynamic>> chapterData1, chapterData1Parallel, chapterData2;
   int activeScrollIndex1, activeScrollIndex2;
-  BibleParser parser;
 
   // Functions to work with "settings" or preferences
 
@@ -238,8 +254,6 @@ class Configurations {
   Future<void> setup() async {
     // Set up share preferences.
     await setDefault();
-    // Set up bible parser
-    parser = BibleParser(stringValues["abbreviations"]);
     // Set up bibles.
     await setupResources();
   }
@@ -364,7 +378,6 @@ class Configurations {
           historyActiveVerse.insert(0, newItem);
           if (historyActiveVerse.length > 20) historyActiveVerse.sublist(0, 20);
           await save(feature, historyActiveVerse);
-          updateActiveVerseReference(newItem);
           updateActiveScrollIndex(newItem);
         }
         break;
@@ -569,7 +582,6 @@ class Configurations {
     await openBibleDatabase();
     await updateBCVMenu(activeVerse);
     await updateDBChapterData(activeVerse);
-    updateActiveVerseReference(activeVerse);
     updateActiveScrollIndex(activeVerse);
   }
 
@@ -669,9 +681,6 @@ class Configurations {
     // chapterData2 always use secondary bible data.
     chapterData2 = bibleDB2.chapterData;
   }
-
-  void updateParserAbbreviations() => parser.updateAbbreviations(stringValues["abbreviations"]);
-  void updateActiveVerseReference(List<int> activeVerse) => activeVerseReference = parser.bcvToVerseReference(activeVerse.sublist(0, 3));
 
   void updateActiveScrollIndex(List<int> activeVerse) {
     // useful references on finding index

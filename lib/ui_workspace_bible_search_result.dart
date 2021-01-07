@@ -7,6 +7,7 @@ import 'package:flutter_parsed_text/flutter_parsed_text.dart';
 // My libraries
 import 'config.dart';
 import 'bible.dart';
+import 'ui_bar_chart.dart';
 
 class BibleSearchResults extends StatelessWidget {
 
@@ -18,25 +19,39 @@ class BibleSearchResults extends StatelessWidget {
     return Consumer(
       builder: (context, watch, child) {
         final BibleParser parser = watch(parserP).state;
-        final int lastBibleSearchHit = watch(bibleSearchDataP).state["lastBibleSearchHit"];
-        final String lastBibleSearchEntry = watch(bibleSearchDataP).state["lastBibleSearchEntry"];
-        final Map<int, List<List<dynamic>>> lastSearchResults =
-            watch(bibleSearchDataP).state["lastBibleSearchResults"];
-        final Map<int, List<List<dynamic>>> lastSearchResultsLazy =
-            watch(bibleSearchDataP).state["lastBibleSearchResultsLazy"];
+        final bibleSearchData = watch(bibleSearchDataP).state;
+        final String lastBibleSearchModule = bibleSearchData["lastBibleSearchModule"];
+        final int lastBibleSearchHit = bibleSearchData["lastBibleSearchHit"];
+        final String lastBibleSearchEntry = bibleSearchData["lastBibleSearchEntry"];
+        final Map<int, List<List<dynamic>>> lastSearchResults = bibleSearchData["lastBibleSearchResults"];
+        final Map<int, List<List<dynamic>>> lastSearchResultsLazy = bibleSearchData["lastBibleSearchResultsLazy"];
         final List<int> bookList = lastSearchResults.keys.toList()..sort();
-        Map<String, double> pieChartDataMap = {
-          for (MapEntry i in lastSearchResults.entries)
-            parser.standardAbbreviation[i.key.toString()]:
-                i.value.length.toDouble()
-        };
+        List<ChartsFlutterDatum> bookBarChartData = [];
+        Map<String, double> pieChartDataMap = {};
+        for (MapEntry i in lastSearchResults.entries) {
+          final String bookAbb = parser.standardAbbreviation[i.key.toString()];
+          final int eachBookHit = i.value.length;
+          pieChartDataMap[bookAbb] = eachBookHit.toDouble();
+          bookBarChartData.add(ChartsFlutterDatum(x: i.key, y: eachBookHit));
+        }
+        final String searchOverview = "$lastBibleSearchModule [$lastBibleSearchHit]";
         return (lastSearchResultsLazy.isEmpty) ? Center(
           child: Text("No search result!"),
         ) : SingleChildScrollView(
           child: Column(
             children: [
+              ListTile(
+                title: Center(child: Text(lastBibleSearchEntry, style: context.read(myTextStyleP).state["verseFont"],)),
+              ),
               ExpansionTile(
-                title: Text("$lastBibleSearchEntry x $lastBibleSearchHit"),
+                leading: IconButton(
+                  tooltip: "Bar chart",
+                  icon: const Icon(Icons.add_chart),
+                  onPressed: () async {
+                    Configurations.goTo(context, BookBarChart("$searchOverview: $lastBibleSearchEntry", bookBarChartData));
+                  },
+                ),
+                title: Text(searchOverview),
                 children: [
                   PieChart(
                     dataMap: pieChartDataMap,
@@ -56,7 +71,7 @@ class BibleSearchResults extends StatelessWidget {
                   scrollDirection: Axis.vertical,
                   itemCount: bookList.length,
                   itemBuilder: (context, i) => _buildBookSection(
-                      bookList[i], lastSearchResults[bookList[i]].length, lastSearchResultsLazy[bookList[i]])),
+                      bookList[i], lastBibleSearchEntry, lastSearchResults[bookList[i]].length, lastSearchResults[bookList[i]], lastSearchResultsLazy[bookList[i]])),
             ],
           ),
         );
@@ -64,15 +79,28 @@ class BibleSearchResults extends StatelessWidget {
     );
   }
 
-  Widget _buildBookSection(int bookNo, int allHits, List<List<dynamic>> data) {
+  Widget _buildBookSection(int bookNo, String lastBibleSearchEntry, int allHits, List<List<dynamic>> data, List<List<dynamic>> dataLazy) {
     return Consumer(
       builder: (context, watch, child) {
         final BibleParser parser = watch(parserP).state;
+        final String bookName = parser.standardBookname[bookNo.toString()];
+        final String chapterOverview = "$bookName [$allHits]";
         return ExpansionTile(
-          title: Text(
-              "${parser.standardBookname[bookNo.toString()]} [$allHits]"),
+          leading: IconButton(
+            tooltip: "Bar chart",
+            icon: const Icon(Icons.add_chart),
+            onPressed: () async {
+              Map<double, double> barChartData = {};
+              data.forEach((i) {
+                double chapter = i.first[1].toDouble();
+                barChartData[chapter] = (barChartData.containsKey(chapter)) ? barChartData[chapter] + 1 : 1;
+              });
+              Configurations.goTo(context, ChapterBarChart(barChartData, topTitle: "$chapterOverview: $lastBibleSearchEntry", bottomTitle: context.read(interfaceAppP).state[9],));
+            },
+          ),
+          title: Text(chapterOverview),
           backgroundColor: Theme.of(context).accentColor.withOpacity(0.025),
-          children: <Widget>[_buildBookResult(data, bookNo)],
+          children: <Widget>[_buildBookResult(dataLazy, bookNo)],
         );
       },
     );

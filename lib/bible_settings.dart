@@ -2,15 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'dart:io';
 import 'config.dart';
-import 'app_translation.dart';
 
 class BibleSettings extends StatelessWidget {
   @override
   build(BuildContext context) {
     return Consumer(
       builder: (context, watch, child) {
-        final List<String> interface =
-            AppTranslation.interfaceBibleSettings[watch(abbreviationsP).state];
+        final List<String> interface = watch(interfaceBibleSettingsP).state;
         return Theme(
           data: watch(mainThemeP).state,
           child: Scaffold(
@@ -34,7 +32,7 @@ class BibleSettings extends StatelessWidget {
             padding: const EdgeInsets.all(24.0),
             child: ListView(
               children: <Widget>[
-                _abbreviations(context, interface),
+                _language(context, interface),
                 const Divider(),
                 ..._backgroundBrightness(context, interface),
                 ..._fontSize(context, interface),
@@ -56,10 +54,10 @@ class BibleSettings extends StatelessWidget {
     );
   }
 
-  Widget _abbreviations(BuildContext context, List<String> interface) {
+  Widget _language(BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final String abbreviations = watch(abbreviationsP).state;
+        final String language = watch(languageP).state;
         final Map<String, String> interfaceMap = {
           "English": "ENG",
           "繁體中文": "TC",
@@ -78,20 +76,15 @@ class BibleSettings extends StatelessWidget {
             underline: watch(dropdownUnderlineP).state,
             iconDisabledColor: watch(myColorsP).state["dropdownDisabled"],
             iconEnabledColor: watch(myColorsP).state["dropdownEnabled"],
-            value: interfaceMapReverse[abbreviations],
+            value: interfaceMapReverse[language],
             onChanged: (String newValue) {
               String newValueAbb = interfaceMap[newValue];
-              if (newValueAbb != abbreviations) {
+              if (newValueAbb != language) {
                 context
                     .read(configProvider)
                     .state
-                    .save("abbreviations", newValueAbb);
-                context.read(configProvider).state.updateParserAbbreviations();
-                context.read(configProvider).state.updateActiveVerseReference(
-                    context.read(historyActiveVerseP).state.first);
-                context.refresh(abbreviationsP);
-                context.refresh(parserP);
-                context.refresh(activeVerseReferenceP);
+                    .save("language", newValueAbb);
+                context.refresh(languageP);
               }
             },
             items: <String>[...interfaceMap.keys.toList()]
@@ -210,7 +203,7 @@ class BibleSettings extends StatelessWidget {
           "SC": ["---", "提示", "原文逐字翻译"],
         };
         final List<String> _instantActionList =
-            _instantActionMap[watch(abbreviationsP).state];
+            _instantActionMap[watch(languageP).state];
         final int instantAction = watch(instantActionP).state;
         final String instantActionDescription =
             _instantActionList[instantAction];
@@ -250,9 +243,7 @@ class BibleSettings extends StatelessWidget {
   Widget _favouriteAction(BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final List<String> _favouriteActionList = AppTranslation
-            .interfaceDialog[watch(abbreviationsP).state]
-            .sublist(4);
+        final List<String> _favouriteActionList = watch(interfaceDialogP).state.sublist(4);
         _favouriteActionList.insert(0, "---");
         final int favouriteAction = watch(favouriteActionP).state;
         final String favouriteActionDescription =

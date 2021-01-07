@@ -107,7 +107,7 @@ class BibleDrawer extends StatelessWidget {
             .first;
         return TextField(
           //controller: ,
-          autofocus: true,
+          autofocus: false,
           decoration: InputDecoration(
             labelText: "Go to",
             //labelStyle: ,
@@ -170,24 +170,46 @@ class BibleDrawer extends StatelessWidget {
             context.refresh(menuVerseListP);
           },
         ),
-        title: Text("$currentBookName -> ${(currentMenuBookName != currentBookName) ? currentMenuBookName : ''}"),
-        /*title: Text(this.interfaceApp[this.abbreviations][12],
-          style: _generalTextStyle),*/
-        initiallyExpanded: false,
+        title: Text(currentBookName),
+        subtitle: (currentMenuBookName == currentBookName) ? null : Text("-> $currentMenuBookName"),
+        initiallyExpanded: true,
         backgroundColor: Theme.of(context).accentColor.withOpacity(0.025),
         children: <Widget>[
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 5.0),
             child: Wrap(
               spacing: 3.0,
-              children: _buildBookMenuChips(context, bookList, standardBookname,
-                  standardAbbreviation, menuBook),
+              children: (watch(displayAllMenuBookP).state) ? _buildBookMenuChips(context, bookList, standardBookname, standardAbbreviation, menuBook) : _buildSelectADifferentBookChip(context),
             ),
           )
         ],
         //onExpansionChanged: ,
       );
     });
+  }
+
+  List<Widget> _buildSelectADifferentBookChip(BuildContext context) {
+    return <Widget>[
+      Consumer(builder: (context, watch, child) {
+        final String buttonTitle = watch(interfaceAppP).state[32];
+        return ChoiceChip(
+          backgroundColor: Colors.blue[50],
+          label: Tooltip(
+              message: buttonTitle,
+              child: Text(
+                buttonTitle,
+                style: TextStyle(fontSize: 14),
+              )),
+          selected: false,
+          onSelected: (bool selected) async {
+            if (selected) {
+              context.read(configProvider).state.updateDisplayAllMenuBook();
+              context.refresh(displayAllMenuBookP);
+            }
+          },
+        );
+      }),
+    ];
   }
 
   List<Widget> _buildBookMenuChips(
@@ -218,6 +240,8 @@ class BibleDrawer extends StatelessWidget {
               context.refresh(menuChapterListP);
               context.refresh(menuChapterP);
               context.refresh(menuVerseListP);
+              context.read(configProvider).state.updateDisplayAllMenuBook();
+              context.refresh(displayAllMenuBookP);
             }
           },
         );
@@ -246,9 +270,8 @@ class BibleDrawer extends StatelessWidget {
             context.refresh(menuVerseListP);
           },
         ),
-        title: Text("$currentChapterNo -> ${(menuChapter != currentChapterNo) ? menuChapter : ''}"),
-        /*title: Text(this.interfaceApp[this.abbreviations][12],
-          style: _generalTextStyle),*/
+        title: Text("${watch(interfaceAppP).state[33]}$currentChapterNo"),
+        subtitle: (menuChapter == currentChapterNo) ? null : Text("-> $menuChapter"),
         initiallyExpanded: true,
         backgroundColor: Theme.of(context).accentColor.withOpacity(0.025),
         children: <Widget>[
@@ -318,7 +341,7 @@ class BibleDrawer extends StatelessWidget {
               context.refresh(menuVerseListP);
             },
           ),
-          title: Text(activeVerse[2].toString()),
+          title: Text("${watch(interfaceAppP).state[34]}${activeVerse[2].toString()}"),
           /*title: Text(this.interfaceApp[this.abbreviations][12],
           style: _generalTextStyle),*/
           initiallyExpanded: true,
@@ -589,9 +612,9 @@ class BibleDrawer extends StatelessWidget {
       "SC": ["基本", "正规表示式", "并存组合", "任何一个", "自定 SQL"],
     };
     return Consumer(builder: (context, watch, child) {
-      final String abbreviations = watch(abbreviationsP).state;
+      final String language = watch(languageP).state;
       final int searchEntryOption = watch(searchEntryOptionP).state;
-      return Text(description[abbreviations][searchEntryOption]);
+      return Text(description[language][searchEntryOption]);
     });
   }
 
