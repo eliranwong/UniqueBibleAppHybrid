@@ -47,7 +47,7 @@ class BibleDrawer extends StatelessWidget {
       children: <Widget>[
         Container(height: 5),
         _buildVerseReferenceField(context),
-        //_buildMultipleReferenceSwitch(context),
+        Container(height: 5),
         _buildBookMenuList(context),
         _buildChapterMenuList(context),
         _buildShowVerseSwitch(context),
@@ -106,15 +106,23 @@ class BibleDrawer extends StatelessWidget {
             .listListIntValues["historyActiveVerse"]
             .first;
         return TextField(
-          //controller: ,
-          autofocus: false,
+          controller: TextEditingController(text: activeVerseReference),
+          autofocus: watch(autoFocusVerseReferenceFieldP).state,
           decoration: InputDecoration(
             labelText: "Go to",
-            //labelStyle: ,
+            labelStyle: TextStyle(color: watch(myColorsP).state["blueAccent"]),
             hintText: activeVerseReference,
             hintStyle: myTextStyle["subtitleStyle"],
             //errorText: _searchInputValid ? null : 'Invalid input!',
             //prefixIcon: Icon(Icons.search),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: watch(myColorsP).state["blueAccent"]),
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: watch(myColorsP).state["grey"]),
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(10)),
             ),
@@ -234,7 +242,7 @@ class BibleDrawer extends StatelessWidget {
               )),
           selected: (bookNo == menuBook),
           onSelected: (bool selected) async {
-            if (selected) {
+            if ((selected) && (bookNo != menuBook)) {
               await context.read(configProvider).state.bibleDB1.updateMenuBook(bookNo);
               context.refresh(menuBookP);
               context.refresh(menuChapterListP);
@@ -242,6 +250,11 @@ class BibleDrawer extends StatelessWidget {
               context.refresh(menuVerseListP);
               context.read(configProvider).state.updateDisplayAllMenuBook();
               context.refresh(displayAllMenuBookP);
+              if (context.read(openBookWithoutChapterSelectionP).state) {
+                int newChapter = context.read(menuChapterP).state;
+                int newVerse = context.read(menuVerseListP).state.first;
+                await callBack(["newVerseSelected", [bookNo, newChapter, newVerse]]);
+              }
             }
           },
         );
@@ -303,16 +316,14 @@ class BibleDrawer extends StatelessWidget {
           ),
           selected: (chapterNo == menuChapter),
           onSelected: (bool selected) async {
-            if (selected) {
-              if (context.read(showVerseSelectionP).state) {
-                await context.read(configProvider).state.bibleDB1.updateMenuChapter(chapterNo);
-                context.refresh(menuChapterP);
-                context.refresh(menuVerseListP);
-              } else if ("${context.read(menuBookP).state}.$chapterNo" != "") {
-                await context.read(configProvider).state.bibleDB1.updateMenuChapter(chapterNo);
-                final int firstVerseNo = context.read(configProvider).state.bibleDB1.menuVerseList.first;
-                await callBack(["newVerseSelected", [context.read(menuBookP).state, chapterNo, firstVerseNo]]);
-              }
+            if ((context.read(showVerseSelectionP).state) && (!context.read(openChapterWithoutVerseSelectionP).state)) {
+              await context.read(configProvider).state.bibleDB1.updateMenuChapter(chapterNo);
+              context.refresh(menuChapterP);
+              context.refresh(menuVerseListP);
+            } else if ("${context.read(menuBookP).state}.$chapterNo" != "${context.read(menuBookP).state}.$menuChapter") {
+              await context.read(configProvider).state.bibleDB1.updateMenuChapter(chapterNo);
+              final int firstVerseNo = context.read(configProvider).state.bibleDB1.menuVerseList.first;
+              await callBack(["newVerseSelected", [context.read(menuBookP).state, chapterNo, firstVerseNo]]);
             }
           },
         );
@@ -393,8 +404,29 @@ class BibleDrawer extends StatelessWidget {
         _buildVersionList(context, true),
         _buildVersionList(context, false),
         _buildVersionFilterChipsList(context),
+        _buildCompareButton(context),
       ],
     );
+  }
+
+  Widget _buildCompareButton(BuildContext context) {
+    return Consumer(builder: (context, watch, child) {
+      final String activeVerseReference = watch(activeVerseReferenceP).state;
+      final List<String> interfaceApp = watch(interfaceAppP).state;
+      return ButtonBar(
+        alignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          RaisedButton(
+            child: Text("${interfaceApp[38]}\n$activeVerseReference", textAlign: TextAlign.center,),
+            color: Colors.teal[50],
+            onPressed: () async {
+              await callBack(["loadMultipleVersions", [[context.read(configProvider).state.listListIntValues["historyActiveVerse"].first], true]]);
+              _completeDrawerAction(context);
+            },
+          ),
+        ],
+      );
+    });
   }
 
   Widget _buildVersionFilterChipsList(BuildContext context) {
@@ -442,13 +474,16 @@ class BibleDrawer extends StatelessWidget {
               )),
           selected: (compareBibleList.contains(module)),
           onSelected: (bool selected) async {
+            // Remove old bible version(s) and potential duplication.
+            List<String> newCompareList = [for (String i in compareBibleList) if (allBiblesList.contains(i)) i].toSet().toList();
             if (selected) {
-              // TODO:
-              print("inc $module");
+              newCompareList.add(module);
+              await context.read(configProvider).state.save("compareBibleList", newCompareList);
             } else {
-              // TODO:
-              print("excl $module");
+              newCompareList.remove(module);
+              await context.read(configProvider).state.save("compareBibleList", newCompareList);
             }
+            context.refresh(compareBibleListP);
           },
         );
       },
@@ -523,15 +558,23 @@ class BibleDrawer extends StatelessWidget {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
         final String bible1 = watch(bible1P).state;
         return TextField(
-          //controller: ,
+          controller: TextEditingController(text: bible1),
           autofocus: true,
           decoration: InputDecoration(
             labelText: "Primary Bible",
-            //labelStyle: ,
+            labelStyle: TextStyle(color: watch(myColorsP).state["blueAccent"]),
             hintText: bible1,
             hintStyle: myTextStyle["subtitleStyle"],
             //errorText: _searchInputValid ? null : 'Invalid input!',
             //prefixIcon: Icon(Icons.search),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: watch(myColorsP).state["blueAccent"]),
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: watch(myColorsP).state["grey"]),
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(10)),
             ),
@@ -556,15 +599,23 @@ class BibleDrawer extends StatelessWidget {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
         final String bible2 = watch(bible2P).state;
         return TextField(
-          //controller: ,
+          controller: TextEditingController(text: bible2),
           autofocus: true,
           decoration: InputDecoration(
             labelText: "Secondary Bible",
-            //labelStyle: ,
+            labelStyle: TextStyle(color: watch(myColorsP).state["blueAccent"]),
             hintText: bible2,
             hintStyle: myTextStyle["subtitleStyle"],
             //errorText: _searchInputValid ? null : 'Invalid input!',
             //prefixIcon: Icon(Icons.search),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: watch(myColorsP).state["blueAccent"]),
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: watch(myColorsP).state["grey"]),
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(10)),
             ),
@@ -592,7 +643,8 @@ class BibleDrawer extends StatelessWidget {
         children: <Widget>[
           Container(height: 5),
           _buildSearchBibleField(context),
-          Container(height: 5),
+          //Container(height: 5),
+          _buildSearchButtons(context),
           _buildSearchEntryOptionDescription(context),
           _buildSearchEntryOption(context),
           _buildSearchEntryExclusionOption(context),
@@ -605,16 +657,61 @@ class BibleDrawer extends StatelessWidget {
     });
   }
 
-  Widget _buildSearchEntryOptionDescription(BuildContext context) {
-    Map<String, List<String>> description = {
-      "ENG": ["Basic", "Regex pattern", "AND combo (separator: |)", "OR combo (separator: |)", "Custom SQL"],
-      "TC": ["基本", "正規表示式", "并存組合", "任何一個", "自定 SQL"],
-      "SC": ["基本", "正规表示式", "并存组合", "任何一个", "自定 SQL"],
-    };
+  Widget _buildSearchButtons(BuildContext context) {
     return Consumer(builder: (context, watch, child) {
-      final String language = watch(languageP).state;
+      final String bible1 = watch(bible1P).state;
+      final String bible2 = watch(bible2P).state;
+      return ListTile(
+        title: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 5.0),
+          child: Wrap(
+            spacing: 3.0,
+            children: <Widget>[
+              ChoiceChip(
+                backgroundColor: Colors.blue[50],
+                label: Tooltip(
+                    message: watch(interfaceAppP).state[2],
+                    child: Text(bible1,
+                      style: TextStyle(fontSize: 14),
+                    )),
+                selected: false,
+                onSelected: (bool selected) async {
+                  if (selected) await _searchSelectedBible(context, module: bible1);
+                },
+              ),
+              ChoiceChip(
+                backgroundColor: Colors.blue[50],
+                label: Tooltip(
+                    message: watch(interfaceAppP).state[2],
+                    child: Text("$bible2",
+                      style: TextStyle(fontSize: 14),
+                    )),
+                selected: false,
+                onSelected: (bool selected) async {
+                  if (selected) await _searchSelectedBible(context, module: bible2);
+                },
+              ),
+            ],
+          ),
+        ),
+        trailing: PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert, color: watch(myColorsP).state["blueAccent"],),
+          itemBuilder: (BuildContext context) {
+            final Map<String, List<String>> allBibles = context.read(configProvider).state.allBibles;
+            final List<String> allBiblesList = allBibles.keys.toList()..sort();
+            return allBiblesList.map((i) => PopupMenuItem(value: i, child: Text(i))).toList();
+          },
+          onSelected: (String value) async => await _searchSelectedBible(context, module: value),
+        ),
+      );
+    });
+  }
+
+  Widget _buildSearchEntryOptionDescription(BuildContext context) {
+    return Consumer(builder: (context, watch, child) {
+      final List<String> searchOptionDescription = watch(searchEntryOptionsP).state;
       final int searchEntryOption = watch(searchEntryOptionP).state;
-      return Text(description[language][searchEntryOption]);
+      return Text(searchOptionDescription[searchEntryOption]);
     });
   }
 
@@ -826,30 +923,28 @@ class BibleDrawer extends StatelessWidget {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
         final String lastBibleSearchEntry = watch(bibleSearchDataP).state["lastBibleSearchEntry"];
         return TextField(
-          controller: searchFieldController,
+          controller: searchFieldController..text = lastBibleSearchEntry,
           autofocus: true,
           decoration: InputDecoration(
             labelText: "Search",
-            //labelStyle: ,
+            labelStyle: TextStyle(color: watch(myColorsP).state["blueAccent"]),
             hintText: lastBibleSearchEntry,
             hintStyle: myTextStyle["subtitleStyle"],
             //errorText: _searchInputValid ? null : 'Invalid input!',
             //prefixIcon: Icon(Icons.search),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: watch(myColorsP).state["blueAccent"]),
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: watch(myColorsP).state["grey"]),
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(10)),
             ),
           ),
-          onSubmitted: (String value) async {
-            if (value.isEmpty) value = lastBibleSearchEntry;
-            if (value.isNotEmpty) {
-              List<String> data = ((context.read(searchEntryExclusionP).state) && (excludeFromSearchController.text.isNotEmpty)) ? [value, excludeFromSearchController.text] : [value, ""];
-              await callBack([
-                "searchBible1",
-                data
-              ]);
-              _completeDrawerAction(context);
-            }
-          },
+          onSubmitted: (String value) async => await _searchSelectedBible(context),
           //onChanged: ,
           //onTap: ,
           //onEditingComplete: ,
@@ -863,38 +958,46 @@ class BibleDrawer extends StatelessWidget {
       builder: (context, watch, child) {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
         final String lastBibleSearchEntry = watch(bibleSearchDataP).state["lastBibleSearchEntry"];
+        final String lastBibleSearchExclusionEntry = watch(bibleSearchDataP).state["lastBibleSearchExclusionEntry"];
         return TextField(
-          controller: excludeFromSearchController,
+          controller: excludeFromSearchController..text = lastBibleSearchExclusionEntry,
           autofocus: false,
           decoration: InputDecoration(
             labelText: "Exclude (separator |)",
-            //labelStyle: ,
+            labelStyle: TextStyle(color: watch(myColorsP).state["blueAccent"]),
             hintText: "exclude these words",
             hintStyle: myTextStyle["subtitleStyle"],
             //errorText: _searchInputValid ? null : 'Invalid input!',
             //prefixIcon: Icon(Icons.search),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: watch(myColorsP).state["blueAccent"]),
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: watch(myColorsP).state["grey"]),
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(10)),
             ),
           ),
-          onSubmitted: (String value) async {
-            String searchValue = searchFieldController.text;
-            if (searchValue.isEmpty) searchValue = lastBibleSearchEntry;
-            if (searchValue.isNotEmpty) {
-              List<String> data = (value.isNotEmpty) ? [searchValue, value] : [searchValue, ""];
-              await callBack([
-                "searchBible1",
-                data
-              ]);
-              _completeDrawerAction(context);
-            }
-          },
+          onSubmitted: (String value) async => await _searchSelectedBible(context),
           //onChanged: ,
           //onTap: ,
           //onEditingComplete: ,
         );
       },
     );
+  }
+
+  Future<void> _searchSelectedBible(BuildContext context, {String module = ""}) async {
+    final String searchString = (searchFieldController.text.isNotEmpty) ? searchFieldController.text : context.read(bibleSearchDataP).state["lastBibleSearchEntry"];
+    if (searchString.isNotEmpty) {
+      final String searchExclusionString = excludeFromSearchController.text;
+      List<String> data = [searchString, searchExclusionString, module];
+      await callBack(["searchBible", data]);
+      _completeDrawerAction(context);
+    }
   }
 
   Future<void> _completeDrawerAction(BuildContext context) async {

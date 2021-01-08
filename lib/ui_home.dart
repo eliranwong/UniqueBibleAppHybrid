@@ -10,7 +10,7 @@ import 'package:flutter_parsed_text/flutter_parsed_text.dart';
 import 'dart:io';
 // My libraries
 import 'config.dart';
-import 'app_translation.dart';
+import 'file_mx.dart';
 import 'bibles_scroll_coordinator.dart';
 import 'bible.dart';
 // ui
@@ -20,6 +20,7 @@ import 'ui_drawer.dart';
 import 'ui_workspace.dart';
 import 'ui_workspace_bible_search_result.dart';
 import 'ui_workspace_multiple_verses.dart';
+import 'ui_workspace_multiple_versions.dart';
 
 class UiHome extends HookWidget {
   // A global key
@@ -79,18 +80,17 @@ class UiHome extends HookWidget {
           title: Text(useProvider(activeVerseReferenceP).state),
           leading: Builder(
             builder: (BuildContext context) {
-              return Consumer(
-                builder: (context, watch, child) {
-                  return IconButton(
-                    tooltip: watch(interfaceAppP).state[1],
-                    icon: const Icon(Icons.menu),
-                    onPressed: () {
-                      configState.save(
-                          "showDrawer", !context.read(showDrawerP).state);
-                      context.refresh(showDrawerP);
-                    },
-                  );
-                });
+              return Consumer(builder: (context, watch, child) {
+                return IconButton(
+                  tooltip: watch(interfaceAppP).state[1],
+                  icon: const Icon(Icons.menu),
+                  onPressed: () {
+                    configState.save(
+                        "showDrawer", !context.read(showDrawerP).state);
+                    context.refresh(showDrawerP);
+                  },
+                );
+              });
             },
           ),
           actions: <Widget>[
@@ -237,8 +237,12 @@ class UiHome extends HookWidget {
         Workspace((List<dynamic> data) async => await callBack(context, data));
     return <Widget>[
       _bible2ChapterContent(context),
-      BibleSearchResults((List<dynamic> data) async => await callBack(context, data)),
-      MultipleVerses((List<dynamic> data) async => await callBack(context, data)),
+      BibleSearchResults(
+          (List<dynamic> data) async => await callBack(context, data)),
+      MultipleVerses(
+          (List<dynamic> data) async => await callBack(context, data)),
+      MultipleVersions(
+              (List<dynamic> data) async => await callBack(context, data)),
       //TestChart(),
       //TestFlutterHTML(),
       //workspace.dummyWidget("Tab 3"),
@@ -377,12 +381,12 @@ class UiHome extends HookWidget {
             alignment: TextAlign.start,
             text: "[${data.first.last}]$displayVersion $verseText",
             style: verseStyle,
-              parse: <MatchText>[
-                MatchText(
-                  pattern: r"\[[0-9]+?\]",
-                  style: myTextStyle["verseNoFont"],
-                ),
-              ],
+            parse: <MatchText>[
+              MatchText(
+                pattern: r"\[[0-9]+?\]",
+                style: myTextStyle["verseNoFont"],
+              ),
+            ],
           ),
           onTap: () async {
             if (i != activeScrollIndex)
@@ -582,8 +586,9 @@ class UiHome extends HookWidget {
       "newVerseSelectedSameChapter": newVerseSelectedSameChapter,
       "changeBible1Version": changeBible1Version,
       "changeBible2Version": changeBible2Version,
-      "searchBible1": searchBible1,
+      "searchBible": searchBible,
       "loadMultipleVerses": loadMultipleVerses,
+      "loadMultipleVersions": loadMultipleVersions,
       "scrollToBibleVerse": scrollToBibleVerse, // non-future function
     };
     (data.last.isEmpty)
@@ -597,8 +602,13 @@ class UiHome extends HookWidget {
     final String activeModule = context.read(bible1P).state;
     if (module != activeModule) await changeBible1Version(context, module);
     final List<int> bcvList = [for (int i in data.first) i];
-    final List<int> activeVerse = context.read(configProvider).state.listListIntValues["historyActiveVerse"].first;
-    if (bcvList.join(".") != activeVerse.join(".")) await newVerseSelected(context, bcvList);
+    final List<int> activeVerse = context
+        .read(configProvider)
+        .state
+        .listListIntValues["historyActiveVerse"]
+        .first;
+    if (bcvList.join(".") != activeVerse.join("."))
+      await newVerseSelected(context, bcvList);
   }
 
   Future<void> newVerseSelectedSameChapter(
@@ -688,27 +698,52 @@ class UiHome extends HookWidget {
     scrollToBibleVerse(context);
   }
 
-  Future<void> searchBible1(BuildContext context, List<dynamic> data) async {
+  Future<void> searchBible(BuildContext context, List<dynamic> data) async {
     await changeWorkspaceTab(context, 1);
 
     final int searchEntryOption = context.read(searchEntryOptionP).state;
     final bool searchWholeBible = context.read(searchWholeBibleP).state;
-    List<int> filter = (searchWholeBible) ? [] : context.read(bibleSearchBookFilterP).state.toList()..sort();
+    List<int> filter = (searchWholeBible)
+        ? []
+        : context.read(bibleSearchBookFilterP).state.toList()
+      ..sort();
     await context
         .read(configProvider)
         .state
-        .bibleDB1
-        .searchMultipleBooks(data.first, searchEntryOption, filter: filter, exclusion: data.last);
+        .updateSearchBibleDB(context, module: data.last);
+    await context.read(configProvider).state.searchBibleDB.searchMultipleBooks(
+        data.first, searchEntryOption,
+        filter: filter, exclusion: data[1]);
     context.refresh(bibleSearchDataP);
   }
 
-  Future<void> loadMultipleVerses(BuildContext context, List<dynamic> data) async {
+  Future<void> loadMultipleVerses(
+      BuildContext context, List<dynamic> data) async {
     // Remove empty item .removeWhere((i) => i.isEmpty);
-    Bible bible = context.read(configProvider).state.bibleDB1;
-    List<List<dynamic>> newData = [for (List<dynamic> item in data) (item.length > 3) ? await bible.getSingleVerseDataRange(item) : await bible.getSingleVerseData(item)]..removeWhere((i) => (i).isEmpty);
+    final Bible bible = context.read(configProvider).state.bibleDB1;
+    final List<List<dynamic>> newData = [for (List<dynamic> item in data) await bible.getVerseData(item)]..removeWhere((i) => (i).isEmpty);
     context.read(configProvider).state.updateMultipleVersesData(newData);
-    context.read(configProvider).state.updateMultipleVersesShowVersion(false);
     context.refresh(multipleVersesP);
+  }
+
+  Future<void> loadMultipleVersions(BuildContext context, List<dynamic> data) async {
+    final FileMx fileMx = context.read(fileMxP).state;
+    final List<String> compareBibleList = context.read(compareBibleListP).state..sort();
+    final Map<String, List<String>> allBibles = context.read(configProvider).state.allBibles;
+    final List<String> allBibleList = allBibles.keys.toList();
+    final List<int> firstReference = data.first.first;
+    List<List<dynamic>> verseData = [];
+    for (String module in compareBibleList) {
+      if (allBibleList.contains(module)) {
+        final Bible bible = Bible(module, allBibles[module].last, fileMx);
+        await bible.openDatabase();
+        verseData.add(await bible.getVerseData(firstReference));
+        bible.db.close();
+      }
+    }
+    verseData = verseData..removeWhere((i) => (i).isEmpty);
+    context.read(configProvider).state.updateMultipleVersions(verseData, (data.last) ? data.first : []);
+    context.refresh(multipleVersionsP);
   }
 
 }

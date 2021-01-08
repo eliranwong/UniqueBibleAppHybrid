@@ -7,21 +7,37 @@ import 'config.dart';
 import 'bible.dart';
 import 'text_transformer.dart';
 
-class MultipleVerses extends StatelessWidget{
+class MultipleVersions extends StatelessWidget {
 
   final Function callBack;
-  MultipleVerses(this.callBack);
+  MultipleVersions(this.callBack);
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(3),
       children: <Widget>[
-        Container(height: 5),
-        _buildVerseReferenceField(context),
-        _buildVerseList(context),
+        //Container(height: 5),
+        ListTile(
+          title: _buildVerseReferenceField(context),
+          trailing: Consumer(builder: (context, watch, child) {
+            return PopupMenuButton<String>(
+              icon: Icon(Icons.more_vert, color: watch(myColorsP).state["blueAccent"],),
+              itemBuilder: (BuildContext context) {
+                final Map<String, List<String>> allBibles = context.read(configProvider).state.allBibles;
+                final List<String> allBiblesList = allBibles.keys.toList()..sort();
+                return allBiblesList.map((i) => PopupMenuItem(value: i, child: Text(i))).toList();
+              },
+              onSelected: (String value) async {
+                print("hello");
+              },
+            );
+          }),
+        ),
+        _buildCardList(context),
       ],
     );
+    //return _buildCardList(context);
   }
 
   Widget _buildVerseReferenceField(BuildContext context) {
@@ -71,44 +87,39 @@ class MultipleVerses extends StatelessWidget{
     );
   }
 
-  Widget _buildVerseList(BuildContext context) {
-    return Consumer(
-        builder: (context, watch, child) {
-          final bool multipleVersesShowVersion = watch(multipleVersesP).state["multipleVersesShowVersion"];
-          //final List<List<dynamic>> multipleVersesData = watch(multipleVersesP).state["multipleVersesData"];
-          final List<List<dynamic>> multipleVersesDataLazy = watch(multipleVersesP).state["multipleVersesDataLazy"];
-          return ListView.builder(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            scrollDirection: Axis.vertical,
-            itemCount: multipleVersesDataLazy.length,
-            itemBuilder: (context, i) => _buildVerseRow(context, i, multipleVersesDataLazy[i]),
-          );
-        }
+  Widget _buildCardList(BuildContext context) {
+    return Consumer(builder: (context, watch, child) {
+      final Map<String, dynamic> multipleVersions = watch(multipleVersionsP).state;
+      final List<List<dynamic>> multipleVersionsEntries = multipleVersions["multipleVersionsEntries"];
+      final List<List<dynamic>> multipleVersionsData = multipleVersions["multipleVersionsData"];
+      return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(5.0, 15.0, 5.0, 15.0),
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          scrollDirection: Axis.vertical,
+          itemCount: multipleVersionsData.length,
+          itemBuilder: (context, i) => _buildCard(context, i, multipleVersionsData[i]),
+      );
+    });
+  }
+
+  Widget _buildCard(BuildContext context, int i, List<dynamic> data) {
+    return Center(
+      child: Card(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            _buildVerseRow(context, i, data),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildVerseRow(BuildContext context, int i, List<dynamic> data) {
-    if (data.isEmpty)
-      return ListTile(
-        title: Center(
-          child: Text(
-            "[Read more ...]",
-          ),
-        ),
-        onTap: () {
-          context.read(configProvider).state.updateMultipleVersesDataLazy();
-          context.refresh(multipleVersesP);
-        },
-        onLongPress: () {
-          print("long press");
-        },
-      );
     return Consumer(
       builder: (context, watch, child) {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
-        final String displayVersion =
-        (context.read(parallelVersesP).state) ? " [${data.last}]" : "";
         final String verseText = Bible.processVerseText(data[1]);
         //final String lastBibleSearchEntry = context.read(bibleSearchDataP).state["lastBibleSearchEntry"];
         //final int searchEntryOption = context.read(searchEntryOptionP).state;
@@ -117,11 +128,12 @@ class MultipleVerses extends StatelessWidget{
           title: ParsedText(
             selectable: true,
             alignment: TextAlign.start,
-            text: "[${context.read(parserP).state.bcvToVerseReference([for (int i in data.first) i])}]$displayVersion $verseText",
+            text: "[${data.last}] $verseText",
+            //text: "[${context.read(parserP).state.bcvToVerseReference([for (int i in data.first) i])}]$displayVersion $verseText",
             style: myTextStyle["verseFont"],
             parse: <MatchText>[
               MatchText(
-                pattern: r"\[[A-Za-z0-9]+? [0-9\-:]+?\]",
+                pattern: r"\[[A-Za-z0-9]+? [0-9\-:]+?\]|\[[A-Z][A-Z]+?[a-z]*?[0-9]*?\]|\[[^A-Za-z]+?\]",
                 style: myTextStyle["verseNoFont"],
                 onTap: (url) async => await callBack(["newVersionVerseSelected", data]),
               ),

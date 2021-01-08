@@ -11,8 +11,8 @@ class Bible {
   //Map<String, List<int>> allVerseList;
   List<List<dynamic>> chapterData;
   Set<int> bibleSearchBookFilter = {};
-  String lastBibleSearchEntry = "";
-  int lastBibleSearchHit = 0, searchItemsPerPage = 20, menuBook, menuChapter;
+  String lastBibleSearchEntry = "", lastBibleSearchExclusionEntry = "";
+  int lastBibleSearchEntryOption = 0, lastBibleSearchHit = 0, searchItemsPerPage = 20, menuBook, menuChapter;
   Map<int, List<List<dynamic>>> lastBibleSearchResults = {},
       lastBibleSearchResultsLazy = {};
 
@@ -25,9 +25,7 @@ class Bible {
     return verseText;
   }
 
-  Future<void> openDatabase() async {
-    db = await fileMx.openSqliteDB("FULLPATH", filePath);
-  }
+  Future<void> openDatabase() async => db = await fileMx.openSqliteDB("FULLPATH", filePath);
 
   Future<void> updateBCVMenu(List<int> bcvList) async {
     bookList = await getBookList();
@@ -87,6 +85,8 @@ class Bible {
         module
       ];
 
+  Future<List<dynamic>> getVerseData(List<int> bcvList) async => (bcvList.length > 3) ? await getSingleVerseDataRange(bcvList) : await getSingleVerseData(bcvList);
+
   Future<List<dynamic>> getSingleVerseData(List<int> bcvList) async {
     final String query =
         "SELECT * FROM Verses WHERE Book=? AND Chapter=? AND Verse=?";
@@ -138,6 +138,7 @@ class Bible {
   Future<void> searchMultipleBooks(String searchEntry, int searchEntryOption,
       {List<int> filter = const [], String exclusion = ""}) async {
     lastBibleSearchEntry = searchEntry;
+    lastBibleSearchExclusionEntry = exclusion;
     lastBibleSearchResults = {};
     lastBibleSearchResultsLazy = {};
     lastBibleSearchHit = 0;
@@ -227,6 +228,9 @@ class Bible {
 
     // Dealing with regular expression
     if (searchEntryOption == 1) results = results.where((i) => (RegExp(searchEntry).hasMatch(i["Scripture"]))).toList();
+
+    // update lastBibleSearchEntryOption
+    lastBibleSearchEntryOption = searchEntryOption;
 
     return [
       for (Map<String, dynamic> result in results) verseDataToList(result)

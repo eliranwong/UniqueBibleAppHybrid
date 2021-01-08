@@ -37,7 +37,10 @@ class AppTranslation {
       "Select a Different Book",//32
       "ch. ", //33
       "v. ", //34
-      "Search Result Analysis",
+      "Search Result Analysis", //35
+      "Search Mode: ", //36
+      "exclude: ", //37
+      "COMPARE", //38
     ],
     "TC": [
       "跨平台聖經工具",
@@ -76,6 +79,9 @@ class AppTranslation {
       "章數：", //33
       "節數：", //34
       "搜索結果分析",
+      "搜索模式：", //36
+      "排除：", //37
+      "比較", //38
     ],
     "SC": [
       "跨平台圣经工具",
@@ -114,6 +120,9 @@ class AppTranslation {
       "章数：", //33
       "節数：", //34
       "搜索结果分析",
+      "搜索模式：", //36
+      "排除：", //37
+      "比较", //38
     ],
   };
 
@@ -275,6 +284,9 @@ class AppTranslation {
       "Open Marvel.Bible Externally",
       "Default Marvel Commentary",
       "Keep Menu Open", //24
+      "Auto Focus 'Go to' Field when Menu is Opened", //25
+      "Open Book without Chapter Selection", //26
+      "Open Chapter without Verse Selection", //27
     ],
     "TC": [
       "設定",
@@ -302,6 +314,9 @@ class AppTranslation {
       "使用外置瀏覽器開啟 Marvel.Bible",
       "預設 Marvel 釋經書",
       "持續開啓菜單", //24
+      "當菜單開啓時自動對焦經文輸入框", //25
+      "不用選擇章數直接開啓書卷", //26
+      "不用選擇節數直接開啓章", //27
     ],
     "SC": [
       "设定",
@@ -329,7 +344,16 @@ class AppTranslation {
       "使用外置浏览器开启 Marvel.Bible",
       "预设 Marvel 释经书",
       "持续开启菜单", //24
+      "当餐牌開啟時自動對焦經文輸入框 ...", //25
+      "不用选择章数直接开启书卷", //26
+      "不用选择节数直接开启章", //27
     ],
+  };
+
+  static const Map<String, List<String>> searchEntryOptions = {
+    "ENG": ["Basic", "Regex pattern", "AND combo (separator: |)", "OR combo (separator: |)", "Custom SQL"],
+    "TC": ["基本", "正規表示式", "并存組合", "任何一個", "自定 SQL"],
+    "SC": ["基本", "正规表示式", "并存组合", "任何一个", "自定 SQL"],
   };
 
 }

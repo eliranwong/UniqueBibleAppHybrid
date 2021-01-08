@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'config.dart';
 import 'app_translation.dart';
-import 'bible_settings.dart';
+import 'ui_bible_settings.dart';
 
 class HomeTopAppBar {
 

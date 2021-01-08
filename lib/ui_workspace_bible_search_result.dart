@@ -10,7 +10,6 @@ import 'bible.dart';
 import 'ui_bar_chart.dart';
 
 class BibleSearchResults extends StatelessWidget {
-
   final Function callBack;
   BibleSearchResults(this.callBack);
 
@@ -20,11 +19,21 @@ class BibleSearchResults extends StatelessWidget {
       builder: (context, watch, child) {
         final BibleParser parser = watch(parserP).state;
         final bibleSearchData = watch(bibleSearchDataP).state;
-        final String lastBibleSearchModule = bibleSearchData["lastBibleSearchModule"];
+        final List<String> searchOptionDescription =
+            watch(searchEntryOptionsP).state;
+        final String lastBibleSearchEntryOption = searchOptionDescription[
+            bibleSearchData["lastBibleSearchEntryOption"]];
+        final String lastBibleSearchExclusionEntry =
+            bibleSearchData["lastBibleSearchExclusionEntry"];
+        final String lastBibleSearchModule =
+            bibleSearchData["lastBibleSearchModule"];
         final int lastBibleSearchHit = bibleSearchData["lastBibleSearchHit"];
-        final String lastBibleSearchEntry = bibleSearchData["lastBibleSearchEntry"];
-        final Map<int, List<List<dynamic>>> lastSearchResults = bibleSearchData["lastBibleSearchResults"];
-        final Map<int, List<List<dynamic>>> lastSearchResultsLazy = bibleSearchData["lastBibleSearchResultsLazy"];
+        final String lastBibleSearchEntry =
+            bibleSearchData["lastBibleSearchEntry"];
+        final Map<int, List<List<dynamic>>> lastSearchResults =
+            bibleSearchData["lastBibleSearchResults"];
+        final Map<int, List<List<dynamic>>> lastSearchResultsLazy =
+            bibleSearchData["lastBibleSearchResultsLazy"];
         final List<int> bookList = lastSearchResults.keys.toList()..sort();
         List<ChartsFlutterDatum> bookBarChartData = [];
         Map<String, double> pieChartDataMap = {};
@@ -34,52 +43,76 @@ class BibleSearchResults extends StatelessWidget {
           pieChartDataMap[bookAbb] = eachBookHit.toDouble();
           bookBarChartData.add(ChartsFlutterDatum(x: i.key, y: eachBookHit));
         }
-        final String searchOverview = "$lastBibleSearchModule [$lastBibleSearchHit]";
-        return (lastSearchResultsLazy.isEmpty) ? Center(
-          child: Text("No search result!"),
-        ) : SingleChildScrollView(
-          child: Column(
-            children: [
-              ListTile(
-                title: Center(child: Text(lastBibleSearchEntry, style: context.read(myTextStyleP).state["verseFont"],)),
-              ),
-              ExpansionTile(
-                leading: IconButton(
-                  tooltip: "Bar chart",
-                  icon: const Icon(Icons.add_chart),
-                  onPressed: () async {
-                    Configurations.goTo(context, BookBarChart("$searchOverview: $lastBibleSearchEntry", bookBarChartData));
-                  },
-                ),
-                title: Text(searchOverview),
-                children: [
-                  PieChart(
-                    dataMap: pieChartDataMap,
-                    centerText: "$lastBibleSearchEntry",
-                    chartValuesOptions: ChartValuesOptions(
-                      showChartValueBackground: true,
-                      showChartValues: true,
-                      showChartValuesInPercentage: true,
-                      showChartValuesOutside: false,
+        final String searchOverview =
+            "$lastBibleSearchModule [$lastBibleSearchHit]";
+        return (lastSearchResultsLazy.isEmpty)
+            ? Center(
+                child: Text("No search result!"),
+              )
+            : SingleChildScrollView(
+                child: Column(
+                  children: [
+                    ListTile(
+                      title: Center(
+                          child: Text(
+                        (lastBibleSearchExclusionEntry.isEmpty)
+                            ? lastBibleSearchEntry
+                            : "$lastBibleSearchEntry (${context.read(interfaceAppP).state[37]}$lastBibleSearchExclusionEntry)",
+                        style: context.read(myTextStyleP).state["verseFont"],
+                      )),
+                      subtitle: Center(
+                          child: Text(
+                        "${context.read(interfaceAppP).state[36]}$lastBibleSearchEntryOption",
+                        style:
+                            context.read(myTextStyleP).state["subtitleStyle"],
+                      )),
                     ),
-                  ),
-                ],
-              ),
-              ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  scrollDirection: Axis.vertical,
-                  itemCount: bookList.length,
-                  itemBuilder: (context, i) => _buildBookSection(
-                      bookList[i], lastBibleSearchEntry, lastSearchResults[bookList[i]].length, lastSearchResults[bookList[i]], lastSearchResultsLazy[bookList[i]])),
-            ],
-          ),
-        );
+                    ExpansionTile(
+                      leading: IconButton(
+                        tooltip: "Bar chart",
+                        icon: const Icon(Icons.add_chart),
+                        onPressed: () async {
+                          Configurations.goTo(
+                              context,
+                              BookBarChart(
+                                  "$searchOverview: $lastBibleSearchEntry",
+                                  bookBarChartData));
+                        },
+                      ),
+                      title: Text(searchOverview),
+                      children: [
+                        PieChart(
+                          dataMap: pieChartDataMap,
+                          centerText: "$lastBibleSearchEntry",
+                          chartValuesOptions: ChartValuesOptions(
+                            showChartValueBackground: true,
+                            showChartValues: true,
+                            showChartValuesInPercentage: true,
+                            showChartValuesOutside: false,
+                          ),
+                        ),
+                      ],
+                    ),
+                    ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        scrollDirection: Axis.vertical,
+                        itemCount: bookList.length,
+                        itemBuilder: (context, i) => _buildBookSection(
+                            bookList[i],
+                            lastBibleSearchEntry,
+                            lastSearchResults[bookList[i]].length,
+                            lastSearchResults[bookList[i]],
+                            lastSearchResultsLazy[bookList[i]])),
+                  ],
+                ),
+              );
       },
     );
   }
 
-  Widget _buildBookSection(int bookNo, String lastBibleSearchEntry, int allHits, List<List<dynamic>> data, List<List<dynamic>> dataLazy) {
+  Widget _buildBookSection(int bookNo, String lastBibleSearchEntry, int allHits,
+      List<List<dynamic>> data, List<List<dynamic>> dataLazy) {
     return Consumer(
       builder: (context, watch, child) {
         final BibleParser parser = watch(parserP).state;
@@ -93,9 +126,17 @@ class BibleSearchResults extends StatelessWidget {
               Map<double, double> barChartData = {};
               data.forEach((i) {
                 double chapter = i.first[1].toDouble();
-                barChartData[chapter] = (barChartData.containsKey(chapter)) ? barChartData[chapter] + 1 : 1;
+                barChartData[chapter] = (barChartData.containsKey(chapter))
+                    ? barChartData[chapter] + 1
+                    : 1;
               });
-              Configurations.goTo(context, ChapterBarChart(barChartData, topTitle: "$chapterOverview: $lastBibleSearchEntry", bottomTitle: context.read(interfaceAppP).state[9],));
+              Configurations.goTo(
+                  context,
+                  ChapterBarChart(
+                    barChartData,
+                    topTitle: "$chapterOverview: $lastBibleSearchEntry",
+                    bottomTitle: context.read(interfaceAppP).state[9],
+                  ));
             },
           ),
           title: Text(chapterOverview),
@@ -117,7 +158,8 @@ class BibleSearchResults extends StatelessWidget {
     );
   }
 
-  Widget _buildVerseRow(BuildContext context, int i, List<dynamic> data, int bookNo) {
+  Widget _buildVerseRow(
+      BuildContext context, int i, List<dynamic> data, int bookNo) {
     if (data.isEmpty)
       return ListTile(
         title: Center(
@@ -126,7 +168,11 @@ class BibleSearchResults extends StatelessWidget {
           ),
         ),
         onTap: () {
-          context.read(configProvider).state.bibleDB1.updateLastBibleSearchResultsLazy(bookNo);
+          context
+              .read(configProvider)
+              .state
+              .bibleDB1
+              .updateLastBibleSearchResultsLazy(bookNo);
           context.refresh(bibleSearchDataP);
         },
         onLongPress: () {
@@ -139,26 +185,35 @@ class BibleSearchResults extends StatelessWidget {
         final String displayVersion =
             (context.read(parallelVersesP).state) ? " [${data.last}]" : "";
         final String verseText = Bible.processVerseText(data[1]);
-        final String lastBibleSearchEntry = context.read(bibleSearchDataP).state["lastBibleSearchEntry"];
+        final String lastBibleSearchEntry =
+            context.read(bibleSearchDataP).state["lastBibleSearchEntry"];
         final int searchEntryOption = context.read(searchEntryOptionP).state;
-        final String searchEntry = (searchEntryOption == 4) ? [for (var match in RegExp(r"%(.*?)%").allMatches(lastBibleSearchEntry)) match.group(1)].join("|") : lastBibleSearchEntry;
+        final String searchEntry = (searchEntryOption == 4)
+            ? [
+                for (var match
+                    in RegExp(r"%(.*?)%").allMatches(lastBibleSearchEntry))
+                  match.group(1)
+              ].join("|")
+            : lastBibleSearchEntry;
         return ListTile(
           title: ParsedText(
             selectable: true,
             alignment: TextAlign.start,
-            text: "[${data.first[1]}:${data.first.last}]$displayVersion $verseText",
+            text:
+                "[${data.first[1]}:${data.first.last}]$displayVersion $verseText",
             style: myTextStyle["verseFont"],
             parse: <MatchText>[
               MatchText(
                 pattern: r"\[[0-9]+?:[0-9]+?\]",
                 style: myTextStyle["verseNoFont"],
-                onTap: (url) async => await callBack(["newVersionVerseSelected", data]),
+                onTap: (url) async =>
+                    await callBack(["newVersionVerseSelected", data]),
               ),
               MatchText(
                 pattern: searchEntry,
                 regexOptions: RegexOptions(
-                    caseSensitive : false,
-                    unicode : true,
+                  caseSensitive: false,
+                  unicode: true,
                 ),
                 style: TextStyle(backgroundColor: Colors.red[300]),
               ),
@@ -174,5 +229,4 @@ class BibleSearchResults extends StatelessWidget {
       },
     );
   }
-
 }

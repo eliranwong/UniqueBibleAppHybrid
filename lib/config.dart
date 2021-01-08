@@ -27,12 +27,20 @@ final configProvider = StateProvider<Configurations>((ref) {
   );
 });
 
+final fileMxP = StateProvider<FileMx>((ref) => ref.watch(configProvider).state.fileMx);
+
 //final configCopyProvider = StateProvider<Configurations>((ref) => Configurations());
 
 final showDrawerP = StateProvider<bool>(
         (ref) => ref.watch(configProvider).state.boolValues["showDrawer"]),
     keepDrawerOpenP = StateProvider<bool>(
             (ref) => ref.watch(configProvider).state.boolValues["keepDrawerOpen"]),
+    autoFocusVerseReferenceFieldP = StateProvider<bool>(
+            (ref) => ref.watch(configProvider).state.boolValues["autoFocusVerseReferenceField"]),
+    openBookWithoutChapterSelectionP = StateProvider<bool>(
+            (ref) => ref.watch(configProvider).state.boolValues["openBookWithoutChapterSelection"]),
+    openChapterWithoutVerseSelectionP = StateProvider<bool>(
+            (ref) => ref.watch(configProvider).state.boolValues["openChapterWithoutVerseSelection"]),
     showVerseSelectionP = StateProvider<bool>(
             (ref) => ref.watch(configProvider).state.boolValues["showVerseSelection"]),
     parallelVersesP = StateProvider<bool>(
@@ -112,20 +120,28 @@ final menuVerseListP = StateProvider<List<int>>((ref) => ref.watch(configProvide
 final bibleSearchDataP = StateProvider<Map<String, dynamic>>(
     (ref) {
       Map<String, dynamic> data = {};
-      data["lastBibleSearchModule"] = ref.watch(configProvider).state.bibleDB1.module;
-      data["lastBibleSearchHit"] = ref.watch(configProvider).state.bibleDB1.lastBibleSearchHit;
-      data["lastBibleSearchEntry"] = ref.watch(configProvider).state.bibleDB1.lastBibleSearchEntry;
-      data["lastBibleSearchResults"] = ref.watch(configProvider).state.bibleDB1.lastBibleSearchResults;
-      data["lastBibleSearchResultsLazy"] = ref.watch(configProvider).state.bibleDB1.lastBibleSearchResultsLazy;
+      data["lastBibleSearchEntryOption"] = ref.watch(configProvider).state.searchBibleDB.lastBibleSearchEntryOption;
+      data["lastBibleSearchModule"] = ref.watch(configProvider).state.searchBibleDB.module;
+      data["lastBibleSearchHit"] = ref.watch(configProvider).state.searchBibleDB.lastBibleSearchHit;
+      data["lastBibleSearchEntry"] = ref.watch(configProvider).state.searchBibleDB.lastBibleSearchEntry;
+      data["lastBibleSearchExclusionEntry"] = ref.watch(configProvider).state.searchBibleDB.lastBibleSearchExclusionEntry;
+      data["lastBibleSearchResults"] = ref.watch(configProvider).state.searchBibleDB.lastBibleSearchResults;
+      data["lastBibleSearchResultsLazy"] = ref.watch(configProvider).state.searchBibleDB.lastBibleSearchResultsLazy;
       return data;
     }
 );
 final multipleVersesP = StateProvider<Map<String, dynamic>>(
         (ref) {
       Map<String, dynamic> data = {};
-      data["multipleVersesShowVersion"] = ref.watch(configProvider).state.multipleVersesShowVersion;
-      //data["multipleVersesData"] = ref.watch(configProvider).state.multipleVersesData;
       data["multipleVersesDataLazy"] = ref.watch(configProvider).state.multipleVersesDataLazy;
+      return data;
+    }
+);
+final multipleVersionsP = StateProvider<Map<String, dynamic>>(
+        (ref) {
+      Map<String, dynamic> data = {};
+      data["multipleVersionsEntries"] = ref.watch(configProvider).state.multipleVersionsEntries;
+      data["multipleVersionsData"] = ref.watch(configProvider).state.multipleVersionsData;
       return data;
     }
 );
@@ -149,6 +165,7 @@ final interfaceMessageP = StateProvider<List<String>>((ref) => AppTranslation.in
 final interfaceDialogP = StateProvider<List<String>>((ref) => AppTranslation.interfaceDialog[ref.watch(languageP).state]);
 final interfaceBibleSearchP = StateProvider<List<String>>((ref) => AppTranslation.interfaceBibleSearch[ref.watch(languageP).state]);
 final interfaceBibleSettingsP = StateProvider<List<String>>((ref) => AppTranslation.interfaceBibleSettings[ref.watch(languageP).state]);
+final searchEntryOptionsP = StateProvider<List<String>>((ref) => AppTranslation.searchEntryOptions[ref.watch(languageP).state]);
 final activeVerseReferenceP = StateProvider<String>(
     (ref) {
       final BibleParser parser = ref.watch(parserP).state;
@@ -172,14 +189,16 @@ class Configurations {
   void updateDisplayAllMenuBook() => displayAllMenuBook = !displayAllMenuBook;
   int searchEntryOption = 0;
   // Multiple verses
-  bool multipleVersesShowVersion = false;
-  List<List<dynamic>> multipleVersesData = [], multipleVersesDataLazy = [];
+  List<List<dynamic>> multipleVersesData = [], multipleVersesDataLazy = [], multipleVersionsData = [], multipleVersionsEntries = [];
   int searchItemsPerPage = 20;
 
   // Variables which are stored in preferences.
   // Default values.
   // Default bool values.
   Map<String, bool> boolValues = {
+    "autoFocusVerseReferenceField": false,
+    "openBookWithoutChapterSelection": true,
+    "openChapterWithoutVerseSelection": true,
     "bigScreen": true,
     "showVerseSelection": false,
     "showNotes": false,
@@ -237,7 +256,7 @@ class Configurations {
   String marvelData;
   FileMx fileMx;
   Map<String, List<String>> allBibles, allBiblesByLanguages = {};
-  Bible bibleDB1, bibleDB2, bibleDB3, iBibleDB, tBibleDB, headingsDB;
+  Bible bibleDB1, bibleDB2, searchBibleDB, iBibleDB, tBibleDB, headingsDB;
   List<List<dynamic>> chapterData1, chapterData1Parallel, chapterData2;
   int activeScrollIndex1, activeScrollIndex2;
 
@@ -544,6 +563,7 @@ class Configurations {
           backgroundColor: Colors.lightBlue,
       ),*/
       textTheme: TextTheme(
+        headline6: verseFont,
         bodyText1: verseFont,
         subtitle1: subtitleStyle,
       ),
@@ -583,6 +603,24 @@ class Configurations {
     await updateBCVMenu(activeVerse);
     await updateDBChapterData(activeVerse);
     updateActiveScrollIndex(activeVerse);
+    searchBibleDB = bibleDB1;
+  }
+
+  Future<void> updateSearchBibleDB(BuildContext context, {String module = ""}) async {
+    if (module.isEmpty) module = bibleDB1.module;
+    if (module != searchBibleDB.module) {
+      searchBibleDB.db?.close();
+      if (module == bibleDB1.module) {
+        searchBibleDB = bibleDB1;
+      } else if (module == bibleDB2.module) {
+        searchBibleDB = bibleDB2;
+      } else {
+        await searchBibleDB?.db?.close();
+        searchBibleDB = Bible(module, allBibles[module].last, fileMx);
+        await searchBibleDB.openDatabase();
+      }
+      context.refresh(bibleSearchDataP);
+    }
   }
 
   Future<void> newVerseSelected(List<dynamic> bcvList) async {
@@ -696,9 +734,11 @@ class Configurations {
   }
 
   Future<String> getBibleInfo(String fullPath) async {
-    final String query = "SELECT Scripture FROM Verses WHERE Book=0 AND Chapter=0 AND Verse=0";
+    // old format
+    //final String query = "SELECT Scripture FROM Verses WHERE Book=0 AND Chapter=0 AND Verse=0";
+    final String query = "SELECT Title FROM Details";
     final List<Map<String, dynamic>> results = await fileMx.querySqliteDB("FULLPATH", fullPath, query, []);
-    return (results.isNotEmpty) ? results.first["Scripture"] : "";
+    return (results.isNotEmpty) ? results.first["Title"] : "";
   }
 
   Future<void> copyAssetsResources() async {
@@ -717,7 +757,11 @@ class Configurations {
     return fileMx.getDirectoryItems(biblesFolder, filter: ".bible");
   }
 
-  void updateMultipleVersesShowVersion(bool value) => multipleVersesShowVersion = value;
+  void updateMultipleVersions(List<List<dynamic>> data, List<List<dynamic>> entries) {
+    multipleVersionsData = data;
+    multipleVersionsEntries = entries;
+  }
+
   void updateMultipleVersesData(List<List<dynamic>> data) {
     multipleVersesData = data;
     multipleVersesDataLazy = (multipleVersesData.length > searchItemsPerPage) ? [...multipleVersesData.sublist(0, searchItemsPerPage), []] : multipleVersesData;
