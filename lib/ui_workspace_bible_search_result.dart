@@ -1,12 +1,13 @@
 // Packages
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:unique_bible_app_expanded/bible_parser.dart';
 import 'package:pie_chart/pie_chart.dart';
 import 'package:flutter_parsed_text/flutter_parsed_text.dart';
 // My libraries
 import 'config.dart';
 import 'bible.dart';
+import 'bible_parser.dart';
+// ui
 import 'ui_bar_chart.dart';
 
 class BibleSearchResults extends StatelessWidget {

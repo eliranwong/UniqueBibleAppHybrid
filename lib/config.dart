@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart';
-import 'package:unique_bible_app_expanded/app_translation.dart';
 // Core libraries
 import 'dart:io';
 // My libraries
+import 'app_translation.dart';
 import 'module_description.dart';
 import 'bible.dart';
 import 'file_mx.dart';

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:unique_bible_app_expanded/config.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
 //import 'package:graphic/graphic.dart' as graphic;
+import 'config.dart';
 
 class ChartsFlutterDatum {
   final int x;
