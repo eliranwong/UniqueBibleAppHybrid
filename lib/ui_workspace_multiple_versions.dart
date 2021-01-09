@@ -21,15 +21,15 @@ class MultipleVersions extends StatelessWidget {
         ListTile(
           title: _buildVerseReferenceField(context),
           trailing: Consumer(builder: (context, watch, child) {
+            final String multipleVersionsReferences = watch(multipleVersionsP).state["multipleVersionsReferences"];
             return PopupMenuButton<String>(
               icon: Icon(Icons.more_vert, color: watch(myColorsP).state["blueAccent"],),
               itemBuilder: (BuildContext context) {
-                final Map<String, List<String>> allBibles = context.read(configProvider).state.allBibles;
-                final List<String> allBiblesList = allBibles.keys.toList()..sort();
-                return allBiblesList.map((i) => PopupMenuItem(value: i, child: Text(i))).toList();
+                return multipleVersionsReferences.split("; ").map((i) => PopupMenuItem(value: i, child: Text(i))).toList();
               },
               onSelected: (String value) async {
-                print("hello");
+                final List<List<int>> allReferences = context.read(parserP).state.extractAllReferences(value);
+                if (allReferences.isNotEmpty) await callBack(["loadMultipleVersions", [allReferences, false]]);
               },
             );
           }),
@@ -44,14 +44,16 @@ class MultipleVersions extends StatelessWidget {
     return Consumer(
       builder: (context, watch, child) {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
-        final String activeVerseReference = watch(activeVerseReferenceP).state;
+        final String multipleVersionsReferences = watch(multipleVersionsP).state["multipleVersionsReferences"];
+        final List<List<dynamic>> multipleVersionsData = watch(multipleVersionsP).state["multipleVersionsData"];
+        final List<dynamic> loadedBcvList = (multipleVersionsData.isNotEmpty) ? multipleVersionsData.first.first : [];
         return TextField(
-          //controller: ,
+          controller: TextEditingController(text: (loadedBcvList.isEmpty) ? "" : context.read(parserP).state.bcvToVerseReference([for (int i in loadedBcvList) i])),
           autofocus: false,
           decoration: InputDecoration(
-            labelText: "Multiple references",
+            labelText: "Verse Comparison",
             labelStyle: TextStyle(color: watch(myColorsP).state["blueAccent"]),
-            hintText: activeVerseReference,
+            hintText: multipleVersionsReferences,
             hintStyle: myTextStyle["subtitleStyle"],
             //errorText: _searchInputValid ? null : 'Invalid input!',
             //prefixIcon: Icon(Icons.search),
@@ -75,9 +77,8 @@ class MultipleVersions extends StatelessWidget {
             // Convert full-width punctuations
             value = TextTransformer.removeFullWidthPunctuation(value);
             // Parse the entered reference(s)
-            final List<List<dynamic>> references =
-            context.read(parserP).state.extractAllReferences(value);
-            if (references.isNotEmpty) await callBack(["loadMultipleVerses", references]);
+            final List<List<int>> allReferences = context.read(parserP).state.extractAllReferences(value);
+            if (allReferences.isNotEmpty) await callBack(["loadMultipleVersions", [allReferences, true]]);
           },
           //onChanged: ,
           //onTap: ,
@@ -90,7 +91,6 @@ class MultipleVersions extends StatelessWidget {
   Widget _buildCardList(BuildContext context) {
     return Consumer(builder: (context, watch, child) {
       final Map<String, dynamic> multipleVersions = watch(multipleVersionsP).state;
-      final List<List<dynamic>> multipleVersionsEntries = multipleVersions["multipleVersionsEntries"];
       final List<List<dynamic>> multipleVersionsData = multipleVersions["multipleVersionsData"];
       return ListView.builder(
           padding: const EdgeInsets.fromLTRB(5.0, 15.0, 5.0, 15.0),

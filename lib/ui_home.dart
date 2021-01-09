@@ -13,6 +13,7 @@ import 'config.dart';
 import 'file_mx.dart';
 import 'bibles_scroll_coordinator.dart';
 import 'bible.dart';
+import 'bible_parser.dart';
 // ui
 import 'ui_home_bottom_app_bar.dart';
 import 'ui_home_top_app_bar.dart';
@@ -121,7 +122,7 @@ class UiHome extends HookWidget {
             await context.read(configProvider).state.changeWorkspaceLayout();
             context.refresh(workspaceLayoutP);
           },
-          child: Icon(Icons.workspaces_outline),
+          child: Icon(Icons.workspaces_outline, color: Colors.white,),
         );
       },
     );
@@ -750,7 +751,10 @@ class UiHome extends HookWidget {
       }
     }
 
-    context.read(configProvider).state.updateMultipleVersesData(newData1, newData2);
+    final BibleParser parser = context.read(parserP).state;
+    final String references = [for (List<dynamic> i in data) parser.bcvToVerseReference(i)].join("; ");
+    
+    context.read(configProvider).state.updateMultipleVersesData(newData1, newData2, references);
     context.refresh(multipleVersesP);
   }
 
@@ -769,8 +773,15 @@ class UiHome extends HookWidget {
         bible.db.close();
       }
     }
+
+    String references = "";
+    if (data.last) {
+      final BibleParser parser = context.read(parserP).state;
+      references = [for (List<dynamic> i in data.first) parser.bcvToVerseReference(i)].join("; ");
+    }
+
     verseData = verseData..removeWhere((i) => (i).isEmpty);
-    context.read(configProvider).state.updateMultipleVersions(verseData, (data.last) ? data.first : []);
+    context.read(configProvider).state.updateMultipleVersions(verseData, references: references);
     context.refresh(multipleVersionsP);
   }
 

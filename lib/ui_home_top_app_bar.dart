@@ -60,6 +60,8 @@ class HomeTopAppBar {
     return Consumer(
       builder: (context, watch, child) {
         final List<String> interfaceApp = watch(interfaceAppP).state;
+        final List<String> interfaceBottom = watch(interfaceBottomP).state;
+        final Map<String, Color> myColors = watch(myColorsP).state;
         return PopupMenuButton<String>(
           icon: Icon(Icons.more_vert),
           tooltip: interfaceApp[21],
@@ -115,122 +117,111 @@ class HomeTopAppBar {
                 break;
             }
           },
-          itemBuilder: (BuildContext context) => _buildPopupMenu(interfaceApp),
+          itemBuilder: (BuildContext context) => _buildPopupMenu(interfaceApp, interfaceBottom, myColors),
         );
       },
     );
   }
 
-  List<PopupMenuEntry<String>> _buildPopupMenu(List<String> interfaceApp) {
+  List<PopupMenuEntry<String>> _buildPopupMenu(List<String> interfaceApp, List<String> interfaceBottom, Map<String, Color> myColors) {
     return <PopupMenuEntry<String>>[
       PopupMenuItem<String>(
         value: "Flags",
-        child: ListTile(
-          leading: Consumer(
-            builder: (context, watch, child) {
-              return Icon((watch(showFlagsP).state)
-                  ? Icons.visibility_off
-                  : Icons.visibility);
-            },
-          ),
-          title: Consumer(
-            builder: (context, watch, child) {
-              return Text(
-                  "${(watch(showFlagsP).state) ? interfaceApp[20] : interfaceApp[19]}${interfaceApp[28]}");
-            },
-          ),
-        ),
+        child: Consumer(builder: (context, watch, child) {
+          return ListTile(
+            leading: Icon((watch(showFlagsP).state)
+                ? Icons.visibility_off
+                : Icons.visibility, color: myColors["grey"],),
+            title: Text(
+                "${(watch(showFlagsP).state) ? interfaceApp[20] : interfaceApp[19]}${interfaceApp[28]}"),
+          );
+        }),
       ),
       PopupMenuItem<String>(
         value: "Notes",
-        child: ListTile(
-          leading: Consumer(
-            builder: (context, watch, child) {
-              return Icon((watch(showNotesP).state)
-                  ? Icons.visibility_off
-                  : Icons.visibility);
-            },
-          ),
-          title: Consumer(
-            builder: (context, watch, child) {
-              return Text(
-                  "${(watch(showNotesP).state) ? interfaceApp[20] : interfaceApp[19]}${interfaceApp[13]}");
-            },
-          ),
-        ),
+        child: Consumer(builder: (context, watch, child) {
+          return ListTile(
+            leading: Icon((watch(showNotesP).state)
+                ? Icons.visibility_off
+                : Icons.visibility, color: myColors["grey"],),
+            title: Text(
+                "${(watch(showNotesP).state) ? interfaceApp[20] : interfaceApp[19]}${interfaceApp[13]}"),
+          );
+        }),
       ),
       PopupMenuItem<String>(
         value: "Transliteration",
-        child: ListTile(
-          leading: Consumer(
-            builder: (context, watch, child) {
-              return Icon((watch(showTransliterationP).state)
-                  ? Icons.visibility_off
-                  : Icons.visibility);
-            },
-          ),
-          title: Consumer(
-            builder: (context, watch, child) {
-              return Text(
-                  "${(watch(showTransliterationP).state) ? interfaceApp[20] : interfaceApp[19]}${interfaceApp[30]}");
-            },
-          ),
-        ),
+        child: Consumer(builder: (context, watch, child) {
+          return ListTile(
+            leading: Icon((watch(showTransliterationP).state)
+                ? Icons.visibility_off
+                : Icons.visibility, color: myColors["grey"],),
+            title: Text(
+                "${(watch(showTransliterationP).state) ? interfaceApp[20] : interfaceApp[19]}${interfaceApp[30]}"),
+          );
+        }),
       ),
       PopupMenuItem<String>(
         value: "Pinyin",
-        child: ListTile(
-          leading: Consumer(
-            builder: (context, watch, child) {
-              return Icon((watch(showPinyinP).state)
-                  ? Icons.visibility_off
-                  : Icons.visibility);
-            },
-          ),
-          title: Consumer(
-            builder: (context, watch, child) {
-              return Text(
-                  "${(watch(showPinyinP).state) ? interfaceApp[20] : interfaceApp[19]}${interfaceApp[29]}");
-            },
-          ),
-        ),
+        child: Consumer(builder: (context, watch, child) {
+          return ListTile(
+            leading: Icon((watch(showPinyinP).state)
+                ? Icons.visibility_off
+                : Icons.visibility, color: myColors["grey"],
+            ),
+            title: Text(
+                "${(watch(showPinyinP).state) ? interfaceApp[20] : interfaceApp[19]}${interfaceApp[29]}"),
+          );
+        }),
       ),
       const PopupMenuDivider(),
       PopupMenuItem<String>(
         value: "Settings",
-        child: ListTile(
-          leading: Icon(Icons.settings),
-          title: Text(interfaceApp[4]),
-        ),
+        child: Consumer(builder: (context, watch, child) {
+          return ListTile(
+            leading: Icon(Icons.settings, color: myColors["grey"],),
+            title: Text(interfaceApp[4]),
+          );
+        }),
       ),
       const PopupMenuDivider(),
       PopupMenuItem<String>(
         value: "Manual",
-        child: ListTile(
-          leading: Icon(Icons.help_outline),
-          title: Consumer(
-            builder: (context, watch, child) {
-              return Text(watch(interfaceBottomP).state[8]);
-            },
-          ),
-        ),
+        child: Consumer(builder: (context, watch, child) {
+          return ListTile(
+            leading: Icon(Icons.help_outline, color: myColors["grey"],),
+            title: Consumer(
+              builder: (context, watch, child) {
+                return Text(interfaceBottom[8]);
+              },
+            ),
+          );
+        }),
       ),
       PopupMenuItem<String>(
         value: "Contact",
-        child: ListTile(
-          leading: Icon(Icons.alternate_email),
-          title: Text(interfaceApp[14]),
-        ),
+        child: Consumer(builder: (context, watch, child) {
+          return ListTile(
+            leading: Icon(Icons.alternate_email, color: myColors["grey"],),
+            title: Text(interfaceApp[14]),
+          );
+        }),
       ),
       const PopupMenuDivider(),
       PopupMenuItem<String>(
         value: "Restart",
-        child: ListTile(
-          leading: Icon(Icons.replay),
-          title: Text(interfaceApp[31]),
-        ),
+        child: Consumer(builder: (context, watch, child) {
+          return ListTile(
+            leading: Icon(Icons.replay, color: myColors["grey"],),
+            title: Text(interfaceApp[31]),
+          );
+        }),
       ),
     ];
   }
 
 }
+
+
+
+

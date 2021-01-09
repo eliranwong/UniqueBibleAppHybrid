@@ -140,14 +140,15 @@ final multipleVersesP = StateProvider<Map<String, dynamic>>(
       Map<String, dynamic> data = {};
       data["multipleVersesDataLazy"] = ref.watch(configProvider).state.multipleVersesDataLazy;
       data["multipleVersesDataParallel"] = ref.watch(configProvider).state.multipleVersesDataParallel;
+      data["multipleVersesReferences"] = ref.watch(configProvider).state.multipleVersesReferences;
       return data;
     }
 );
 final multipleVersionsP = StateProvider<Map<String, dynamic>>(
         (ref) {
       Map<String, dynamic> data = {};
-      data["multipleVersionsEntries"] = ref.watch(configProvider).state.multipleVersionsEntries;
       data["multipleVersionsData"] = ref.watch(configProvider).state.multipleVersionsData;
+      data["multipleVersionsReferences"] = ref.watch(configProvider).state.multipleVersionsReferences;
       return data;
     }
 );
@@ -196,7 +197,8 @@ class Configurations {
   int searchEntryOption = 0;
   Map<int, List<List<dynamic>>> lastBibleSearchResultsParallel = {};
   // Multiple verses
-  List<List<dynamic>> multipleVersesData = [], multipleVersesDataLazy = [], multipleVersesDataParallel = [], multipleVersionsData = [], multipleVersionsEntries = [];
+  List<List<dynamic>> multipleVersesData = [], multipleVersesDataLazy = [], multipleVersesDataParallel = [], multipleVersionsData = [];
+  String multipleVersesReferences, multipleVersionsReferences = "";
   int searchItemsPerPage = 20;
 
   // Variables which are stored in preferences.
@@ -765,15 +767,16 @@ class Configurations {
     return fileMx.getDirectoryItems(biblesFolder, filter: ".bible");
   }
 
-  void updateMultipleVersions(List<List<dynamic>> data, List<List<dynamic>> entries) {
+  void updateMultipleVersions(List<List<dynamic>> data, {String references = ""}) {
+    if (references.isNotEmpty) multipleVersionsReferences = references;
     multipleVersionsData = data;
-    multipleVersionsEntries = entries;
   }
 
-  void updateMultipleVersesData(List<List<dynamic>> data1, List<List<dynamic>> data2) {
+  void updateMultipleVersesData(List<List<dynamic>> data1, List<List<dynamic>> data2, String references) {
     multipleVersesData = data1;
     multipleVersesDataLazy = (multipleVersesData.length > searchItemsPerPage) ? [...multipleVersesData.sublist(0, searchItemsPerPage), []] : multipleVersesData;
     multipleVersesDataParallel = data2;
+    multipleVersesReferences = references;
   }
   void updateMultipleVersesDataLazy() {
     int currentLazyItemsNo = multipleVersesDataLazy.length - 1;

@@ -32,8 +32,8 @@ class UniqueBibleApp extends HookWidget {
         useProvider(configurationsProvider);
 
     return config.when(
-      loading: () => _dummyApp("Loading ..."),
-      error: (error, stack) => _dummyApp("Failed to load configurations!"),
+      loading: () => _dummyApp(),
+      error: (error, stack) => _dummyApp(message: "Failed to load configurations!"),
       data: (config) => _mainApp(),
     );
   }
@@ -46,11 +46,19 @@ class UniqueBibleApp extends HookWidget {
     );
   }
 
-  MaterialApp _dummyApp(String message) {
+  MaterialApp _dummyApp({String message = ""}) {
     return MaterialApp(
       title: "Unique Bible App",
-      home: Center(
-        child: Text(message),
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text("Unique Bible App"),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Center(
+            child: (message.isEmpty) ? CircularProgressIndicator() : Text(message),
+          ),
+        ),
       ),
       debugShowCheckedModeBanner: false,
     );

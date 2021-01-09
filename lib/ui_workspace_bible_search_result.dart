@@ -49,7 +49,9 @@ class BibleSearchResults extends StatelessWidget {
             "$lastBibleSearchModule [$lastBibleSearchHit]";
         return (lastSearchResultsLazy.isEmpty)
             ? Center(
-                child: Text("No search result!"),
+                child: Consumer(builder: (context, watch, child) {
+                  return Text("Search result is displayed here!", style: watch(myTextStyleP).state["subtitleStyle"],);
+                }),
               )
             : SingleChildScrollView(
                 child: Column(

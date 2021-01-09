@@ -28,14 +28,14 @@ class MultipleVerses extends StatelessWidget{
     return Consumer(
       builder: (context, watch, child) {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
-        final String activeVerseReference = watch(activeVerseReferenceP).state;
+        final String multipleVersesReferences = watch(multipleVersesP).state["multipleVersesReferences"];
         return TextField(
-          //controller: ,
+          controller: TextEditingController(text: multipleVersesReferences),
           autofocus: false,
           decoration: InputDecoration(
             labelText: "Multiple references",
             labelStyle: TextStyle(color: watch(myColorsP).state["blueAccent"]),
-            hintText: activeVerseReference,
+            hintText: multipleVersesReferences,
             hintStyle: myTextStyle["subtitleStyle"],
             //errorText: _searchInputValid ? null : 'Invalid input!',
             //prefixIcon: Icon(Icons.search),
