@@ -74,21 +74,21 @@ class MultipleVerses extends StatelessWidget{
   Widget _buildVerseList(BuildContext context) {
     return Consumer(
         builder: (context, watch, child) {
-          final bool multipleVersesShowVersion = watch(multipleVersesP).state["multipleVersesShowVersion"];
-          //final List<List<dynamic>> multipleVersesData = watch(multipleVersesP).state["multipleVersesData"];
-          final List<List<dynamic>> multipleVersesDataLazy = watch(multipleVersesP).state["multipleVersesDataLazy"];
+          final Map<String, dynamic> multipleVerses = watch(multipleVersesP).state;
+          final List<List<dynamic>> multipleVersesDataLazy = multipleVerses["multipleVersesDataLazy"];
+          final List<List<dynamic>> multipleVersesDataParallel = (watch(parallelVersesP).state) ? multipleVerses["multipleVersesDataParallel"] : [];
           return ListView.builder(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
             scrollDirection: Axis.vertical,
             itemCount: multipleVersesDataLazy.length,
-            itemBuilder: (context, i) => _buildVerseRow(context, i, multipleVersesDataLazy[i]),
+            itemBuilder: (context, i) => _buildVerseRow(context, i, multipleVersesDataLazy[i], (multipleVersesDataParallel.isNotEmpty) ? multipleVersesDataParallel[i] : multipleVersesDataParallel),
           );
         }
     );
   }
 
-  Widget _buildVerseRow(BuildContext context, int i, List<dynamic> data) {
+  Widget _buildVerseRow(BuildContext context, int i, List<dynamic> data, List<dynamic> dataParallel) {
     if (data.isEmpty)
       return ListTile(
         title: Center(
@@ -107,21 +107,56 @@ class MultipleVerses extends StatelessWidget{
     return Consumer(
       builder: (context, watch, child) {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
-        final String displayVersion =
-        (context.read(parallelVersesP).state) ? " [${data.last}]" : "";
         final String verseText = Bible.processVerseText(data[1]);
-        //final String lastBibleSearchEntry = context.read(bibleSearchDataP).state["lastBibleSearchEntry"];
-        //final int searchEntryOption = context.read(searchEntryOptionP).state;
-        //final String searchEntry = (searchEntryOption == 4) ? [for (var match in RegExp(r"%(.*?)%").allMatches(lastBibleSearchEntry)) match.group(1)].join("|") : lastBibleSearchEntry;
+        final String verseTextParallel = (dataParallel.isEmpty) ? "" : Bible.processVerseText(dataParallel[1]);
         return ListTile(
+          subtitle: (dataParallel.isEmpty) ? null : ParsedText(
+            selectable: true,
+            alignment: TextAlign.start,
+            text: "[${dataParallel.last}] $verseTextParallel",
+            style: myTextStyle["subtitleStyle"],
+            parse: <MatchText>[
+              MatchText(
+                pattern: r"\[[A-Za-z0-9]+? [0-9\-:]+?\]|\[[A-Z][A-Z]+?[a-z]*?[0-9]*?\]|\[[^A-Za-z]+?\]",
+                style: myTextStyle["verseNoFont"],
+                onTap: (url) async => await callBack(["newVersionVerseSelected", dataParallel]),
+              ),
+              MatchText(
+                pattern: r"\[[0-9]+?:[0-9]+?\]",
+                style: myTextStyle["verseNoFont"],
+                onTap: (url) async {
+                  List<String> cvList = url.substring(1, url.length - 1).split(":");
+                  List<dynamic> newData = [[dataParallel.first.first, int.parse(cvList.first), int.parse(cvList.last)], ...dataParallel.sublist(1, 3)];
+                  await callBack(["newVersionVerseSelected", newData]);
+                },
+              ),
+              MatchText(
+                pattern: r"\[[0-9]+?\]",
+                style: myTextStyle["verseNoFont"],
+                onTap: (url) async {
+                  int v = int.parse(url.substring(1, url.length - 1));
+                  List<dynamic> newData = [[...dataParallel.first.sublist(0, 2), v], ...dataParallel.sublist(1, 3)];
+                  await callBack(["newVersionVerseSelected", newData]);
+                },
+              ),
+              /*MatchText(
+                pattern: searchEntry,
+                regexOptions: RegexOptions(
+                  caseSensitive : false,
+                  unicode : true,
+                ),
+                style: TextStyle(backgroundColor: Colors.red[300]),
+              ),*/
+            ],
+          ),
           title: ParsedText(
             selectable: true,
             alignment: TextAlign.start,
-            text: "[${context.read(parserP).state.bcvToVerseReference([for (int i in data.first) i])}]$displayVersion $verseText",
+            text: "[${context.read(parserP).state.bcvToVerseReference([for (int i in data.first) i])}] ${(context.read(parallelVersesP).state) ? '\n[${data.last}]' : ''} $verseText",
             style: myTextStyle["verseFont"],
             parse: <MatchText>[
               MatchText(
-                pattern: r"\[[A-Za-z0-9]+? [0-9\-:]+?\]",
+                pattern: r"\[[A-Za-z0-9]+? [0-9\-:]+?\]|\[[A-Z][A-Z]+?[a-z]*?[0-9]*?\]|\[[^A-Za-z]+?\]",
                 style: myTextStyle["verseNoFont"],
                 onTap: (url) async => await callBack(["newVersionVerseSelected", data]),
               ),

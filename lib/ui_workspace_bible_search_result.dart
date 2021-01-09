@@ -34,6 +34,8 @@ class BibleSearchResults extends StatelessWidget {
             bibleSearchData["lastBibleSearchResults"];
         final Map<int, List<List<dynamic>>> lastSearchResultsLazy =
             bibleSearchData["lastBibleSearchResultsLazy"];
+        final Map<int, List<List<dynamic>>> lastBibleSearchResultsParallel =
+        (watch(parallelVersesP).state) ? bibleSearchData["lastBibleSearchResultsParallel"] : {};
         final List<int> bookList = lastSearchResults.keys.toList()..sort();
         List<ChartsFlutterDatum> bookBarChartData = [];
         Map<String, double> pieChartDataMap = {};
@@ -99,11 +101,14 @@ class BibleSearchResults extends StatelessWidget {
                         scrollDirection: Axis.vertical,
                         itemCount: bookList.length,
                         itemBuilder: (context, i) => _buildBookSection(
-                            bookList[i],
-                            lastBibleSearchEntry,
-                            lastSearchResults[bookList[i]].length,
-                            lastSearchResults[bookList[i]],
-                            lastSearchResultsLazy[bookList[i]])),
+                          bookList[i],
+                          lastBibleSearchEntry,
+                          lastSearchResults[bookList[i]].length,
+                          lastSearchResults[bookList[i]],
+                          lastSearchResultsLazy[bookList[i]],
+                          (lastBibleSearchResultsParallel.isNotEmpty) ? lastBibleSearchResultsParallel[bookList[i]] : [],
+                        )
+                    ),
                   ],
                 ),
               );
@@ -112,7 +117,7 @@ class BibleSearchResults extends StatelessWidget {
   }
 
   Widget _buildBookSection(int bookNo, String lastBibleSearchEntry, int allHits,
-      List<List<dynamic>> data, List<List<dynamic>> dataLazy) {
+      List<List<dynamic>> data, List<List<dynamic>> dataLazy, List<List<dynamic>> dataParallel) {
     return Consumer(
       builder: (context, watch, child) {
         final BibleParser parser = watch(parserP).state;
@@ -141,25 +146,25 @@ class BibleSearchResults extends StatelessWidget {
           ),
           title: Text(chapterOverview),
           backgroundColor: Theme.of(context).accentColor.withOpacity(0.025),
-          children: <Widget>[_buildBookResult(dataLazy, bookNo)],
+          children: <Widget>[_buildBookResult(dataLazy, dataParallel, bookNo)],
         );
       },
     );
   }
 
-  Widget _buildBookResult(List<List<dynamic>> data, int bookNo) {
+  Widget _buildBookResult(List<List<dynamic>> data, List<List<dynamic>> dataParallel, int bookNo) {
     return ListView.builder(
       padding: EdgeInsets.zero,
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
       scrollDirection: Axis.vertical,
       itemCount: data.length,
-      itemBuilder: (context, i) => _buildVerseRow(context, i, data[i], bookNo),
+      itemBuilder: (context, i) => _buildVerseRow(context, i, data[i], (dataParallel.isNotEmpty) ? dataParallel[i] : [], bookNo),
     );
   }
 
   Widget _buildVerseRow(
-      BuildContext context, int i, List<dynamic> data, int bookNo) {
+      BuildContext context, int i, List<dynamic> data, List<dynamic> dataParallel, int bookNo) {
     if (data.isEmpty)
       return ListTile(
         title: Center(
@@ -183,8 +188,9 @@ class BibleSearchResults extends StatelessWidget {
       builder: (context, watch, child) {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
         final String displayVersion =
-            (context.read(parallelVersesP).state) ? " [${data.last}]" : "";
+            (context.read(parallelVersesP).state) ? "\n[${data.last}]" : "";
         final String verseText = Bible.processVerseText(data[1]);
+        final String verseTextParallel = (dataParallel.isEmpty) ? "" : Bible.processVerseText(dataParallel[1]);
         final String lastBibleSearchEntry =
             context.read(bibleSearchDataP).state["lastBibleSearchEntry"];
         final int searchEntryOption = context.read(searchEntryOptionP).state;
@@ -196,6 +202,53 @@ class BibleSearchResults extends StatelessWidget {
               ].join("|")
             : lastBibleSearchEntry;
         return ListTile(
+          subtitle: (dataParallel.isEmpty) ? null : ParsedText(
+            selectable: true,
+            alignment: TextAlign.start,
+            text: "[${dataParallel.last}] $verseTextParallel",
+            style: myTextStyle["subtitleStyle"],
+            parse: <MatchText>[
+              MatchText(
+                pattern: r"\[[A-Za-z0-9]+? [0-9\-:]+?\]|\[[A-Z][A-Z]+?[a-z]*?[0-9]*?\]|\[[^A-Za-z]+?\]",
+                style: myTextStyle["verseNoFont"],
+                onTap: (url) async => await callBack(["newVersionVerseSelected", dataParallel]),
+              ),
+              MatchText(
+                pattern: r"\[[0-9]+?:[0-9]+?\]",
+                style: myTextStyle["verseNoFont"],
+                onTap: (url) async {
+                  List<String> cvList = url.substring(1, url.length - 1).split(":");
+                  List<dynamic> newData = [[dataParallel.first.first, int.parse(cvList.first), int.parse(cvList.last)], ...dataParallel.sublist(1, 3)];
+                  await callBack(["newVersionVerseSelected", newData]);
+                },
+              ),
+              MatchText(
+                pattern: r"\[[0-9]+?\]",
+                style: myTextStyle["verseNoFont"],
+                onTap: (url) async {
+                  int v = int.parse(url.substring(1, url.length - 1));
+                  List<dynamic> newData = [[...dataParallel.first.sublist(0, 2), v], ...dataParallel.sublist(1, 3)];
+                  await callBack(["newVersionVerseSelected", newData]);
+                },
+              ),
+              MatchText(
+                pattern: searchEntry,
+                regexOptions: RegexOptions(
+                  caseSensitive: false,
+                  unicode: true,
+                ),
+                style: TextStyle(backgroundColor: Colors.red[300]),
+              ),
+              /*MatchText(
+                pattern: searchEntry,
+                regexOptions: RegexOptions(
+                  caseSensitive : false,
+                  unicode : true,
+                ),
+                style: TextStyle(backgroundColor: Colors.red[300]),
+              ),*/
+            ],
+          ),
           title: ParsedText(
             selectable: true,
             alignment: TextAlign.start,
@@ -204,11 +257,16 @@ class BibleSearchResults extends StatelessWidget {
             style: myTextStyle["verseFont"],
             parse: <MatchText>[
               MatchText(
+                pattern: r"\[[A-Za-z0-9]+? [0-9\-:]+?\]|\[[A-Z][A-Z]+?[a-z]*?[0-9]*?\]|\[[^A-Za-z]+?\]",
+                style: myTextStyle["verseNoFont"],
+                onTap: (url) async => await callBack(["newVersionVerseSelected", data]),
+              ),
+              /*MatchText(
                 pattern: r"\[[0-9]+?:[0-9]+?\]",
                 style: myTextStyle["verseNoFont"],
                 onTap: (url) async =>
                     await callBack(["newVersionVerseSelected", data]),
-              ),
+              ),*/
               MatchText(
                 pattern: searchEntry,
                 regexOptions: RegexOptions(

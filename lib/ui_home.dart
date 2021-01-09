@@ -711,18 +711,46 @@ class UiHome extends HookWidget {
         .read(configProvider)
         .state
         .updateSearchBibleDB(context, module: data.last);
-    await context.read(configProvider).state.searchBibleDB.searchMultipleBooks(
+    final Bible targetSearchBible = context.read(configProvider).state.searchBibleDB;
+    await targetSearchBible.searchMultipleBooks(
         data.first, searchEntryOption,
         filter: filter, exclusion: data[1]);
+
+    // Draw parallel verses if parallel feature for search result is enabled.
+    Map<int, List<List<dynamic>>> lastBibleSearchResultsParallel = {};
+    if (context.read(enableParallelSearchResultsP).state) {
+      final Bible bible2 = context.read(configProvider).state.bibleDB2;
+      for (MapEntry mi in targetSearchBible.lastBibleSearchResults.entries) {
+        final List<List<dynamic>> newData2 = [];
+        for (List<dynamic> li in mi.value) {
+          List<dynamic> parallelData = await bible2.getVerseData([for (int i in li.first) i]);
+          newData2.add((parallelData.isNotEmpty) ? parallelData : [li.first, "", bible2.module]);
+        }
+        lastBibleSearchResultsParallel[mi.key] = newData2;
+      }
+    }
+    context.read(configProvider).state.updateLastBibleSearchResultsParallel(lastBibleSearchResultsParallel);
+
     context.refresh(bibleSearchDataP);
   }
 
   Future<void> loadMultipleVerses(
       BuildContext context, List<dynamic> data) async {
     // Remove empty item .removeWhere((i) => i.isEmpty);
-    final Bible bible = context.read(configProvider).state.bibleDB1;
-    final List<List<dynamic>> newData = [for (List<dynamic> item in data) await bible.getVerseData(item)]..removeWhere((i) => (i).isEmpty);
-    context.read(configProvider).state.updateMultipleVersesData(newData);
+    final Bible bible1 = context.read(configProvider).state.bibleDB1;
+    final List<List<dynamic>> newData1 = [for (List<dynamic> item in data) await bible1.getVerseData(item)]..removeWhere((i) => (i).isEmpty);
+
+    // Draw parallel verses if parallel feature for multiple display is enabled.
+    final List<List<dynamic>> newData2 = [];
+    if (context.read(enableParallelMultipleVersesP).state) {
+      final Bible bible2 = context.read(configProvider).state.bibleDB2;
+      for (List<dynamic> i in newData1) {
+        List<dynamic> parallelData = await bible2.getVerseData([for (int i in i.first) i]);
+        newData2.add((parallelData.isNotEmpty) ? parallelData : [i.first, "", bible2.module]);
+      }
+    }
+
+    context.read(configProvider).state.updateMultipleVersesData(newData1, newData2);
     context.refresh(multipleVersesP);
   }
 

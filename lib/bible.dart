@@ -54,6 +54,9 @@ class Bible {
   }
 
   Future<List<int>> getBookList() async {
+    // Avoid errors if database is closed or not opened.
+    if ((db == null) || (!db.isOpen)) await openDatabase();
+
     final String query = "SELECT DISTINCT Book FROM Verses ORDER BY Book";
     final List<Map<String, dynamic>> results =
         await fileMx.queryOpenedSqliteDB(db, query, []);
@@ -64,6 +67,9 @@ class Bible {
   }
 
   Future<List<int>> getChapterList(List<int> bcvList) async {
+    // Avoid errors if database is closed or not opened.
+    if ((db == null) || (!db.isOpen)) await openDatabase();
+
     final String query =
         "SELECT DISTINCT Chapter FROM Verses WHERE Book=? ORDER BY Chapter";
     final List<Map<String, dynamic>> results =
@@ -72,6 +78,9 @@ class Bible {
   }
 
   Future<List<int>> getVerseList(List<int> bcvList) async {
+    // Avoid errors if database is closed or not opened.
+    if ((db == null) || (!db.isOpen)) await openDatabase();
+
     final String query =
         "SELECT DISTINCT Verse FROM Verses WHERE Book=? AND Chapter=? ORDER BY Verse";
     final List<Map<String, dynamic>> results =
@@ -88,6 +97,9 @@ class Bible {
   Future<List<dynamic>> getVerseData(List<int> bcvList) async => (bcvList.length > 3) ? await getSingleVerseDataRange(bcvList) : await getSingleVerseData(bcvList);
 
   Future<List<dynamic>> getSingleVerseData(List<int> bcvList) async {
+    // Avoid errors if database is closed or not opened.
+    if ((db == null) || (!db.isOpen)) await openDatabase();
+
     final String query =
         "SELECT * FROM Verses WHERE Book=? AND Chapter=? AND Verse=?";
     final List<Map<String, dynamic>> results =
@@ -126,6 +138,9 @@ class Bible {
   }
 
   Future<List<List<dynamic>>> getChapterData(List<int> bcvList) async {
+    // Avoid errors if database is closed or not opened.
+    if ((db == null) || (!db.isOpen)) await openDatabase();
+
     final String query =
         "SELECT * FROM Verses WHERE Book=? AND Chapter=? ORDER BY Verse";
     final List<Map<String, dynamic>> results =
@@ -137,6 +152,10 @@ class Bible {
 
   Future<void> searchMultipleBooks(String searchEntry, int searchEntryOption,
       {List<int> filter = const [], String exclusion = ""}) async {
+
+    // In case book list is null.
+    if (bookList == null) bookList = await getBookList();
+
     lastBibleSearchEntry = searchEntry;
     lastBibleSearchExclusionEntry = exclusion;
     lastBibleSearchResults = {};
@@ -170,6 +189,10 @@ class Bible {
   Future<List<List<dynamic>>> getSearchData(
       String searchEntry, int searchEntryOption,
       {int book = 0, String exclusion = ""}) async {
+
+    // Avoid errors if database is closed or not opened.
+    if ((db == null) || (!db.isOpen)) await openDatabase();
+
     String query;
     final String queryPrefix = "SELECT * FROM Verses WHERE";
     final String bookFilter = " Book = ?";

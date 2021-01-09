@@ -994,7 +994,7 @@ class BibleDrawer extends StatelessWidget {
     final String searchString = (searchFieldController.text.isNotEmpty) ? searchFieldController.text : context.read(bibleSearchDataP).state["lastBibleSearchEntry"];
     if (searchString.isNotEmpty) {
       final String searchExclusionString = excludeFromSearchController.text;
-      List<String> data = [searchString, searchExclusionString, module];
+      final List<String> data = [searchString, searchExclusionString, module];
       await callBack(["searchBible", data]);
       _completeDrawerAction(context);
     }

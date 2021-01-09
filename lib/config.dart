@@ -35,6 +35,10 @@ final showDrawerP = StateProvider<bool>(
         (ref) => ref.watch(configProvider).state.boolValues["showDrawer"]),
     keepDrawerOpenP = StateProvider<bool>(
             (ref) => ref.watch(configProvider).state.boolValues["keepDrawerOpen"]),
+    enableParallelSearchResultsP = StateProvider<bool>(
+            (ref) => ref.watch(configProvider).state.boolValues["enableParallelSearchResults"]),
+    enableParallelMultipleVersesP = StateProvider<bool>(
+            (ref) => ref.watch(configProvider).state.boolValues["enableParallelMultipleVerses"]),
     autoFocusVerseReferenceFieldP = StateProvider<bool>(
             (ref) => ref.watch(configProvider).state.boolValues["autoFocusVerseReferenceField"]),
     openBookWithoutChapterSelectionP = StateProvider<bool>(
@@ -127,6 +131,7 @@ final bibleSearchDataP = StateProvider<Map<String, dynamic>>(
       data["lastBibleSearchExclusionEntry"] = ref.watch(configProvider).state.searchBibleDB.lastBibleSearchExclusionEntry;
       data["lastBibleSearchResults"] = ref.watch(configProvider).state.searchBibleDB.lastBibleSearchResults;
       data["lastBibleSearchResultsLazy"] = ref.watch(configProvider).state.searchBibleDB.lastBibleSearchResultsLazy;
+      data["lastBibleSearchResultsParallel"] = ref.watch(configProvider).state.lastBibleSearchResultsParallel;
       return data;
     }
 );
@@ -134,6 +139,7 @@ final multipleVersesP = StateProvider<Map<String, dynamic>>(
         (ref) {
       Map<String, dynamic> data = {};
       data["multipleVersesDataLazy"] = ref.watch(configProvider).state.multipleVersesDataLazy;
+      data["multipleVersesDataParallel"] = ref.watch(configProvider).state.multipleVersesDataParallel;
       return data;
     }
 );
@@ -188,14 +194,17 @@ class Configurations {
   bool searchWholeBible = true, searchEntryExclusion = false, displayAllMenuBook = false;
   void updateDisplayAllMenuBook() => displayAllMenuBook = !displayAllMenuBook;
   int searchEntryOption = 0;
+  Map<int, List<List<dynamic>>> lastBibleSearchResultsParallel = {};
   // Multiple verses
-  List<List<dynamic>> multipleVersesData = [], multipleVersesDataLazy = [], multipleVersionsData = [], multipleVersionsEntries = [];
+  List<List<dynamic>> multipleVersesData = [], multipleVersesDataLazy = [], multipleVersesDataParallel = [], multipleVersionsData = [], multipleVersionsEntries = [];
   int searchItemsPerPage = 20;
 
   // Variables which are stored in preferences.
   // Default values.
   // Default bool values.
   Map<String, bool> boolValues = {
+    "enableParallelSearchResults": false,
+    "enableParallelMultipleVerses": false,
     "autoFocusVerseReferenceField": false,
     "openBookWithoutChapterSelection": true,
     "openChapterWithoutVerseSelection": true,
@@ -609,13 +618,12 @@ class Configurations {
   Future<void> updateSearchBibleDB(BuildContext context, {String module = ""}) async {
     if (module.isEmpty) module = bibleDB1.module;
     if (module != searchBibleDB.module) {
-      searchBibleDB.db?.close();
+      await searchBibleDB.db?.close();
       if (module == bibleDB1.module) {
         searchBibleDB = bibleDB1;
       } else if (module == bibleDB2.module) {
         searchBibleDB = bibleDB2;
       } else {
-        await searchBibleDB?.db?.close();
         searchBibleDB = Bible(module, allBibles[module].last, fileMx);
         await searchBibleDB.openDatabase();
       }
@@ -762,9 +770,10 @@ class Configurations {
     multipleVersionsEntries = entries;
   }
 
-  void updateMultipleVersesData(List<List<dynamic>> data) {
-    multipleVersesData = data;
+  void updateMultipleVersesData(List<List<dynamic>> data1, List<List<dynamic>> data2) {
+    multipleVersesData = data1;
     multipleVersesDataLazy = (multipleVersesData.length > searchItemsPerPage) ? [...multipleVersesData.sublist(0, searchItemsPerPage), []] : multipleVersesData;
+    multipleVersesDataParallel = data2;
   }
   void updateMultipleVersesDataLazy() {
     int currentLazyItemsNo = multipleVersesDataLazy.length - 1;
@@ -772,5 +781,7 @@ class Configurations {
     multipleVersesDataLazy = (multipleVersesData.length > currentLazyItemsMoreNo)
         ? [...multipleVersesData.sublist(0, currentLazyItemsMoreNo), []] : multipleVersesData;
   }
+
+  void updateLastBibleSearchResultsParallel(Map<int, List<List<dynamic>>> data) => lastBibleSearchResultsParallel = data;
 
 }

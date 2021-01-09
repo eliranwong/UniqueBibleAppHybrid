@@ -287,6 +287,8 @@ class AppTranslation {
       "Auto Focus 'Go to' Field when Menu is Opened", //25
       "Open Book without Chapter Selection", //26
       "Open Chapter without Verse Selection", //27
+      "Enable Parallel Search Results (slower if enabled)", //28
+      "Enable Parallel Multiple Verses (slower if enabled)", //29
     ],
     "TC": [
       "設定",
@@ -317,6 +319,8 @@ class AppTranslation {
       "當菜單開啓時自動對焦經文輸入框", //25
       "不用選擇章數直接開啓書卷", //26
       "不用選擇節數直接開啓章", //27
+      "啓動平衡搜索結果（需要較長時間搜索）", //28
+      "啓動平衡多節顯示（需要較長時間顯示）", //29
     ],
     "SC": [
       "设定",
@@ -347,6 +351,8 @@ class AppTranslation {
       "当餐牌開啟時自動對焦經文輸入框 ...", //25
       "不用选择章数直接开启书卷", //26
       "不用选择节数直接开启章", //27
+      "启动平衡搜索结果（需要较长时间搜索）", //28
+      "启动平衡多节显示（需要较长时间显示）", //29
     ],
   };
 

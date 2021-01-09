@@ -121,9 +121,6 @@ class MultipleVersions extends StatelessWidget {
       builder: (context, watch, child) {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
         final String verseText = Bible.processVerseText(data[1]);
-        //final String lastBibleSearchEntry = context.read(bibleSearchDataP).state["lastBibleSearchEntry"];
-        //final int searchEntryOption = context.read(searchEntryOptionP).state;
-        //final String searchEntry = (searchEntryOption == 4) ? [for (var match in RegExp(r"%(.*?)%").allMatches(lastBibleSearchEntry)) match.group(1)].join("|") : lastBibleSearchEntry;
         return ListTile(
           title: ParsedText(
             selectable: true,

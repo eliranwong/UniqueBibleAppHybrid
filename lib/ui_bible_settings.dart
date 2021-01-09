@@ -42,6 +42,9 @@ class BibleSettings extends StatelessWidget {
                 _openBookWithoutChapterSelection(context, interface),
                 _openChapterWithoutVerseSelection(context, interface),
                 const Divider(),
+                _enableParallelSearchResults(context, interface),
+                _enableParallelMultipleVerses(context, interface),
+                const Divider(),
                 _instantAction(context, interface),
                 _favouriteAction(context, interface),
                 const Divider(),
@@ -257,6 +260,52 @@ class BibleSettings extends StatelessWidget {
                       .state
                       .save("openChapterWithoutVerseSelection", newValue);
                   context.refresh(openChapterWithoutVerseSelectionP);
+                }
+              }),
+        );
+      },
+    );
+  }
+
+  Widget _enableParallelSearchResults(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final bool currentValue = watch(enableParallelSearchResultsP).state;
+        return ListTile(
+          title:
+          Text(interface[28], style: watch(myTextStyleP).state["verseFont"]),
+          trailing: Switch(
+              value: currentValue,
+              onChanged: (bool newValue) {
+                if (newValue != currentValue) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("enableParallelSearchResults", newValue);
+                  context.refresh(enableParallelSearchResultsP);
+                }
+              }),
+        );
+      },
+    );
+  }
+
+  Widget _enableParallelMultipleVerses(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final bool currentValue = watch(enableParallelMultipleVersesP).state;
+        return ListTile(
+          title:
+          Text(interface[29], style: watch(myTextStyleP).state["verseFont"]),
+          trailing: Switch(
+              value: currentValue,
+              onChanged: (bool newValue) {
+                if (newValue != currentValue) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("enableParallelMultipleVerses", newValue);
+                  context.refresh(enableParallelMultipleVersesP);
                 }
               }),
         );
