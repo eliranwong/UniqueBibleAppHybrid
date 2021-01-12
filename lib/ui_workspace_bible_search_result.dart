@@ -7,6 +7,7 @@ import 'package:flutter_parsed_text/flutter_parsed_text.dart';
 import 'config.dart';
 import 'bible.dart';
 import 'bible_parser.dart';
+import 'text_transformer.dart';
 // ui
 import 'ui_bar_chart.dart';
 
@@ -192,8 +193,8 @@ class BibleSearchResults extends StatelessWidget {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
         final String displayVersion =
             (context.read(parallelVersesP).state) ? "\n[${data.last}]" : "";
-        final String verseText = Bible.processVerseText(data[1]);
-        final String verseTextParallel = (dataParallel.isEmpty) ? "" : Bible.processVerseText(dataParallel[1]);
+        final String verseText = TextTransformer.processBibleVerseText(data[1]);
+        final String verseTextParallel = (dataParallel.isEmpty) ? "" : TextTransformer.processBibleVerseText(dataParallel[1]);
         final String lastBibleSearchEntry =
             context.read(bibleSearchDataP).state["lastBibleSearchEntry"];
         final int searchEntryOption = context.read(searchEntryOptionP).state;

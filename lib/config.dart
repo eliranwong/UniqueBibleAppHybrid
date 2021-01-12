@@ -266,7 +266,7 @@ class Configurations {
   // Variables to work with bibles
   String marvelData;
   FileMx fileMx;
-  Map<String, List<String>> allBibles, allBiblesByLanguages = {};
+  Map<String, List<String>> allBibles = {}, allBiblesByLanguages = {"he": [], "el": [], "he.el": []};
   Bible bibleDB1, bibleDB2, searchBibleDB, iBibleDB, tBibleDB, headingsDB;
   List<List<dynamic>> chapterData1, chapterData1Parallel, chapterData2;
   int activeScrollIndex1, activeScrollIndex2;
@@ -606,7 +606,11 @@ class Configurations {
 
   Future<void> setupBibles() async {
     final Map<String, String> bibleFiles = await checkInstalledBibles();
-    allBibles = {for (MapEntry i in bibleFiles.entries) basenameWithoutExtension(i.key): [(extension(i.key).isNotEmpty) ? extension(i.key) : "en", await getBibleInfo(i.value), i.value]};
+    for (MapEntry i in bibleFiles.entries) {
+      final Map<String, dynamic> bibleInfo = await getBibleInfo(i.value);
+      // abbreviation: [language, full name, full path]
+      allBibles[basenameWithoutExtension(i.key)] =  [bibleInfo["Language"] ?? "en", bibleInfo["Title"] ?? "", i.value];
+    }
     allBibles.forEach((k, v) => allBiblesByLanguages[v.first] = (allBiblesByLanguages.containsKey(v.first) ? [...allBiblesByLanguages[v.first], ...[k]] : [k]));
     // Load bible databases.
     final List<int> activeVerse = listListIntValues["historyActiveVerse"].first;
@@ -743,17 +747,17 @@ class Configurations {
     activeScrollIndex2 = (activeVerseIndex2 == -1) ? 0 : activeVerseIndex2;
   }
 
-  Future<String> getBibleInfo(String fullPath) async {
+  Future<Map<String, dynamic>> getBibleInfo(String fullPath) async {
     // old format
     //final String query = "SELECT Scripture FROM Verses WHERE Book=0 AND Chapter=0 AND Verse=0";
-    final String query = "SELECT Title FROM Details";
+    final String query = "SELECT * FROM Details";
     final List<Map<String, dynamic>> results = await fileMx.querySqliteDB("FULLPATH", fullPath, query, []);
-    return (results.isNotEmpty) ? results.first["Title"] : "";
+    return (results.isNotEmpty) ? results.first : [];
   }
 
   Future<void> copyAssetsResources() async {
     Map<String, List<String>> resources = {
-      "bibles": ["KJV.bible", "NET.bible"],
+      "bibles": ["KJV.bible", "NET.bible", "OHGBt.bible", "OHGBi.bible"],
     };
     for (String resource in resources.keys) {
       resources[resource].forEach((filename) async {
@@ -766,6 +770,9 @@ class Configurations {
     final String biblesFolder = await fileMx.getUserDirectoryFolder("bibles");
     return fileMx.getDirectoryItems(biblesFolder, filter: ".bible");
   }
+
+  bool isHebrewBible(List<dynamic> data) => (allBiblesByLanguages["he"].contains(data.last)) || ((allBiblesByLanguages["he.el"].contains(data.last)) && (data.first.first < 40));
+  bool isGreekBible(List<dynamic> data) => (allBiblesByLanguages["el"].contains(data.last)) || ((allBiblesByLanguages["he.el"].contains(data.last)) && (data.first.first >= 40));
 
   void updateMultipleVersions(List<List<dynamic>> data, {String references = ""}) {
     if (references.isNotEmpty) multipleVersionsReferences = references;

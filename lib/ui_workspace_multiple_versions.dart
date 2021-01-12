@@ -4,7 +4,6 @@ import 'package:hooks_riverpod/all.dart';
 import 'package:flutter_parsed_text/flutter_parsed_text.dart';
 // My libraries
 import 'config.dart';
-import 'bible.dart';
 import 'text_transformer.dart';
 
 class MultipleVersions extends StatelessWidget {
@@ -120,7 +119,7 @@ class MultipleVersions extends StatelessWidget {
     return Consumer(
       builder: (context, watch, child) {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
-        final String verseText = Bible.processVerseText(data[1]);
+        final String verseText = TextTransformer.processBibleVerseText(data[1]);
         return ListTile(
           title: ParsedText(
             selectable: true,

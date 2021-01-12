@@ -107,8 +107,8 @@ class MultipleVerses extends StatelessWidget{
     return Consumer(
       builder: (context, watch, child) {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
-        final String verseText = Bible.processVerseText(data[1]);
-        final String verseTextParallel = (dataParallel.isEmpty) ? "" : Bible.processVerseText(dataParallel[1]);
+        final String verseText = TextTransformer.processBibleVerseText(data[1]);
+        final String verseTextParallel = (dataParallel.isEmpty) ? "" : TextTransformer.processBibleVerseText(dataParallel[1]);
         return ListTile(
           subtitle: (dataParallel.isEmpty) ? null : ParsedText(
             selectable: true,

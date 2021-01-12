@@ -8,12 +8,14 @@ import 'package:swipedetector/swipedetector.dart';
 import 'package:flutter_parsed_text/flutter_parsed_text.dart';
 // Core libraries
 import 'dart:io';
+import 'dart:async';
 // My libraries
 import 'config.dart';
 import 'file_mx.dart';
 import 'bibles_scroll_coordinator.dart';
 import 'bible.dart';
 import 'bible_parser.dart';
+import 'text_transformer.dart';
 // ui
 import 'ui_home_bottom_app_bar.dart';
 import 'ui_home_top_app_bar.dart';
@@ -365,30 +367,90 @@ class UiHome extends HookWidget {
     );
   }
 
+  Widget _buildCommonVerseContent(BuildContext context, List<dynamic> data, Map<String, TextStyle> myTextStyle, bool isActiveVerse, String displayVersion) {
+    final TextStyle verseStyle = (isActiveVerse)
+        ? myTextStyle["activeVerseFont"]
+        : myTextStyle["verseFont"];
+    final String verseNoText = "[${data.first.last}]$displayVersion";
+    final String verseText = TextTransformer.processBibleVerseText(data[1]);
+    return ParsedText(
+      //selectable: true, //selectable option breaks the listener for parallel scrolling
+      alignment: TextAlign.start,
+      text: "$verseNoText $verseText",
+      style: verseStyle,
+      parse: <MatchText>[
+        MatchText(
+          pattern: r"\[[0-9]+?\]|\[[A-Z][A-Z]+?[a-z]*?[0-9]*?\]",
+          style: myTextStyle[(isActiveVerse) ? "activeVerseNoFont" : "verseNoFont"],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInterlinearVerseContent(BuildContext context, List<dynamic> data, Map<String, TextStyle> myTextStyle, bool isActiveVerse, String displayVersion) {
+    final bool isHebrewBible = context.read(configProvider).state.isHebrewBible(data);
+    final TextDirection textDirection = (isHebrewBible) ? TextDirection.rtl : TextDirection.ltr;
+    final String verseNoText = "[${data.first.last}]$displayVersion";
+    String verseText = data[1];
+    verseText = verseText.replaceAll("｜＠", "\n");
+    final List<String> wordList = verseText.split(" ｜");
+    List<Widget> interlinearWords = List<Widget>.generate(wordList.length, (index) => interlinearWord(wordList[index], isHebrewBible, myTextStyle, isActiveVerse));
+    return Wrap(
+      textDirection: textDirection,
+      spacing: 1.0,
+      children: <Widget>[
+        //Text(verseNoText, style: myTextStyle[(isActiveVerse) ? "activeVerseNoFont" : "verseNoFont"],),
+        ParsedText(
+          //selectable: true, //selectable option breaks the listener for parallel scrolling
+          alignment: (isHebrewBible) ? TextAlign.right : TextAlign.left,
+          text: verseNoText,
+          style: myTextStyle["verseFont"],
+          parse: <MatchText>[
+            MatchText(
+              pattern: r"\[[0-9]+?\]|\[[A-Z][A-Z]+?[a-z]*?[0-9]*?\]",
+              style: myTextStyle[(isActiveVerse) ? "activeVerseNoFont" : "verseNoFont"],
+            ),
+          ],
+        ),
+        ...interlinearWords,
+      ],
+    );
+  }
+
+  Widget interlinearWord(String wordText, bool isHebrewBible, Map<String, TextStyle> myTextStyle, bool isActiveVerse) {
+    return RaisedButton(
+      //padding: EdgeInsets.zero,
+      child: ParsedText(
+        //selectable: true, //selectable option breaks the listener for parallel scrolling
+        alignment: (isHebrewBible) ? TextAlign.right : TextAlign.left,
+        text: wordText,
+        style: myTextStyle[(isActiveVerse) ? "activeVerseFont" : "verseFont"],
+        parse: <MatchText>[
+          MatchText(
+            pattern: r"^.*?\n",
+            style: myTextStyle["verseFontHebrew"],
+          ),
+        ],
+      ),
+      /*child: Text(
+          wordText,
+          textAlign: (isHebrewBible) ? TextAlign.right : TextAlign.left,
+      ),*/
+      disabledColor: Colors.lightBlue[100],
+      //color: Colors.lightBlue[100],
+    );
+  }
+
   Widget _buildVerseRow(
       BuildContext context, int i, int activeScrollIndex, List<dynamic> data) {
+    final bool isActiveVerse = (i == activeScrollIndex);
     return Consumer(
       builder: (context, watch, child) {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
-        final TextStyle verseStyle = (i == activeScrollIndex)
-            ? myTextStyle["activeVerseFont"]
-            : myTextStyle["verseFont"];
         final String displayVersion =
             (context.read(parallelVersesP).state) ? " [${data.last}]" : "";
-        final String verseText = Bible.processVerseText(data[1]);
         return ListTile(
-          title: ParsedText(
-            //selectable: true, //selectable option breaks the listener for parallel scrolling
-            alignment: TextAlign.start,
-            text: "[${data.first.last}]$displayVersion $verseText",
-            style: verseStyle,
-            parse: <MatchText>[
-              MatchText(
-                pattern: r"\[[0-9]+?\]",
-                style: myTextStyle["verseNoFont"],
-              ),
-            ],
-          ),
+          title: (data.last.endsWith("i")) ? _buildInterlinearVerseContent(context, data, myTextStyle, isActiveVerse, displayVersion) : _buildCommonVerseContent(context, data, myTextStyle, isActiveVerse, displayVersion),
           onTap: () async {
             if (i != activeScrollIndex)
               await newVerseSelectedSameChapter(context, data.first);

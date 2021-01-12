@@ -18,13 +18,6 @@ class Bible {
 
   Bible(this.module, this.filePath, this.fileMx);
 
-  static String processVerseText(String verseText) {
-    verseText = verseText.trim();
-    if (verseText.contains("<zh>"))
-      verseText = verseText.replaceAll(RegExp("<zh>|</zh>"), "");
-    return verseText;
-  }
-
   Future<void> openDatabase() async => db = await fileMx.openSqliteDB("FULLPATH", filePath);
 
   Future<void> updateBCVMenu(List<int> bcvList) async {

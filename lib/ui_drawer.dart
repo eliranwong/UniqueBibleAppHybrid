@@ -483,7 +483,7 @@ class BibleDrawer extends StatelessWidget {
               "${interfaceApp[38]}\n$activeVerseReference",
               textAlign: TextAlign.center,
             ),
-            color: Colors.teal[50],
+            color: Colors.lightBlue[50],
             onPressed: () async {
               await callBack([
                 "loadMultipleVersions",
