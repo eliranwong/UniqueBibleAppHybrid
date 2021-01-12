@@ -1,16 +1,18 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:path/path.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:chunked_stream/chunked_stream.dart';
 
 class StorageMx {
 
   // Check if storage permission is granted.
   static Future<bool> checkStoragePermission() async {
-    final permissionResult = await Permission.storage.request();
-    return (permissionResult.isGranted) ? true : false;
+    final PermissionStatus permissionResult = await Permission.storage.request();
+    return (permissionResult.isGranted);
   }
 
   // get user directory
@@ -21,6 +23,7 @@ class StorageMx {
           : await getApplicationDocumentsDirectory();
       return userDirectory.path;
     } else {
+      // Return an empty path if storage permission is not granted.
       return "";
     }
   }
@@ -103,8 +106,8 @@ class FileMx {
     final File targetFile = File(filePath);
     final bool targetFileExists = await targetFile.exists();
     if (!targetFileExists) {
-      final ByteData data =
-      await rootBundle.load("assets/$folderName/$filename");
+      // Load whole file in memory before copying.  This may not work with large-size file in low-memory devices.
+      final ByteData data = await rootBundle.load("assets/$folderName/$filename");
       writeByteDataToFile(data, filePath);
     }
     return filePath;
@@ -114,10 +117,23 @@ class FileMx {
   // Note that "writeAsBytes" and "writeAsBytesSync" are different.
   // writeAsBytes: https://api.flutter.dev/flutter/dart-io/File/writeAsBytes.html
   // writeAsBytesSync: https://api.flutter.dev/flutter/dart-io/File/writeAsBytesSync.html
-  void writeByteDataToFile(ByteData data, String path) async {
+  void writeByteDataToFile(ByteData data, String path) {
     final buffer = data.buffer;
-    File(path).writeAsBytesSync(
-        buffer.asUint8List(data.offsetInBytes, data.lengthInBytes)); // Do not set flush to true.
+    //final Uint8List dataUint8List = buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+    File(path).writeAsBytesSync(buffer.asUint8List(data.offsetInBytes, data.lengthInBytes)); // Do not set flush to true.
+  }
+
+  Future<void> copyLargeFile(String sourcePath, String copyPath, {int byteSize = 512}) async {
+    final streamReader = ChunkedStreamIterator(File(sourcePath).openRead());
+    IOSink sink = File(copyPath).openWrite(mode: FileMode.append);
+    while (true) {
+      // Write 512 bytes by default each time.
+      final lengthBytes = await streamReader.read(byteSize);
+      if (lengthBytes.isEmpty) break;
+      sink.add(lengthBytes);
+    }
+    //sink.flush();
+    sink.close();
   }
 
 }
