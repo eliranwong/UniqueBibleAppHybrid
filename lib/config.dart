@@ -29,7 +29,8 @@ final configProvider = StateProvider<Configurations>((ref) {
 
 final fileMxP = StateProvider<FileMx>((ref) => ref.watch(configProvider).state.fileMx);
 
-//final configCopyProvider = StateProvider<Configurations>((ref) => Configurations());
+final enableParallelChapterScrollingP = StateProvider<bool>(
+        (ref) => ref.watch(configProvider).state.enableParallelChapterScrolling);
 
 final showDrawerP = StateProvider<bool>(
         (ref) => ref.watch(configProvider).state.boolValues["showDrawer"]),
@@ -200,6 +201,9 @@ class Configurations {
   List<List<dynamic>> multipleVersesData = [], multipleVersesDataLazy = [], multipleVersesDataParallel = [], multipleVersionsData = [];
   String multipleVersesReferences, multipleVersionsReferences = "";
   int searchItemsPerPage = 20;
+  // Listening scroll status of opened bible chapters.
+  bool enableParallelChapterScrolling = true;
+  void updateEnableParallelChapterScrolling() => enableParallelChapterScrolling = !enableParallelChapterScrolling;
 
   // Variables which are stored in preferences.
   // Default values.
@@ -611,7 +615,7 @@ class Configurations {
       // abbreviation: [language, full name, full path]
       allBibles[basenameWithoutExtension(i.key)] =  [bibleInfo["Language"] ?? "en", bibleInfo["Title"] ?? "", i.value];
     }
-    allBibles.forEach((k, v) => allBiblesByLanguages[v.first] = (allBiblesByLanguages.containsKey(v.first) ? [...allBiblesByLanguages[v.first], ...[k]] : [k]));
+    allBibles.forEach((k, v) => allBiblesByLanguages[(v.first.isEmpty) ? "en" : v.first] = (allBiblesByLanguages.containsKey(v.first) ? [...allBiblesByLanguages[v.first], ...[k]] : [k]));
     // Load bible databases.
     final List<int> activeVerse = listListIntValues["historyActiveVerse"].first;
     await openBibleDatabase();

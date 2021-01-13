@@ -273,19 +273,22 @@ class UiHome extends HookWidget {
   }
 
   Widget _bible1ChapterContent(BuildContext context) {
-    return ValueListenableBuilder<Iterable<ItemPosition>>(
-      valueListenable: versePositionsListener1.itemPositions,
-      builder: (context, positions, child) {
-        int topIndex;
-        if (positions.isNotEmpty) {
-          topIndex = positions
-              .where((ItemPosition position) => position.itemTrailingEdge > 0)
-              .reduce((ItemPosition min, ItemPosition position) =>
-                  position.itemTrailingEdge < min.itemTrailingEdge
-                      ? position
-                      : min)
-              .index;
-          /*int bottomIndex = positions
+    return Consumer(builder: (context, watch, child) {
+      final bool listeningBible1Chapter = watch(enableParallelChapterScrollingP).state;
+      if (!listeningBible1Chapter) return _buildBibleVerses1(context, listener: false);
+      return ValueListenableBuilder<Iterable<ItemPosition>>(
+        valueListenable: versePositionsListener1.itemPositions,
+        builder: (context, positions, child) {
+          int topIndex;
+          if (positions.isNotEmpty) {
+            topIndex = positions
+                .where((ItemPosition position) => position.itemTrailingEdge > 0)
+                .reduce((ItemPosition min, ItemPosition position) =>
+            position.itemTrailingEdge < min.itemTrailingEdge
+                ? position
+                : min)
+                .index;
+            /*int bottomIndex = positions
               .where((ItemPosition position) => position.itemLeadingEdge < 1)
               .reduce((ItemPosition max, ItemPosition position) =>
           position.itemLeadingEdge > max.itemLeadingEdge
@@ -293,28 +296,32 @@ class UiHome extends HookWidget {
               : max)
               .index;*/
 
-          // Update bible 1 current position
-          biblesScrollCoordinator.updateBible1Index(topIndex);
-        }
-        return _buildBibleVerses1(context);
-      },
-    );
+            // Update bible 1 current position
+            biblesScrollCoordinator.updateBible1Index(topIndex);
+          }
+          return _buildBibleVerses1(context);
+        },
+      );
+    });
   }
 
   Widget _bible2ChapterContent(BuildContext context) {
-    return ValueListenableBuilder<Iterable<ItemPosition>>(
-      valueListenable: versePositionsListener2.itemPositions,
-      builder: (context, positions, child) {
-        int topIndex;
-        if (positions.isNotEmpty) {
-          topIndex = positions
-              .where((ItemPosition position) => position.itemTrailingEdge > 0)
-              .reduce((ItemPosition min, ItemPosition position) =>
-                  position.itemTrailingEdge < min.itemTrailingEdge
-                      ? position
-                      : min)
-              .index;
-          /*int bottomIndex = positions
+    return Consumer(builder: (context, watch, child) {
+      final bool listeningBible1Chapter = watch(enableParallelChapterScrollingP).state;
+      if (!listeningBible1Chapter) return _buildBibleVerses2(context, listener: false);
+      return ValueListenableBuilder<Iterable<ItemPosition>>(
+        valueListenable: versePositionsListener2.itemPositions,
+        builder: (context, positions, child) {
+          int topIndex;
+          if (positions.isNotEmpty) {
+            topIndex = positions
+                .where((ItemPosition position) => position.itemTrailingEdge > 0)
+                .reduce((ItemPosition min, ItemPosition position) =>
+            position.itemTrailingEdge < min.itemTrailingEdge
+                ? position
+                : min)
+                .index;
+            /*int bottomIndex = positions
               .where((ItemPosition position) => position.itemLeadingEdge < 1)
               .reduce((ItemPosition max, ItemPosition position) =>
           position.itemLeadingEdge > max.itemLeadingEdge
@@ -322,15 +329,16 @@ class UiHome extends HookWidget {
               : max)
               .index;*/
 
-          // Update bible 2 current position
-          biblesScrollCoordinator.updateBible2Index(topIndex);
-        }
-        return _buildBibleVerses2(context);
-      },
-    );
+            // Update bible 2 current position
+            biblesScrollCoordinator.updateBible2Index(topIndex);
+          }
+          return _buildBibleVerses2(context);
+        },
+      );
+    });
   }
 
-  Widget _buildBibleVerses1(BuildContext context) {
+  Widget _buildBibleVerses1(BuildContext context, {listener: true}) {
     return Consumer(
       builder: (context, watch, child) {
         final List<List<dynamic>> chapterData = watch(chapterData1P).state;
@@ -339,16 +347,16 @@ class UiHome extends HookWidget {
           padding: EdgeInsets.zero,
           itemCount: chapterData.length,
           itemBuilder: (context, i) =>
-              _buildVerseRow(context, i, activeScrollIndex1, chapterData[i]),
+              _buildVerseRow(context, i, activeScrollIndex1, chapterData[i], listener: listener),
           initialScrollIndex: activeScrollIndex1,
           itemScrollController: verseScrollController1,
-          itemPositionsListener: versePositionsListener1,
+          itemPositionsListener: (listener) ? versePositionsListener1 : null,
         );
       },
     );
   }
 
-  Widget _buildBibleVerses2(BuildContext context) {
+  Widget _buildBibleVerses2(BuildContext context, {listener: true}) {
     return Consumer(
       builder: (context, watch, child) {
         final List<List<dynamic>> chapterData = watch(chapterData2P).state;
@@ -357,51 +365,74 @@ class UiHome extends HookWidget {
           padding: EdgeInsets.zero,
           itemCount: chapterData.length,
           itemBuilder: (context, i) =>
-              _buildVerseRow(context, i, activeScrollIndex2, chapterData[i]),
+              _buildVerseRow(context, i, activeScrollIndex2, chapterData[i], listener: listener),
           initialScrollIndex: activeScrollIndex2,
           //initialAlignment: 0.0,
           itemScrollController: verseScrollController2,
-          itemPositionsListener: versePositionsListener2,
+          itemPositionsListener: (listener) ? versePositionsListener2 : null,
         );
       },
     );
   }
 
-  Widget _buildCommonVerseContent(BuildContext context, List<dynamic> data, Map<String, TextStyle> myTextStyle, bool isActiveVerse, String displayVersion) {
-    final TextStyle verseStyle = (isActiveVerse)
-        ? myTextStyle["activeVerseFont"]
-        : myTextStyle["verseFont"];
+  Widget _buildPlainVerseContent(BuildContext context, List<dynamic> data, Map<String, TextStyle> myTextStyle, bool isActiveVerse, String displayVersion, {listener: true}) {
+    final bool isHebrewBible = context.read(configProvider).state.isHebrewBible(data);
+    final bool isGreekBible = context.read(configProvider).state.isGreekBible(data);
     final String verseNoText = "[${data.first.last}]$displayVersion";
-    final String verseText = TextTransformer.processBibleVerseText(data[1]);
+    String verseText = data[1];
+    verseText = TextTransformer.processBibleVerseText(verseText);
+    TextStyle verseStyle;
+    if (isHebrewBible) {
+      verseStyle = myTextStyle[(isActiveVerse) ? "activeVerseFontHebrew" : "verseFontHebrew"];
+    } else if (isGreekBible) {
+      verseStyle = myTextStyle[(isActiveVerse) ? "activeVerseFontGreek" : "verseFontGreek"];
+    } else {
+      verseStyle = myTextStyle[(isActiveVerse) ? "activeVerseFont" : "verseFont"];
+    }
     return ParsedText(
-      //selectable: true, //selectable option breaks the listener for parallel scrolling
-      alignment: TextAlign.start,
+      selectable: (!listener), //selectable option breaks the listener for parallel scrolling
+      textDirection: (isHebrewBible) ? TextDirection.rtl : TextDirection.ltr,
+      alignment: (isHebrewBible) ? TextAlign.right : TextAlign.left,
       text: "$verseNoText $verseText",
       style: verseStyle,
       parse: <MatchText>[
         MatchText(
-          pattern: r"\[[0-9]+?\]|\[[A-Z][A-Z]+?[a-z]*?[0-9]*?\]",
+          pattern: r"^\[[0-9]+?\]|\[[A-Z][A-Z]+?[a-z]*?[0-9]*?\]",
           style: myTextStyle[(isActiveVerse) ? "activeVerseNoFont" : "verseNoFont"],
+          onTap: (url) async {
+            enableParallelChapterScrolling(context);
+            await newVerseSelectedSameChapter(context, data.first);
+          },
+        ),
+        MatchText(
+          pattern: r"\b([A-Za-z][a-z]*?)\b|[^\w\.\?\[\]\{\}\!\@\#\$\%\^\&\*\(\)\-\+\=\,\:\;\']", // a custom pattern to match
+          onTap: (url) async {
+            enableParallelChapterScrolling(context);
+            print(url);
+            // do something here with passed url
+          }, // callback function when the text is tapped on
         ),
       ],
     );
   }
 
-  Widget _buildInterlinearVerseContent(BuildContext context, List<dynamic> data, Map<String, TextStyle> myTextStyle, bool isActiveVerse, String displayVersion) {
+  Widget _buildInterlinearVerseContent(BuildContext context, List<dynamic> data, Map<String, TextStyle> myTextStyle, bool isActiveVerse, String displayVersion, {listener: true}) {
     final bool isHebrewBible = context.read(configProvider).state.isHebrewBible(data);
+    final bool isGreekBible = context.read(configProvider).state.isGreekBible(data);
     final TextDirection textDirection = (isHebrewBible) ? TextDirection.rtl : TextDirection.ltr;
     final String verseNoText = "[${data.first.last}]$displayVersion";
     String verseText = data[1];
     verseText = verseText.replaceAll("｜＠", "\n");
     final List<String> wordList = verseText.split(" ｜");
-    List<Widget> interlinearWords = List<Widget>.generate(wordList.length, (index) => interlinearWord(wordList[index], isHebrewBible, myTextStyle, isActiveVerse));
+    List<Widget> interlinearWords = List<Widget>.generate(wordList.length, (index) => interlinearWord(context, wordList[index], myTextStyle, isActiveVerse, isHebrewBible, isGreekBible, listener: listener));
     return Wrap(
       textDirection: textDirection,
       spacing: 1.0,
+      runSpacing: 1.0,
       children: <Widget>[
-        //Text(verseNoText, style: myTextStyle[(isActiveVerse) ? "activeVerseNoFont" : "verseNoFont"],),
         ParsedText(
-          //selectable: true, //selectable option breaks the listener for parallel scrolling
+          selectable: (!listener), //selectable option breaks the listener for parallel scrolling
+          textDirection: (isHebrewBible) ? TextDirection.rtl : TextDirection.ltr,
           alignment: (isHebrewBible) ? TextAlign.right : TextAlign.left,
           text: verseNoText,
           style: myTextStyle["verseFont"],
@@ -409,6 +440,10 @@ class UiHome extends HookWidget {
             MatchText(
               pattern: r"\[[0-9]+?\]|\[[A-Z][A-Z]+?[a-z]*?[0-9]*?\]",
               style: myTextStyle[(isActiveVerse) ? "activeVerseNoFont" : "verseNoFont"],
+              onTap: (url) async {
+                enableParallelChapterScrolling(context);
+                await newVerseSelectedSameChapter(context, data.first);
+              },
             ),
           ],
         ),
@@ -417,32 +452,49 @@ class UiHome extends HookWidget {
     );
   }
 
-  Widget interlinearWord(String wordText, bool isHebrewBible, Map<String, TextStyle> myTextStyle, bool isActiveVerse) {
+  Widget interlinearWord(BuildContext context, String wordText, Map<String, TextStyle> myTextStyle, bool isActiveVerse, bool isHebrewBible, bool isGreekBible, {listener: true}) {
+    TextStyle mainWordStyle;
+    if (isHebrewBible) {
+      mainWordStyle = myTextStyle[(isActiveVerse) ? "activeVerseFontHebrew" : "verseFontHebrew"];
+    } else if (isGreekBible) {
+      mainWordStyle = myTextStyle[(isActiveVerse) ? "activeVerseFontGreek" : "verseFontGreek"];
+    } else {
+      mainWordStyle = myTextStyle[(isActiveVerse) ? "activeVerseFont" : "verseFont"];
+    }
     return RaisedButton(
       //padding: EdgeInsets.zero,
       child: ParsedText(
-        //selectable: true, //selectable option breaks the listener for parallel scrolling
+        selectable: (!listener), //selectable option breaks the listener for parallel scrolling
+        //textDirection: (isHebrewBible) ? TextDirection.rtl : TextDirection.ltr,
         alignment: (isHebrewBible) ? TextAlign.right : TextAlign.left,
         text: wordText,
         style: myTextStyle[(isActiveVerse) ? "activeVerseFont" : "verseFont"],
         parse: <MatchText>[
           MatchText(
-            pattern: r"^.*?\n",
-            style: myTextStyle["verseFontHebrew"],
+            pattern: r"^(.*?)\n",
+            style: mainWordStyle,
+          ),
+          MatchText(
+            pattern: r"\b([\w]+?)\b",
+            style: myTextStyle["interlinearStyle"],
+          ),
+          MatchText(
+            pattern: r"[\[\]\+]",
+            style: myTextStyle["interlinearStyleDim"],
           ),
         ],
       ),
-      /*child: Text(
-          wordText,
-          textAlign: (isHebrewBible) ? TextAlign.right : TextAlign.left,
-      ),*/
-      disabledColor: Colors.lightBlue[100],
-      //color: Colors.lightBlue[100],
+      color: Colors.lightBlue[50],
+      disabledColor: Colors.lightBlue[50],
+      elevation: 0,
+      onPressed: () {
+        enableParallelChapterScrolling(context);
+      },
     );
   }
 
   Widget _buildVerseRow(
-      BuildContext context, int i, int activeScrollIndex, List<dynamic> data) {
+      BuildContext context, int i, int activeScrollIndex, List<dynamic> data, {listener: true}) {
     final bool isActiveVerse = (i == activeScrollIndex);
     return Consumer(
       builder: (context, watch, child) {
@@ -450,31 +502,28 @@ class UiHome extends HookWidget {
         final String displayVersion =
             (context.read(parallelVersesP).state) ? " [${data.last}]" : "";
         return ListTile(
-          title: (data.last.endsWith("i")) ? _buildInterlinearVerseContent(context, data, myTextStyle, isActiveVerse, displayVersion) : _buildCommonVerseContent(context, data, myTextStyle, isActiveVerse, displayVersion),
-          onTap: () async {
-            if (i != activeScrollIndex)
-              await newVerseSelectedSameChapter(context, data.first);
-          },
-          onLongPress: () {
-            // TODO: implement verse features here.
-            print("long press");
-          },
-          // WARNING: DO NOT use SelectableText widget together with itemPositionsListener.  The listener breaks.
-          /*title: SelectableText.rich(
-            TextSpan(
-              text: "[${data.first.last}]$displayVersion $verseText",
-              style: verseStyle,
-            ),
-            //toolbarOptions: ToolbarOptions(copy: true, selectAll: true),
-            onTap: () async {
-              if (i != activeScrollIndex) {
-                await newVerseSelectedSameChapter(context, data.first);
-              }
-            },
-          ),*/
+          title: (data.last.endsWith("i")) ? _buildInterlinearVerseContent(context, data, myTextStyle, isActiveVerse, displayVersion, listener: listener) : _buildPlainVerseContent(context, data, myTextStyle, isActiveVerse, displayVersion, listener: listener),
+          //onTap: () => enableParallelChapterScrolling(context),
+          onLongPress: () => disableParallelChapterScrolling(context),
         );
       },
     );
+  }
+
+  void enableParallelChapterScrolling(BuildContext context) {
+    final bool enableParallelChapterScrolling = context.read(enableParallelChapterScrollingP).state;
+    if (!enableParallelChapterScrolling) {
+      context.read(configProvider).state.updateEnableParallelChapterScrolling();
+      context.refresh(enableParallelChapterScrollingP);
+    }
+  }
+
+  void disableParallelChapterScrolling(BuildContext context) {
+    final bool enableParallelChapterScrolling = context.read(enableParallelChapterScrollingP).state;
+    if (enableParallelChapterScrolling) {
+      context.read(configProvider).state.updateEnableParallelChapterScrolling();
+      context.refresh(enableParallelChapterScrollingP);
+    }
   }
 
   void setupBiblesScrollCoordinator(BuildContext context) {
@@ -665,13 +714,7 @@ class UiHome extends HookWidget {
     final String activeModule = context.read(bible1P).state;
     if (module != activeModule) await changeBible1Version(context, module);
     final List<int> bcvList = [for (int i in data.first) i];
-    final List<int> activeVerse = context
-        .read(configProvider)
-        .state
-        .listListIntValues["historyActiveVerse"]
-        .first;
-    if (bcvList.join(".") != activeVerse.join("."))
-      await newVerseSelected(context, bcvList);
+    await newVerseSelected(context, bcvList);
   }
 
   Future<void> newVerseSelectedSameChapter(
@@ -680,17 +723,24 @@ class UiHome extends HookWidget {
 
   Future<void> newVerseSelected(BuildContext context, List<dynamic> bcvList,
       {bool sameChapter = false}) async {
-    await context.read(configProvider).state.newVerseSelected(bcvList);
-    context.refresh(historyActiveVerseP);
-    context.refresh(activeScrollIndex1P);
-    context.refresh(activeScrollIndex2P);
-    if (!sameChapter) {
-      context.refresh(chapterData1P);
-      context.refresh(chapterData2P);
+    final List<int> activeVerse = context
+        .read(configProvider)
+        .state
+        .listListIntValues["historyActiveVerse"]
+        .first;
+    if (bcvList.join(".") != activeVerse.join(".")) {
+      await context.read(configProvider).state.newVerseSelected(bcvList);
+      context.refresh(historyActiveVerseP);
+      context.refresh(activeScrollIndex1P);
+      context.refresh(activeScrollIndex2P);
+      if (!sameChapter) {
+        context.refresh(chapterData1P);
+        context.refresh(chapterData2P);
+      }
+      context.refresh(menuBookP);
+      context.refresh(menuChapterP);
+      scrollToBibleVerse(context);
     }
-    context.refresh(menuBookP);
-    context.refresh(menuChapterP);
-    scrollToBibleVerse(context);
   }
 
   Future<void> changeBible1Version(BuildContext context, String module) async =>

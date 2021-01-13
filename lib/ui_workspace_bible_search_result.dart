@@ -243,14 +243,6 @@ class BibleSearchResults extends StatelessWidget {
                 ),
                 style: TextStyle(backgroundColor: Colors.red[300]),
               ),
-              /*MatchText(
-                pattern: searchEntry,
-                regexOptions: RegexOptions(
-                  caseSensitive : false,
-                  unicode : true,
-                ),
-                style: TextStyle(backgroundColor: Colors.red[300]),
-              ),*/
             ],
           ),
           title: ParsedText(
