@@ -32,67 +32,6 @@ enum DialogAction {
   openVerse,
 }
 
-enum TtsState {
-  playing,
-  stopped,
-}
-
-class TtsHelper {
-
-  // This workaroundHebrew functions is applicable to Android plaftfrom.
-  static String workaroundHebrew(String text) {
-    final List<List<String>> searchReplace = [
-      ['w', 'v'],
-      ['ō|ō|Ō|ô|ŏ', 'ο'],
-      ['ê|ē|ĕ', 'e'],
-      ['î|ī', 'i'],
-      ['û', 'u'],
-      //['š', 'sh'],
-      ['ś', 's'],
-      ['ă|ā|â', 'a'],
-      ['[ʿʾ]', ''],
-    ];
-    for (List<String> i in searchReplace) {
-      final String search = i.first;
-      final String replace = i.last;
-      text = text.replaceAll(RegExp(search), replace);
-    }
-    return text;
-  }
-
-  static String removeGreekAccents(String text) {
-    List<List<String>> searchReplace = [
-      ['[ἀἄᾄἂἆἁἅᾅἃάᾴὰᾶᾷᾳᾆᾀ]', 'α'],
-      ['[ἈἌἎἉἍἋ]', 'Α'],
-      ['[ἐἔἑἕἓέὲ]', 'ε'],
-      ['[ἘἜἙἝἛ]', 'Ε'],
-      ['[ἠἤᾔἢἦᾖᾐἡἥἣἧᾗᾑήῄὴῆῇῃ]', 'η'],
-      ['[ἨἬἪἮἩἭἫ]', 'Η'],
-      ['[ἰἴἶἱἵἳἷίὶῖϊΐῒ]', 'ι'],
-      ['[ἸἼἹἽ]', 'Ι'],
-      ['[ὀὄὂὁὅὃόὸ]', 'ο'],
-      ['[ὈὌὉὍὋ]', 'Ο'],
-      ['[ῥ]', 'ρ'],
-      ['[Ῥ]', 'Ρ'],
-      ['[ὐὔὒὖὑὕὓὗύὺῦϋΰῢ]', 'υ'],
-      ['[ὙὝὟ]', 'Υ'],
-      ['[ὠὤὢὦᾠὡὥὧᾧώῴὼῶῷῳᾤὣ]', 'ω'],
-      ['[ὨὬὪὮὩὭὯ]', 'Ω'],
-      [
-        "[\-\—\,\;\:\\\?\.\·\·\'\‘\’\᾿\‹\›\“\”\«\»\(\)\[\]\{\}\⧼\⧽\〈\〉\*\‿\᾽\⇔\¦]",
-        ""
-      ],
-    ];
-    for (List<String> i in searchReplace) {
-      final String search = i.first;
-      final String replace = i.last;
-      text = text.replaceAll(RegExp(search), replace);
-    }
-    return text;
-  }
-
-}
-
 /*class FileIOHelper {
 
   String getDataPath(String dataType, [String module]) => "assets/$dataType/$module.json";

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 // Core libraries
 import 'dart:io';
 // My libraries
@@ -11,6 +12,7 @@ import 'module_description.dart';
 import 'bible.dart';
 import 'file_mx.dart';
 import 'bible_parser.dart';
+import 'text_transformer.dart';
 
 final configurationsProvider = FutureProvider<Configurations>((ref) async {
   final Configurations configurations = Configurations();
@@ -115,6 +117,7 @@ final historyActiveVerseP = StateProvider<List<List<int>>>(
 final mainThemeP = StateProvider<ThemeData>((ref) => ref.watch(configProvider).state.mainTheme);
 final myColorsP = StateProvider<Map<String, Color>>((ref) => ref.watch(configProvider).state.myColors);
 final myTextStyleP = StateProvider<Map<String, TextStyle>>((ref) => ref.watch(configProvider).state.myTextStyle);
+final bibleTextStylesP = StateProvider<Map<String, List<TextStyle>>>((ref) => ref.watch(configProvider).state.bibleTextStyles);
 final dropdownUnderlineP = StateProvider<Container>((ref) => ref.watch(configProvider).state.dropdownUnderline);
 
 final menuBookP = StateProvider<int>((ref) => ref.watch(configProvider).state.bibleDB1.menuBook);
@@ -182,12 +185,15 @@ final activeVerseReferenceP = StateProvider<String>(
     }
 );
 
+enum TtsState { playing, stopped, paused, continued }
+
 class Configurations {
   SharedPreferences prefs;
 
   // The following variables change when intValues["backgroundBrightness"] or doubleValues["fontSize"] changes.
   ThemeData mainTheme;
   Map<String, TextStyle> myTextStyle;
+  Map<String, List<TextStyle>> bibleTextStyles;
   Map<String, Color> myColors;
   Container dropdownUnderline;
 
@@ -204,6 +210,14 @@ class Configurations {
   // Listening scroll status of opened bible chapters.
   bool enableParallelChapterScrolling = true;
   void updateEnableParallelChapterScrolling() => enableParallelChapterScrolling = !enableParallelChapterScrolling;
+
+  // Variables to work with TTS
+  FlutterTts flutterTts;
+  TtsState ttsState = TtsState.stopped;
+  get isPlaying => ttsState == TtsState.playing;
+  get isStopped => ttsState == TtsState.stopped;
+  String currentTtsLanguage;
+
 
   // Variables which are stored in preferences.
   // Default values.
@@ -288,9 +302,75 @@ class Configurations {
   Future<void> setup() async {
     // Set up share preferences.
     await setDefault();
+    // Set up third-party packages
+    await setup3rdPartyPackages();
     // Set up bibles.
     await setupResources();
   }
+
+  Future<void> setup3rdPartyPackages() async {
+    // set up flutter tts
+    flutterTts = FlutterTts();
+    // Set handlers
+    flutterTts.setStartHandler(() => ttsState = TtsState.playing);
+    flutterTts.setCompletionHandler(() => ttsState = TtsState.stopped);
+    flutterTts.setErrorHandler((msg) => ttsState = TtsState.stopped);
+    // Set English as default tts language
+    final String ttsEnglish = stringValues["ttsEnglish"];
+    currentTtsLanguage = ttsEnglish;
+    await flutterTts.setLanguage(ttsEnglish);
+    // Set speech rate
+    await flutterTts.setSpeechRate(doubleValues["speechRate"]);
+  }
+
+  Future speak(String text, {String language = "en") async {
+    // Stop if speaking
+    if (ttsState == TtsState.playing) await stopTTS();
+    // Set language
+    if (language == "he") {
+      if (Platform.isAndroid) {
+        text = TextTransformer.workaroundHebrewTTSinAndroid(text);
+        if (currentTtsLanguage != "el-GR") {
+          await flutterTts.setLanguage("el-GR");
+          currentTtsLanguage = "el-GR";
+        }
+      } else {
+        if (currentTtsLanguage != "he-IL") {
+          await flutterTts.setLanguage("he-IL");
+          currentTtsLanguage = "he-IL";
+        }
+      }
+    } else if (language == "el") {
+      text = TextTransformer.removeGreekAccents(text);
+      if (currentTtsLanguage != "el-GR") {
+        await flutterTts.setLanguage("el-GR");
+        currentTtsLanguage = "el-GR";
+      }
+    } else if (language == "zh") {
+      final String ttsChinese = stringValues["ttsChinese"];
+      if (currentTtsLanguage != ttsChinese) {
+        await flutterTts.setLanguage(stringValues["ttsChinese"]);
+        currentTtsLanguage = ttsChinese;
+      }
+    } else {
+      // English by default
+      final String ttsEnglish = stringValues["ttsEnglish"];
+      if (currentTtsLanguage != ttsEnglish) {
+        await flutterTts.setLanguage(stringValues["ttsEnglish"]);
+        currentTtsLanguage = ttsEnglish;
+      }
+    }
+    if ((text != null) && (text.isNotEmpty)) {
+      dynamic result = await flutterTts.speak(text);
+      if (result == 1) ttsState = TtsState.playing;
+    }
+  }
+
+  Future stopTTS() async {
+    dynamic result = await flutterTts.stop();
+    if (result == 1) ttsState = TtsState.stopped;
+  }
+
 
   Future<void> setDefault() async {
     // Get an instance of SharedPreferences.
@@ -564,6 +644,15 @@ class Configurations {
       "highlightStyle": highlightStyle,
     };
 
+    bibleTextStyles = {
+      "he": [activeVerseFontHebrew, verseFontHebrew],
+      "el": [activeVerseFontGreek, verseFontGreek],
+      "en": [activeVerseFont, verseFont],
+      "verseNo": [activeVerseNoFont, verseFont],
+      "interlinear": [interlinearStyle, interlinearStyleDim],
+      "subtitleStyle": [subtitleStyle, subtitleStyle],
+    };
+
     mainTheme = ThemeData(
       //primaryColor: myColors["appBarColor"],
       appBarTheme: AppBarTheme(color: myColors["appBarColor"]),
@@ -775,8 +864,11 @@ class Configurations {
     return fileMx.getDirectoryItems(biblesFolder, filter: ".bible");
   }
 
-  bool isHebrewBible(List<dynamic> data) => (allBiblesByLanguages["he"].contains(data.last)) || ((allBiblesByLanguages["he.el"].contains(data.last)) && (data.first.first < 40));
-  bool isGreekBible(List<dynamic> data) => (allBiblesByLanguages["el"].contains(data.last)) || ((allBiblesByLanguages["he.el"].contains(data.last)) && (data.first.first >= 40));
+  String getBibleLanguage(List<dynamic> data) {
+    String language = allBibles[data.last].first;
+    if (language == "he.el") language = (data.first.first < 40) ? "he" : "el";
+    return (language.isEmpty) ? "en" : language;
+  }
 
   void updateMultipleVersions(List<List<dynamic>> data, {String references = ""}) {
     if (references.isNotEmpty) multipleVersionsReferences = references;

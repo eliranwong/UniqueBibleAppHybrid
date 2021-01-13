@@ -375,20 +375,17 @@ class UiHome extends HookWidget {
     );
   }
 
-  Widget _buildPlainVerseContent(BuildContext context, List<dynamic> data, Map<String, TextStyle> myTextStyle, bool isActiveVerse, String displayVersion, {listener: true}) {
-    final bool isHebrewBible = context.read(configProvider).state.isHebrewBible(data);
-    final bool isGreekBible = context.read(configProvider).state.isGreekBible(data);
+  Widget _buildPlainVerseContent(BuildContext context, List<dynamic> data, Map<String, List<TextStyle>> bibleTextStyles, bool isActiveVerse, String displayVersion, {listener: true}) {
+    final String language = context.read(configProvider).state.getBibleLanguage(data);
+    final bool isHebrewBible = (language == "he");
+    final defaultBibleTextStyle = bibleTextStyles["en"];
+    final List<TextStyle> bibleTextStyle = bibleTextStyles[language] ?? defaultBibleTextStyle;
+    final TextStyle verseStyle = (isActiveVerse) ? bibleTextStyle.first : bibleTextStyle.last;
+
     final String verseNoText = "[${data.first.last}]$displayVersion";
     String verseText = data[1];
     verseText = TextTransformer.processBibleVerseText(verseText);
-    TextStyle verseStyle;
-    if (isHebrewBible) {
-      verseStyle = myTextStyle[(isActiveVerse) ? "activeVerseFontHebrew" : "verseFontHebrew"];
-    } else if (isGreekBible) {
-      verseStyle = myTextStyle[(isActiveVerse) ? "activeVerseFontGreek" : "verseFontGreek"];
-    } else {
-      verseStyle = myTextStyle[(isActiveVerse) ? "activeVerseFont" : "verseFont"];
-    }
+
     return ParsedText(
       selectable: (!listener), //selectable option breaks the listener for parallel scrolling
       textDirection: (isHebrewBible) ? TextDirection.rtl : TextDirection.ltr,
@@ -398,7 +395,7 @@ class UiHome extends HookWidget {
       parse: <MatchText>[
         MatchText(
           pattern: r"^\[[0-9]+?\]|\[[A-Z][A-Z]+?[a-z]*?[0-9]*?\]",
-          style: myTextStyle[(isActiveVerse) ? "activeVerseNoFont" : "verseNoFont"],
+          style: (isActiveVerse) ? bibleTextStyles["verseNo"].first : bibleTextStyles["verseNo"].last,
           onTap: (url) async {
             enableParallelChapterScrolling(context);
             await newVerseSelectedSameChapter(context, data.first);
@@ -408,7 +405,7 @@ class UiHome extends HookWidget {
           pattern: r"\b([A-Za-z][a-z]*?)\b|[^\w\.\?\[\]\{\}\!\@\#\$\%\^\&\*\(\)\-\+\=\,\:\;\']", // a custom pattern to match
           onTap: (url) async {
             enableParallelChapterScrolling(context);
-            print(url);
+            context.read(configProvider).state.speak(url, language: language);
             // do something here with passed url
           }, // callback function when the text is tapped on
         ),
@@ -416,15 +413,15 @@ class UiHome extends HookWidget {
     );
   }
 
-  Widget _buildInterlinearVerseContent(BuildContext context, List<dynamic> data, Map<String, TextStyle> myTextStyle, bool isActiveVerse, String displayVersion, {listener: true}) {
-    final bool isHebrewBible = context.read(configProvider).state.isHebrewBible(data);
-    final bool isGreekBible = context.read(configProvider).state.isGreekBible(data);
+  Widget _buildInterlinearVerseContent(BuildContext context, List<dynamic> data, Map<String, List<TextStyle>> bibleTextStyles, bool isActiveVerse, String displayVersion, {listener: true}) {
+    final String language = context.read(configProvider).state.getBibleLanguage(data);
+    final bool isHebrewBible = (language == "he");
     final TextDirection textDirection = (isHebrewBible) ? TextDirection.rtl : TextDirection.ltr;
     final String verseNoText = "[${data.first.last}]$displayVersion";
     String verseText = data[1];
     verseText = verseText.replaceAll("｜＠", "\n");
     final List<String> wordList = verseText.split(" ｜");
-    List<Widget> interlinearWords = List<Widget>.generate(wordList.length, (index) => interlinearWord(context, wordList[index], myTextStyle, isActiveVerse, isHebrewBible, isGreekBible, listener: listener));
+    List<Widget> interlinearWords = List<Widget>.generate(wordList.length, (index) => interlinearWord(context, wordList[index], bibleTextStyles, isActiveVerse, language, listener: listener));
     return Wrap(
       textDirection: textDirection,
       spacing: 1.0,
@@ -435,11 +432,11 @@ class UiHome extends HookWidget {
           textDirection: (isHebrewBible) ? TextDirection.rtl : TextDirection.ltr,
           alignment: (isHebrewBible) ? TextAlign.right : TextAlign.left,
           text: verseNoText,
-          style: myTextStyle["verseFont"],
+          style: bibleTextStyles["en"].last,
           parse: <MatchText>[
             MatchText(
               pattern: r"\[[0-9]+?\]|\[[A-Z][A-Z]+?[a-z]*?[0-9]*?\]",
-              style: myTextStyle[(isActiveVerse) ? "activeVerseNoFont" : "verseNoFont"],
+              style: (isActiveVerse) ? bibleTextStyles["verseNo"].first : bibleTextStyles["verseNo"].last,
               onTap: (url) async {
                 enableParallelChapterScrolling(context);
                 await newVerseSelectedSameChapter(context, data.first);
@@ -452,15 +449,11 @@ class UiHome extends HookWidget {
     );
   }
 
-  Widget interlinearWord(BuildContext context, String wordText, Map<String, TextStyle> myTextStyle, bool isActiveVerse, bool isHebrewBible, bool isGreekBible, {listener: true}) {
-    TextStyle mainWordStyle;
-    if (isHebrewBible) {
-      mainWordStyle = myTextStyle[(isActiveVerse) ? "activeVerseFontHebrew" : "verseFontHebrew"];
-    } else if (isGreekBible) {
-      mainWordStyle = myTextStyle[(isActiveVerse) ? "activeVerseFontGreek" : "verseFontGreek"];
-    } else {
-      mainWordStyle = myTextStyle[(isActiveVerse) ? "activeVerseFont" : "verseFont"];
-    }
+  Widget interlinearWord(BuildContext context, String wordText, Map<String, List<TextStyle>> bibleTextStyles, bool isActiveVerse, String language, {listener: true}) {
+    final bool isHebrewBible = (language == "he");
+    final defaultBibleTextStyle = bibleTextStyles["en"];
+    final List<TextStyle> bibleTextStyle = bibleTextStyles[language] ?? defaultBibleTextStyle;
+    final TextStyle mainWordStyle = (isActiveVerse) ? bibleTextStyle.first : bibleTextStyle.last;
     return RaisedButton(
       //padding: EdgeInsets.zero,
       child: ParsedText(
@@ -468,7 +461,7 @@ class UiHome extends HookWidget {
         //textDirection: (isHebrewBible) ? TextDirection.rtl : TextDirection.ltr,
         alignment: (isHebrewBible) ? TextAlign.right : TextAlign.left,
         text: wordText,
-        style: myTextStyle[(isActiveVerse) ? "activeVerseFont" : "verseFont"],
+        style: (isActiveVerse) ? defaultBibleTextStyle.first : defaultBibleTextStyle.last,
         parse: <MatchText>[
           MatchText(
             pattern: r"^(.*?)\n",
@@ -476,11 +469,11 @@ class UiHome extends HookWidget {
           ),
           MatchText(
             pattern: r"\b([\w]+?)\b",
-            style: myTextStyle["interlinearStyle"],
+            style: bibleTextStyles["interlinear"].first,
           ),
           MatchText(
             pattern: r"[\[\]\+]",
-            style: myTextStyle["interlinearStyleDim"],
+            style: bibleTextStyles["interlinear"].last,
           ),
         ],
       ),
@@ -499,10 +492,11 @@ class UiHome extends HookWidget {
     return Consumer(
       builder: (context, watch, child) {
         final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
+        final Map<String, List<TextStyle>> bibleTextStyles = watch(bibleTextStylesP).state;
         final String displayVersion =
             (context.read(parallelVersesP).state) ? " [${data.last}]" : "";
         return ListTile(
-          title: (data.last.endsWith("i")) ? _buildInterlinearVerseContent(context, data, myTextStyle, isActiveVerse, displayVersion, listener: listener) : _buildPlainVerseContent(context, data, myTextStyle, isActiveVerse, displayVersion, listener: listener),
+          title: (data.last.endsWith("i")) ? _buildInterlinearVerseContent(context, data, bibleTextStyles, isActiveVerse, displayVersion, listener: listener) : _buildPlainVerseContent(context, data, bibleTextStyles, isActiveVerse, displayVersion, listener: listener),
           //onTap: () => enableParallelChapterScrolling(context),
           onLongPress: () => disableParallelChapterScrolling(context),
         );
