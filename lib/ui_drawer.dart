@@ -225,8 +225,7 @@ class BibleDrawer extends StatelessWidget {
           selected: false,
           onSelected: (bool selected) async {
             if (selected) {
-              context.read(configProvider).state.updateDisplayAllMenuBook();
-              context.refresh(displayAllMenuBookP);
+              context.read(displayAllMenuBookP).state = !context.read(displayAllMenuBookP).state;
             }
           },
         );
@@ -267,8 +266,7 @@ class BibleDrawer extends StatelessWidget {
               context.refresh(menuChapterListP);
               context.refresh(menuChapterP);
               context.refresh(menuVerseListP);
-              context.read(configProvider).state.updateDisplayAllMenuBook();
-              context.refresh(displayAllMenuBookP);
+              context.read(displayAllMenuBookP).state = !context.read(displayAllMenuBookP).state;
               if (context.read(openBookWithoutChapterSelectionP).state) {
                 int newChapter = context.read(menuChapterP).state;
                 int newVerse = context.read(menuVerseListP).state.first;
@@ -478,12 +476,18 @@ class BibleDrawer extends StatelessWidget {
       return ButtonBar(
         alignment: MainAxisAlignment.spaceEvenly,
         children: [
-          RaisedButton(
+          ElevatedButton(
             child: Text(
               "${interfaceApp[38]}\n$activeVerseReference",
               textAlign: TextAlign.center,
             ),
-            color: Colors.lightBlue[50],
+            style: ButtonStyle(
+              backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                    (Set<MaterialState> states) {
+                  return Colors.lightBlue[50];
+                },
+              ),
+            ),
             onPressed: () async {
               await callBack([
                 "loadMultipleVersions",

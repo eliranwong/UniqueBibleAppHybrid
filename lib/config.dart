@@ -31,8 +31,24 @@ final configProvider = StateProvider<Configurations>((ref) {
 
 final fileMxP = StateProvider<FileMx>((ref) => ref.watch(configProvider).state.fileMx);
 
-final enableParallelChapterScrollingP = StateProvider<bool>(
-        (ref) => ref.watch(configProvider).state.enableParallelChapterScrolling);
+final instantHighlightP = StateProvider<String>((ref) => "");
+final displayAllMenuBookP = StateProvider<bool>((ref) => false);
+final enableParallelChapterScrollingP = StateProvider<bool>((ref) => true);
+
+final customInterlinearP = StateProvider<Map<String, bool>>((ref) {
+  return {
+    "interlinearWord": ref.watch(configProvider).state.boolValues["interlinearWord"],
+    "interlinearTransliteration": ref.watch(configProvider).state.boolValues["interlinearTransliteration"],
+    "interlinearPronunciation": ref.watch(configProvider).state.boolValues["interlinearPronunciation"],
+    "interlinearLexeme": ref.watch(configProvider).state.boolValues["interlinearLexeme"],
+    "interlinearLexicon": ref.watch(configProvider).state.boolValues["interlinearLexicon"],
+    "interlinearGloss": ref.watch(configProvider).state.boolValues["interlinearGloss"],
+    "interlinearMorphology": ref.watch(configProvider).state.boolValues["interlinearMorphology"],
+    "interlinearInterlinear": ref.watch(configProvider).state.boolValues["interlinearInterlinear"],
+    "interlinearTranslation": ref.watch(configProvider).state.boolValues["interlinearTranslation"],
+    "clauseBoundaries": ref.watch(configProvider).state.boolValues["clauseBoundaries"],
+  };
+});
 
 final showDrawerP = StateProvider<bool>(
         (ref) => ref.watch(configProvider).state.boolValues["showDrawer"]),
@@ -157,8 +173,6 @@ final multipleVersionsP = StateProvider<Map<String, dynamic>>(
     }
 );
 
-final displayAllMenuBookP = StateProvider<bool>((ref) => ref.watch(configProvider).state.displayAllMenuBook);
-
 final searchEntryOptionP = StateProvider<int>((ref) => ref.watch(configProvider).state.searchEntryOption);
 final searchEntryExclusionP = StateProvider<bool>((ref) => ref.watch(configProvider).state.searchEntryExclusion);
 final searchWholeBibleP = StateProvider<bool>((ref) => ref.watch(configProvider).state.searchWholeBible);
@@ -199,17 +213,13 @@ class Configurations {
 
   // Variables which are not stored in preferences.
   // Search
-  bool searchWholeBible = true, searchEntryExclusion = false, displayAllMenuBook = false;
-  void updateDisplayAllMenuBook() => displayAllMenuBook = !displayAllMenuBook;
+  bool searchWholeBible = true, searchEntryExclusion = false;
   int searchEntryOption = 0;
   Map<int, List<List<dynamic>>> lastBibleSearchResultsParallel = {};
   // Multiple verses
   List<List<dynamic>> multipleVersesData = [], multipleVersesDataLazy = [], multipleVersesDataParallel = [], multipleVersionsData = [];
   String multipleVersesReferences, multipleVersionsReferences = "";
   int searchItemsPerPage = 20;
-  // Listening scroll status of opened bible chapters.
-  bool enableParallelChapterScrolling = true;
-  void updateEnableParallelChapterScrolling() => enableParallelChapterScrolling = !enableParallelChapterScrolling;
 
   // Variables to work with TTS
   FlutterTts flutterTts;
@@ -223,6 +233,16 @@ class Configurations {
   // Default values.
   // Default bool values.
   Map<String, bool> boolValues = {
+    "interlinearWord": true,
+    "interlinearTransliteration": true,
+    "interlinearPronunciation": true,
+    "interlinearLexeme": true,
+    "interlinearLexicon": true,
+    "interlinearGloss": true,
+    "interlinearMorphology": true,
+    "interlinearInterlinear": true,
+    "interlinearTranslation": true,
+    "clauseBoundaries": true,
     "enableParallelSearchResults": false,
     "enableParallelMultipleVerses": false,
     "autoFocusVerseReferenceField": false,
@@ -323,7 +343,7 @@ class Configurations {
     await flutterTts.setSpeechRate(doubleValues["speechRate"]);
   }
 
-  Future speak(String text, {String language = "en") async {
+  Future speak(String text, {String language = "en"}) async {
     // Stop if speaking
     if (ttsState == TtsState.playing) await stopTTS();
     // Set language
@@ -523,7 +543,7 @@ class Configurations {
   // Run the following function when intValues["backgroundBrightness"] or doubleValues["fontSize"] is changed.
   void updateTheme() {
     Color backgroundColor, canvasColor, cardColor,
-        blueAccent, indigo, black, blue, deepOrange, grey,
+        blueAccent, indigo, black, blue, deepOrange, brown, grey,
         appBarColor, floatingButtonColor, bottomAppBarColor,
         dropdownBackground, dropdownBorder, dropdownDisabled, dropdownEnabled;
 
@@ -539,6 +559,7 @@ class Configurations {
       black = Colors.grey[300];
       blue = Colors.blue[300];
       deepOrange = Colors.deepOrange[300];
+      brown = Colors.brown[400];
       grey = Colors.grey[400];
       appBarColor = Colors.blueGrey[backgroundBrightness - 200];
       floatingButtonColor = Colors.blueGrey[backgroundBrightness - 300];
@@ -555,6 +576,7 @@ class Configurations {
       black = Colors.black;
       blue = Colors.blueAccent[700];
       deepOrange = Colors.deepOrange[700];
+      brown = Colors.brown[700];
       grey = Colors.grey[700];
       //appBarColor = Theme.of(context).appBarTheme.color;
       appBarColor = Colors.blue[600];
@@ -573,6 +595,7 @@ class Configurations {
       "black": black,
       "blue": blue,
       "deepOrange": deepOrange,
+      "brown": brown,
       "grey": grey,
       "appBarColor": appBarColor,
       "floatingButtonColor": floatingButtonColor,
@@ -589,6 +612,7 @@ class Configurations {
     // update various font text style here
     TextStyle verseNoFont =
         TextStyle(fontSize: (doubleValues["fontSize"] - 3), color: blueAccent, decoration: TextDecoration.underline),
+    interlinearLink = TextStyle(fontSize: (doubleValues["fontSize"] - 4), color: blueAccent, decoration: TextDecoration.underline),
     verseFont = TextStyle(fontSize: doubleValues["fontSize"], color: black),
     verseFontHebrew = TextStyle(
         fontFamily: "Ezra SIL",
@@ -610,10 +634,13 @@ class Configurations {
         TextStyle(fontSize: (doubleValues["fontSize"] + 2), color: indigo),
     interlinearStyle =
         TextStyle(fontSize: (doubleValues["fontSize"] - 3), color: deepOrange),
+    interlinearDarkerStyle =
+        TextStyle(fontSize: (doubleValues["fontSize"] - 3), color: brown),
     interlinearStyleDim = TextStyle(
         fontSize: (doubleValues["fontSize"] - 3),
         color: grey,
-        fontStyle: FontStyle.italic),
+        fontStyle: FontStyle.italic,
+    ),
     subtitleStyle = TextStyle(
       fontSize: (doubleValues["fontSize"] - 4),
       color: (backgroundBrightness >= 700)
@@ -625,7 +652,8 @@ class Configurations {
           //fontStyle: FontStyle.italic,
           decoration: TextDecoration.underline,
           color: Colors.blue,
-        );
+        ),
+    instantHighlight = TextStyle(backgroundColor: Colors.red[300]);
 
     // set the same font settings, which is passed to search delegate
     myTextStyle = {
@@ -642,15 +670,17 @@ class Configurations {
       "interlinearStyleDim": interlinearStyleDim,
       "subtitleStyle": subtitleStyle,
       "highlightStyle": highlightStyle,
+      "instantHighlight": instantHighlight,
     };
 
     bibleTextStyles = {
       "he": [activeVerseFontHebrew, verseFontHebrew],
       "el": [activeVerseFontGreek, verseFontGreek],
       "en": [activeVerseFont, verseFont],
-      "verseNo": [activeVerseNoFont, verseFont],
-      "interlinear": [interlinearStyle, interlinearStyleDim],
+      "verseNo": [activeVerseNoFont, verseNoFont],
       "subtitleStyle": [subtitleStyle, subtitleStyle],
+      "interlinear": [interlinearStyle, interlinearDarkerStyle],
+      "interlinear2": [interlinearLink, interlinearStyleDim],
     };
 
     mainTheme = ThemeData(
@@ -704,6 +734,7 @@ class Configurations {
       // abbreviation: [language, full name, full path]
       allBibles[basenameWithoutExtension(i.key)] =  [bibleInfo["Language"] ?? "en", bibleInfo["Title"] ?? "", i.value];
     }
+    allBibles["OHGBc"] = ["he.el", "Open Hebrew Greek Bible customised", fileMx.getFullPath("morphology", "OHGB.morphology")];
     allBibles.forEach((k, v) => allBiblesByLanguages[(v.first.isEmpty) ? "en" : v.first] = (allBiblesByLanguages.containsKey(v.first) ? [...allBiblesByLanguages[v.first], ...[k]] : [k]));
     // Load bible databases.
     final List<int> activeVerse = listListIntValues["historyActiveVerse"].first;
@@ -850,7 +881,8 @@ class Configurations {
 
   Future<void> copyAssetsResources() async {
     Map<String, List<String>> resources = {
-      "bibles": ["KJV.bible", "NET.bible", "OHGBt.bible", "OHGBi.bible"],
+      "bibles": ["KJV.bible", "NET.bible", "OHGBx.bible", "OHGBt.bible", "OHGBi.bible"],
+      "morphology": ["OHGB.morphology"],
     };
     for (String resource in resources.keys) {
       resources[resource].forEach((filename) async {

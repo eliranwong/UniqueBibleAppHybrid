@@ -289,6 +289,17 @@ class AppTranslation {
       "Open Chapter without Verse Selection", //27
       "Enable Parallel Search Results (slower if enabled)", //28
       "Enable Parallel Multiple Verses (slower if enabled)", //29
+      "Manuscript", //30
+      "Transliteration",
+      "Pronunciation",
+      "Lexeme",
+      "Lexical Entry",
+      "Gloss",
+      "Morphology",
+      "Literal Translation",
+      "Smooth Translation", //38
+      "Interlinear Options",
+      "Clause Boundaries", // 40
     ],
     "TC": [
       "設定",
@@ -321,6 +332,17 @@ class AppTranslation {
       "不用選擇節數直接開啓章", //27
       "啓動平衡搜索結果（需要較長時間搜索）", //28
       "啓動平衡多節顯示（需要較長時間顯示）", //29
+      "原文", //30
+      "譯音",
+      "發音",
+      "原文條目",
+      "詞典條目",
+      "字義",
+      "形態學",
+      "直譯",
+      "順譯", //38
+      "原文逐字翻譯選項",
+      "子句邊界", // 40
     ],
     "SC": [
       "设定",
@@ -353,6 +375,17 @@ class AppTranslation {
       "不用选择节数直接开启章", //27
       "启动平衡搜索结果（需要较长时间搜索）", //28
       "启动平衡多节显示（需要较长时间显示）", //29
+      "原文", //30
+      "譯音",
+      "發音",
+      "原文條目",
+      "詞典條目",
+      "字義",
+      "形態學",
+      "直譯",
+      "順譯", //38
+      "原文逐字翻译选项",
+      "子句边界",
     ],
   };
 

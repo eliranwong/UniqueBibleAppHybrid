@@ -50,7 +50,8 @@ class Bible {
     // Avoid errors if database is closed or not opened.
     if ((db == null) || (!db.isOpen)) await openDatabase();
 
-    final String query = "SELECT DISTINCT Book FROM Verses ORDER BY Book";
+    final String queryTable = (module == "OHGBc") ? "Data" : "Verses";
+    final String query = "SELECT DISTINCT Book FROM $queryTable ORDER BY Book";
     final List<Map<String, dynamic>> results =
         await fileMx.queryOpenedSqliteDB(db, query, []);
     return [
@@ -63,8 +64,9 @@ class Bible {
     // Avoid errors if database is closed or not opened.
     if ((db == null) || (!db.isOpen)) await openDatabase();
 
+    final String queryTable = (module == "OHGBc") ? "Data" : "Verses";
     final String query =
-        "SELECT DISTINCT Chapter FROM Verses WHERE Book=? ORDER BY Chapter";
+        "SELECT DISTINCT Chapter FROM $queryTable WHERE Book=? ORDER BY Chapter";
     final List<Map<String, dynamic>> results =
         await fileMx.queryOpenedSqliteDB(db, query, [bcvList.first]);
     return [for (Map<String, dynamic> result in results) result["Chapter"]];
@@ -74,18 +76,49 @@ class Bible {
     // Avoid errors if database is closed or not opened.
     if ((db == null) || (!db.isOpen)) await openDatabase();
 
+    final String queryTable = (module == "OHGBc") ? "Data" : "Verses";
     final String query =
-        "SELECT DISTINCT Verse FROM Verses WHERE Book=? AND Chapter=? ORDER BY Verse";
+        "SELECT DISTINCT Verse FROM $queryTable WHERE Book=? AND Chapter=? ORDER BY Verse";
     final List<Map<String, dynamic>> results =
         await fileMx.queryOpenedSqliteDB(db, query, bcvList.sublist(0, 2));
     return [for (Map<String, dynamic> result in results) result["Verse"]];
   }
 
+  List<Map<String, dynamic>> transformMorphologyToScripture(List<Map<String, dynamic>> results) {
+    Map<String, List<Map<String, dynamic>>> bcvMap = {};
+    for (Map<String, dynamic> result in results) {
+      final String bcvString = "${result["Book"]}.${result["Chapter"]}.${result["Verse"]}";
+      bcvMap[bcvString] = (bcvMap.containsKey(bcvString)) ? [...bcvMap[bcvString], result] : [result];
+    }
+    List<Map<String, dynamic>> transformedResults = [];
+    for (MapEntry entry in bcvMap.entries) {
+      String verseText = "";
+      int clauseID = entry.value.first["ClauseID"];
+      for (Map<String, dynamic> word in entry.value) {
+        final wordString = "<cid>${word["ClauseID"]}</cid><wid>${word["WordID"]}</wid><w>${word["Word"]}</w><transliterate>${word["Transliteration"]}</transliterate><pronounce>${word["Pronunciation"]}</pronounce><lexeme>${word["Lexeme"]}</lexeme><lexicon>${word["LexicalEntry"]}</lexicon><gloss>${word["Gloss"]}</gloss><morphCode>${word["MorphologyCode"]}</morphCode><morph>${word["Morphology"]}</morph><inter>${word["Interlinear"]}</inter><trans>${word["Translation"]}</trans>";
+        if (word["ClauseID"] == clauseID) {
+          verseText = "$verseText｜$wordString";
+        } else {
+          verseText = "$verseText＠$wordString";
+          clauseID++;
+        }
+      }
+      List<int> bcvList = [for (String i in entry.key.split(".")) int.parse(i)];
+      transformedResults.add({
+        "Book": bcvList.first,
+        "Chapter": bcvList[1],
+        "Verse": bcvList.last,
+        "Scripture": verseText.substring(1, verseText.length),
+      });
+    }
+    return transformedResults;
+  }
+
   List<dynamic> verseDataToList(Map<String, dynamic> verseData) => [
-        [verseData["Book"], verseData["Chapter"], verseData["Verse"]],
-        verseData["Scripture"],
-        module
-      ];
+    [verseData["Book"], verseData["Chapter"], verseData["Verse"]],
+    verseData["Scripture"],
+    module
+  ];
 
   Future<List<dynamic>> getVerseData(List<int> bcvList) async => (bcvList.length > 3) ? await getSingleVerseDataRange(bcvList) : await getSingleVerseData(bcvList);
 
@@ -93,10 +126,12 @@ class Bible {
     // Avoid errors if database is closed or not opened.
     if ((db == null) || (!db.isOpen)) await openDatabase();
 
+    final String queryTable = (module == "OHGBc") ? "Data" : "Verses";
     final String query =
-        "SELECT * FROM Verses WHERE Book=? AND Chapter=? AND Verse=?";
-    final List<Map<String, dynamic>> results =
+        "SELECT * FROM $queryTable WHERE Book=? AND Chapter=? AND Verse=?";
+    List<Map<String, dynamic>> results =
         await fileMx.queryOpenedSqliteDB(db, query, bcvList.sublist(0, 3));
+    if (module == "OHGBc") results = transformMorphologyToScripture(results);
     return (results.isNotEmpty) ? verseDataToList(results.first) : [];
   }
 
@@ -134,10 +169,12 @@ class Bible {
     // Avoid errors if database is closed or not opened.
     if ((db == null) || (!db.isOpen)) await openDatabase();
 
+    final String queryTable = (module == "OHGBc") ? "Data" : "Verses";
     final String query =
-        "SELECT * FROM Verses WHERE Book=? AND Chapter=? ORDER BY Verse";
-    final List<Map<String, dynamic>> results =
+        "SELECT * FROM $queryTable WHERE Book=? AND Chapter=? ORDER BY Verse";
+    List<Map<String, dynamic>> results =
         await fileMx.queryOpenedSqliteDB(db, query, bcvList.sublist(0, 2));
+    if (module == "OHGBc") results = transformMorphologyToScripture(results);
     return [
       for (Map<String, dynamic> result in results) verseDataToList(result)
     ];
@@ -187,7 +224,8 @@ class Bible {
     if ((db == null) || (!db.isOpen)) await openDatabase();
 
     String query;
-    final String queryPrefix = "SELECT * FROM Verses WHERE";
+    final String queryTable = (module == "OHGBc") ? "Data" : "Verses";
+    final String queryPrefix = "SELECT * FROM $queryTable WHERE";
     final String bookFilter = " Book = ?";
     final String andOperator = " AND ";
     final String querySuffix = "ORDER BY Book, Chapter, Verse";
@@ -201,7 +239,7 @@ class Bible {
       // Plain text
       case 0:
         filters = ["%$searchEntry%"];
-        queryCondition = "Scripture LIKE ?";
+        queryCondition = (module == "OHGBc") ? "Interlinear LIKE ?" : "Scripture LIKE ?";
         break;
       // Regular expression
       case 1:
@@ -212,13 +250,13 @@ class Bible {
       case 2:
         filters = [for (String entry in searchEntry.split("|")) "%$entry%"];
         queryCondition =
-            "(${List<String>.generate(filters.length, (i) => "Scripture LIKE ?").join(" AND ")})";
+            "(${List<String>.generate(filters.length, (i) => (module == "OHGBc") ? "Interlinear LIKE ?" : "Scripture LIKE ?").join(" AND ")})";
         break;
       // OR combo
       case 3:
         filters = [for (String entry in searchEntry.split("|")) "%$entry%"];
         queryCondition =
-            "(${List<String>.generate(filters.length, (i) => "Scripture LIKE ?").join(" OR ")})";
+            "(${List<String>.generate(filters.length, (i) => (module == "OHGBc") ? "Interlinear LIKE ?" : "Scripture LIKE ?").join(" OR ")})";
         break;
       // Advanced
       // Complete SQL statement started with 'SELECT * FROM Verses WHERE'
@@ -233,7 +271,7 @@ class Bible {
     if (exclusion.isNotEmpty) {
       exclusionFilters = [for (String entry in exclusion.split("|")) "%$entry%"];
       exclusionCondition =
-      "(${List<String>.generate(exclusionFilters.length, (i) => "Scripture NOT LIKE ?").join(" AND ")})";
+      "(${List<String>.generate(exclusionFilters.length, (i) => (module == "OHGBc") ? "Interlinear NOT LIKE ?" : "Scripture NOT LIKE ?").join(" AND ")})";
     }
 
     query =
@@ -241,6 +279,8 @@ class Bible {
     filters = (book != 0) ? [book, ...filters] : filters;
     if (exclusion.isNotEmpty) filters = [...filters, ...exclusionFilters];
     results = await fileMx.queryOpenedSqliteDB(db, query, filters);
+
+    if (module == "OHGBc") results = transformMorphologyToScripture(results);
 
     // Dealing with regular expression
     if (searchEntryOption == 1) results = results.where((i) => (RegExp(searchEntry).hasMatch(i["Scripture"]))).toList();

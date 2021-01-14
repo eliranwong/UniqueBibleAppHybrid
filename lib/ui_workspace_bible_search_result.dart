@@ -241,7 +241,7 @@ class BibleSearchResults extends StatelessWidget {
                   caseSensitive: false,
                   unicode: true,
                 ),
-                style: TextStyle(backgroundColor: Colors.red[300]),
+                style: context.read(configProvider).state.myTextStyle["instantHighlight"],
               ),
             ],
           ),

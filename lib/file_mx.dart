@@ -36,6 +36,9 @@ class FileMx {
 
   FileMx(this.userDirectory);
 
+  // Get the full path of a file located in user directory.
+  String getFullPath(String feature, String filename) => join(userDirectory, feature, filename);
+
   // Get path of a json file in bundle.
   String getAssetsJsonPath(String feature, [String module]) => "assets/$feature/$module.json";
 

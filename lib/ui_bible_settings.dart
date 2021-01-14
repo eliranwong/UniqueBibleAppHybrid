@@ -45,6 +45,18 @@ class BibleSettings extends StatelessWidget {
                 _enableParallelSearchResults(context, interface),
                 _enableParallelMultipleVerses(context, interface),
                 const Divider(),
+                _interlinearTitle(context, interface),
+                _interlinearClauseBoundaries(context, interface),
+                _interlinear0(context, interface),
+                _interlinear1(context, interface),
+                _interlinear2(context, interface),
+                _interlinear3(context, interface),
+                _interlinear4(context, interface),
+                _interlinear5(context, interface),
+                _interlinear6(context, interface),
+                _interlinear7(context, interface),
+                _interlinear8(context, interface),
+                const Divider(),
                 _instantAction(context, interface),
                 _favouriteAction(context, interface),
                 const Divider(),
@@ -55,6 +67,17 @@ class BibleSettings extends StatelessWidget {
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _interlinearTitle(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        return ListTile(
+          title:
+          Text(interface[39], style: watch(myTextStyleP).state["verseFont"]),
         );
       },
     );
@@ -191,6 +214,236 @@ class BibleSettings extends StatelessWidget {
                       .state
                       .save("keepDrawerOpen", newValue);
                   context.refresh(keepDrawerOpenP);
+                }
+              }),
+        );
+      },
+    );
+  }
+
+  Widget _interlinearClauseBoundaries(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final bool customInterlinearOption = watch(customInterlinearP).state["clauseBoundaries"];
+        return ListTile(
+          title:
+          Text(interface[40], style: watch(myTextStyleP).state["verseFont"]),
+          trailing: Switch(
+              value: customInterlinearOption,
+              onChanged: (bool newValue) {
+                if (newValue != customInterlinearOption) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("clauseBoundaries", newValue);
+                  context.refresh(customInterlinearP);
+                }
+              }),
+        );
+      },
+    );
+  }
+
+  Widget _interlinear0(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearWord"];
+        return ListTile(
+          title:
+          Text(interface[30], style: watch(myTextStyleP).state["verseFont"]),
+          trailing: Switch(
+              value: customInterlinearOption,
+              onChanged: (bool newValue) {
+                if (newValue != customInterlinearOption) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("interlinearWord", newValue);
+                  context.refresh(customInterlinearP);
+                }
+              }),
+        );
+      },
+    );
+  }
+
+  Widget _interlinear1(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearTransliteration"];
+        return ListTile(
+          title:
+          Text(interface[31], style: watch(myTextStyleP).state["verseFont"]),
+          trailing: Switch(
+              value: customInterlinearOption,
+              onChanged: (bool newValue) {
+                if (newValue != customInterlinearOption) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("interlinearTransliteration", newValue);
+                  context.refresh(customInterlinearP);
+                }
+              }),
+        );
+      },
+    );
+  }
+
+  Widget _interlinear2(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearPronunciation"];
+        return ListTile(
+          title:
+          Text(interface[32], style: watch(myTextStyleP).state["verseFont"]),
+          trailing: Switch(
+              value: customInterlinearOption,
+              onChanged: (bool newValue) {
+                if (newValue != customInterlinearOption) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("interlinearPronunciation", newValue);
+                  context.refresh(customInterlinearP);
+                }
+              }),
+        );
+      },
+    );
+  }
+
+  Widget _interlinear3(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearLexeme"];
+        return ListTile(
+          title:
+          Text(interface[33], style: watch(myTextStyleP).state["verseFont"]),
+          trailing: Switch(
+              value: customInterlinearOption,
+              onChanged: (bool newValue) {
+                if (newValue != customInterlinearOption) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("interlinearLexeme", newValue);
+                  context.refresh(customInterlinearP);
+                }
+              }),
+        );
+      },
+    );
+  }
+
+  Widget _interlinear4(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearLexicon"];
+        return ListTile(
+          title:
+          Text(interface[34], style: watch(myTextStyleP).state["verseFont"]),
+          trailing: Switch(
+              value: customInterlinearOption,
+              onChanged: (bool newValue) {
+                if (newValue != customInterlinearOption) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("interlinearLexicon", newValue);
+                  context.refresh(customInterlinearP);
+                }
+              }),
+        );
+      },
+    );
+  }
+
+  Widget _interlinear5(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearGloss"];
+        return ListTile(
+          title:
+          Text(interface[35], style: watch(myTextStyleP).state["verseFont"]),
+          trailing: Switch(
+              value: customInterlinearOption,
+              onChanged: (bool newValue) {
+                if (newValue != customInterlinearOption) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("interlinearGloss", newValue);
+                  context.refresh(customInterlinearP);
+                }
+              }),
+        );
+      },
+    );
+  }
+
+  Widget _interlinear6(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearMorphology"];
+        return ListTile(
+          title:
+          Text(interface[36], style: watch(myTextStyleP).state["verseFont"]),
+          trailing: Switch(
+              value: customInterlinearOption,
+              onChanged: (bool newValue) {
+                if (newValue != customInterlinearOption) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("interlinearMorphology", newValue);
+                  context.refresh(customInterlinearP);
+                }
+              }),
+        );
+      },
+    );
+  }
+
+  Widget _interlinear7(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearInterlinear"];
+        return ListTile(
+          title:
+          Text(interface[37], style: watch(myTextStyleP).state["verseFont"]),
+          trailing: Switch(
+              value: customInterlinearOption,
+              onChanged: (bool newValue) {
+                if (newValue != customInterlinearOption) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("interlinearInterlinear", newValue);
+                  context.refresh(customInterlinearP);
+                }
+              }),
+        );
+      },
+    );
+  }
+
+  Widget _interlinear8(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearTranslation"];
+        return ListTile(
+          title:
+          Text(interface[38], style: watch(myTextStyleP).state["verseFont"]),
+          trailing: Switch(
+              value: customInterlinearOption,
+              onChanged: (bool newValue) {
+                if (newValue != customInterlinearOption) {
+                  context
+                      .read(configProvider)
+                      .state
+                      .save("interlinearTranslation", newValue);
+                  context.refresh(customInterlinearP);
                 }
               }),
         );
