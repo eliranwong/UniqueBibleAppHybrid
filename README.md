@@ -80,6 +80,11 @@ what have been done in this hybrid project:
 <img src="screenshots/screenshot_ui_layout.png">
 [screenshot_ui_layout.png]
 
+<img src="screenshots/screenshot_customise_interlinear.png">
+[screenshot_customise_interlinear.png]
+
+<img src="screenshots/screenshot_search_result_chart.png">
+[screenshot_search_result_chart.png]
 
 <img src="screenshots/screenshot_search_results.png">
 [screenshot_search_results.png]
