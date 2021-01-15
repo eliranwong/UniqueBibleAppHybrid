@@ -61,19 +61,23 @@ Database formats: sqlite + json
 
 what have been done in this hybrid project:
 
-* General UI Layout
-* codes on loading preferences
-* codes on bible navigation
-* codes on changing bible version
-* codes on reading parallel verses
-* codes on reading parallel chapters
-* codes on scrolling parallel chapters with exact corresponding verses
-* codes on search bible, display results book by book
-* codes on piechart to present search result
-* navigation drawer ui finished
-* five modes of searching bibles are added (basic, regular express, words with AND combination, words with OR combination, custom SQL)
-* added option to exclude word for bible search result
-* added feature of loading multiple verses
+- General UI Layout
+- codes on loading preferences
+- codes on bible navigation
+- codes on changing bible version
+- codes on reading parallel verses
+- codes on reading parallel chapters
+- codes on scrolling parallel chapters with exact corresponding verses
+- codes on search bible, display results book by book
+- codes on piechart to present search result
+- navigation drawer ui finished
+- five modes of searching bibles are added (basic, regular express, words with AND combination, words with OR combination, custom SQL)
+- added option to exclude word for bible search result
+- added feature of loading multiple verses
+- instant audio
+- instant highlighting
+- instant word study features
+- interlinear customisation
 
 #Screenshots
 
