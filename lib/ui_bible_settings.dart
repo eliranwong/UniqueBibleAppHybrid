@@ -157,6 +157,7 @@ class BibleSettings extends StatelessWidget {
               context.refresh(mainThemeP);
               context.refresh(myColorsP);
               context.refresh(myTextStyleP);
+              context.refresh(bibleTextStylesP);
               context.refresh(dropdownUnderlineP);
             }
           },
@@ -190,6 +191,7 @@ class BibleSettings extends StatelessWidget {
               context.refresh(mainThemeP);
               context.refresh(myColorsP);
               context.refresh(myTextStyleP);
+              context.refresh(bibleTextStylesP);
               context.refresh(dropdownUnderlineP);
             }
           },

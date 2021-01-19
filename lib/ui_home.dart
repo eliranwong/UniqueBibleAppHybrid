@@ -973,7 +973,6 @@ class UiHome extends HookWidget {
       {bool listener: true}) {
     final bool isActiveVerse = (i == activeScrollIndex);
     return Consumer(builder: (context, watch, child) {
-        final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
         final Map<String, List<TextStyle>> bibleTextStyles =
             watch(bibleTextStylesP).state;
         final String displayVersion =
