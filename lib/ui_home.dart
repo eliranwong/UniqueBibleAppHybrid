@@ -16,6 +16,7 @@ import 'bibles_scroll_coordinator.dart';
 import 'bible.dart';
 import 'bible_parser.dart';
 import 'text_transformer.dart';
+import 'ui_workspace_word_features.dart';
 // ui
 import 'ui_home_bottom_app_bar.dart';
 import 'ui_home_top_app_bar.dart';
@@ -24,6 +25,7 @@ import 'ui_workspace.dart';
 import 'ui_workspace_bible_search_result.dart';
 import 'ui_workspace_multiple_verses.dart';
 import 'ui_workspace_multiple_versions.dart';
+import 'ui_workspace_lookup_content.dart';
 
 class UiHome extends HookWidget {
   // A global key
@@ -243,6 +245,10 @@ class UiHome extends HookWidget {
         Workspace((List<dynamic> data) async => await callBack(context, data));
     return <Widget>[
       _bible2ChapterContent(context),
+      WordFeatures(
+              (List<dynamic> data) async => await callBack(context, data)),
+      LookupContent(
+              (List<dynamic> data) async => await callBack(context, data)),
       BibleSearchResults(
           (List<dynamic> data) async => await callBack(context, data)),
       MultipleVerses(
@@ -1177,11 +1183,43 @@ class UiHome extends HookWidget {
       "searchBible": searchBible,
       "loadMultipleVerses": loadMultipleVerses,
       "loadMultipleVersions": loadMultipleVersions,
+      "speak": speak,
+      "lexicon": lexicon,
+      "dictionary": dictionary,
+      "encyclopedia": encyclopedia,
+      "generalDictionary": generalDictionary,
       "scrollToBibleVerse": scrollToBibleVerse, // non-future function
     };
     (data.last.isEmpty)
         ? actions[data.first](context)
         : await actions[data.first](context, data.last);
+  }
+
+  void speak(BuildContext context, String data) {
+    context.read(configProvider).state.speak(data, language: (RegExp("a-zA-Z").hasMatch(data)) ? "en" : "zh");
+  }
+
+  Future<void> lexicon(BuildContext context, List<String> moduleEntry) async {
+    print(moduleEntry);
+  }
+
+  Future<void> dictionary(BuildContext context, List<String> moduleEntry) async {
+    print(moduleEntry);
+  }
+
+  Future<void> encyclopedia(BuildContext context, List<String> moduleEntry) async {
+    print(moduleEntry);
+  }
+
+  Future<void> generalDictionary(BuildContext context, List<String> moduleEntry) async {
+    final FileMx fileMx = context.read(fileMxP).state;
+    final String filename = context.read(configProvider).state.allGeneralDictionaries[moduleEntry.first];
+    final String sqlStatementExact = "SELECT word, data FROM dictionary WHERE word = ?";
+    final List<Map<String, dynamic>> exactMatch = await fileMx.querySqliteDB("FULLPATH", filename, sqlStatementExact, [moduleEntry.last]);
+    final String sqlStatementPartial = "SELECT word, data FROM dictionary WHERE word LIKE ? AND word != ?";
+    final List<Map<String, dynamic>> partialMatches = await fileMx.querySqliteDB("FULLPATH", filename, sqlStatementPartial, ["%${moduleEntry.last}%", moduleEntry.last]);
+    final List<Map<String, dynamic>> allMatches = [if (exactMatch.isNotEmpty) ...exactMatch, if (partialMatches.isNotEmpty) ...partialMatches];
+    context.read(lookupMatchesP).state = allMatches;
   }
 
   Future<void> newVersionVerseSelected(

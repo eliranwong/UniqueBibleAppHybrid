@@ -4,9 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_html/style.dart';
-//import 'package:flutter_html/html_parser.dart';
-import 'config.dart';
-//import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 //import 'package:webview_flutter_plus/webview_flutter_plus.dart';
 //import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
@@ -84,8 +82,9 @@ class TestFlutterHTML extends StatelessWidget {
   }
 }
 
+/*
 // Test result: does not work with html String
-/*class TestWebView extends StatelessWidget {
+class TestWebView extends StatelessWidget {
   WebViewController _webViewController1;
 
   @override

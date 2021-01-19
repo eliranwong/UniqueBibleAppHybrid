@@ -34,6 +34,9 @@ final fileMxP = StateProvider<FileMx>((ref) => ref.watch(configProvider).state.f
 final instantHighlightP = StateProvider<String>((ref) => "");
 final displayAllMenuBookP = StateProvider<bool>((ref) => false);
 final enableParallelChapterScrollingP = StateProvider<bool>((ref) => true);
+final wordLookupEntryP = StateProvider<String>((ref) => ref.watch(instantHighlightP).state);
+final lookupMatchesP = StateProvider<List<Map<String, dynamic>>>((ref) => []);
+final lookupContentP = StateProvider<String>((ref) => "");
 
 final customInterlinearP = StateProvider<Map<String, bool>>((ref) {
   return {
@@ -304,10 +307,12 @@ class Configurations {
   // Variables to work with bibles
   String marvelData;
   FileMx fileMx;
-  Map<String, List<String>> allBibles = {}, allBiblesByLanguages = {"he": [], "el": [], "he.el": []};
+  Map<String, List<String>> allBibles = {};
+  //Map<String, List<String>> allBiblesByLanguages = {"he": [], "el": [], "he.el": []};
   Bible bibleDB1, bibleDB2, searchBibleDB, iBibleDB, tBibleDB, headingsDB;
   List<List<dynamic>> chapterData1, chapterData1Parallel, chapterData2;
   int activeScrollIndex1, activeScrollIndex2;
+  Map<String, String> allCommentaries, allLexicons, allEncyclopedia, allDictionaries, allGeneralDictionaries;
 
   // Functions to work with "settings" or preferences
 
@@ -343,7 +348,8 @@ class Configurations {
     await flutterTts.setSpeechRate(doubleValues["speechRate"]);
   }
 
-  Future speak(String text, {String language = "en"}) async {
+  Future speak(String text, {String language}) async {
+    if (language == null) language = currentTtsLanguage;
     // Stop if speaking
     if (ttsState == TtsState.playing) await stopTTS();
     // Set language
@@ -723,19 +729,25 @@ class Configurations {
     await copyAssetsResources();
 
     await setupBibles();
+
+    allCommentaries = await fileMx.checkInstalledResources("commentaries", ".commentary");
+    allLexicons = await fileMx.checkInstalledResources("lexicons", ".lexicon|.lexi|.dct.mybible|.dictionary.SQLite3");
+    allDictionaries = await fileMx.checkInstalledResources("dictionaries", ".dictionary|.dcti|.dct.mybible|.dictionary.SQLite3");
+    allGeneralDictionaries = await fileMx.checkInstalledResources("dictionaries_general", ".dictionary|.dcti|.dct.mybible|.dictionary.SQLite3");
+    allEncyclopedia = await fileMx.checkInstalledResources("encyclopedia", ".dictionary|.dcti|.dct.mybible|.dictionary.SQLite3");
   }
 
   // Bibles-related functions
 
   Future<void> setupBibles() async {
-    final Map<String, String> bibleFiles = await checkInstalledBibles();
+    final Map<String, String> bibleFiles = await fileMx.checkInstalledResources("bibles", ".bible");
     for (MapEntry i in bibleFiles.entries) {
       final Map<String, dynamic> bibleInfo = await getBibleInfo(i.value);
       // abbreviation: [language, full name, full path]
       allBibles[basenameWithoutExtension(i.key)] =  [bibleInfo["Language"] ?? "en", bibleInfo["Title"] ?? "", i.value];
     }
     allBibles["OHGBc"] = ["he.el", "Open Hebrew Greek Bible customised", fileMx.getFullPath("morphology", "OHGB.morphology")];
-    allBibles.forEach((k, v) => allBiblesByLanguages[(v.first.isEmpty) ? "en" : v.first] = (allBiblesByLanguages.containsKey(v.first) ? [...allBiblesByLanguages[v.first], ...[k]] : [k]));
+    //allBibles.forEach((k, v) => allBiblesByLanguages[(v.first.isEmpty) ? "en" : v.first] = (allBiblesByLanguages.containsKey(v.first) ? [...allBiblesByLanguages[v.first], ...[k]] : [k]));
     // Load bible databases.
     final List<int> activeVerse = listListIntValues["historyActiveVerse"].first;
     await openBibleDatabase();
@@ -889,11 +901,6 @@ class Configurations {
         await fileMx.copyAssetsFileToUserDirectory(resource, filename);
       });
     }
-  }
-
-  Future<Map<String, String>> checkInstalledBibles() async {
-    final String biblesFolder = await fileMx.getUserDirectoryFolder("bibles");
-    return fileMx.getDirectoryItems(biblesFolder, filter: ".bible");
   }
 
   String getBibleLanguage(List<dynamic> data) {

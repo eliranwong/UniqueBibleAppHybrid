@@ -66,12 +66,17 @@ class FileMx {
     return folderPath;
   }
 
+  Future<Map<String, String>> checkInstalledResources(String folder, String filter) async {
+    final String resourceFolder = await getUserDirectoryFolder(folder);
+    return getDirectoryItems(resourceFolder, filter: filter);
+  }
+
   // Create directory if it doesn't exist.
   // Reference: https://api.flutter.dev/flutter/dart-io/Directory-class.html
   Future<void> createDirectory(String folderPath) async {
     final Directory targetDirectory = Directory(folderPath);
     final bool targetDirectoryExists = await targetDirectory.exists();
-    if (!targetDirectoryExists) targetDirectory.create(recursive: true);
+    if (!targetDirectoryExists) await targetDirectory.create(recursive: true);
   }
 
   // Note that "list" and "listSync" are different.
@@ -86,9 +91,22 @@ class FileMx {
         final String filePath = item.path;
         if (filter.isEmpty) {
           directoryItems[basename(filePath)] = filePath;
-        } else if (extension(filePath) == filter) {
-          directoryItems[basenameWithoutExtension(filePath)] = filePath;
+        } else if (filter.contains("|")) {
+          final List<String> filterList = filter.split("|");
+          for (String f in filterList) {
+            if (filePath.endsWith(f)) {
+              final String fileBasename = basename(filePath);
+              directoryItems[fileBasename.substring(0, (fileBasename.length - f.length))] = filePath;
+            }
+          }
+        } else if (filePath.endsWith(filter)) {
+          final String fileBasename = basename(filePath);
+          directoryItems[fileBasename.substring(0, (fileBasename.length - filter.length))] = filePath;
         }
+        // The following does not work with extended extension, like .dct.mybible.
+        /*} else if (extension(filePath) == filter) {
+          directoryItems[basenameWithoutExtension(filePath)] = filePath;
+        }*/
       }
     }
     return directoryItems;

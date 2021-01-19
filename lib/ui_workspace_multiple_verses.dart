@@ -4,7 +4,6 @@ import 'package:hooks_riverpod/all.dart';
 import 'package:flutter_parsed_text/flutter_parsed_text.dart';
 // My libraries
 import 'config.dart';
-import 'bible.dart';
 import 'text_transformer.dart';
 
 class MultipleVerses extends StatelessWidget{
