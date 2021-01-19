@@ -4,8 +4,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:flutter/services.dart';
 // Core libraries
 import 'dart:io';
+import 'dart:typed_data';
 // My libraries
 import 'app_translation.dart';
 import 'module_description.dart';
@@ -735,10 +737,12 @@ class Configurations {
     allDictionaries = await fileMx.checkInstalledResources("dictionaries", ".dictionary|.dcti|.dct.mybible|.dictionary.SQLite3");
     allGeneralDictionaries = await fileMx.checkInstalledResources("dictionaries_general", ".dictionary|.dcti|.dct.mybible|.dictionary.SQLite3");
     allEncyclopedia = await fileMx.checkInstalledResources("encyclopedia", ".dictionary|.dcti|.dct.mybible|.dictionary.SQLite3");
+
+    // The following line is used only for development purpose to get static string of a font data.
+    //await fileMx.getFontUriString("assets/fonts/KoineGreek.ttf", "font/ttf");
   }
 
   // Bibles-related functions
-
   Future<void> setupBibles() async {
     final Map<String, String> bibleFiles = await fileMx.checkInstalledResources("bibles", ".bible");
     for (MapEntry i in bibleFiles.entries) {

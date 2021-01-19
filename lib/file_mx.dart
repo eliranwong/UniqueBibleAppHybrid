@@ -157,4 +157,30 @@ class FileMx {
     sink.close();
   }
 
+  void writeStringToFile(String filename, String fileContent) {
+    final File textFile = File(join(userDirectory, filename));
+    textFile.writeAsStringSync(fileContent);
+  }
+
+  // The following function is used for development purpose.
+  // We use this function to get a static uri String for a font, written in a file.
+  // Reference on custom font in webview: https://github.com/flutter/flutter/issues/57575
+  // Reference on mimetype: https://www.iana.org/assignments/media-types/media-types.xhtml#font
+  // collection	font/collection	[RFC8081]
+  // otf	font/otf
+  // sfnt	font/sfnt
+  // ttf	font/ttf
+  // woff	font/woff
+  // woff2	font/woff2
+  // may use "application/octet-stream" in case of uploading
+  Future<void> getFontUriString(String fontAssetPath, String mimeType) async {
+    final ByteData fontData = await rootBundle.load(fontAssetPath);
+    final buffer = fontData.buffer;
+    final String fontUriString = Uri.dataFromBytes(
+      buffer.asUint8List(fontData.offsetInBytes, fontData.lengthInBytes),
+      mimeType: mimeType,
+    ).toString();
+    writeStringToFile("font.txt", fontUriString);
+  }
+
 }
