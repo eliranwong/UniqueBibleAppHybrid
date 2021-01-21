@@ -33,12 +33,13 @@ final configProvider = StateProvider<Configurations>((ref) {
 
 final fileMxP = StateProvider<FileMx>((ref) => ref.watch(configProvider).state.fileMx);
 
-final instantHighlightP = StateProvider<String>((ref) => "");
+final instantHighlightWordP = StateProvider<String>((ref) => "");
 final displayAllMenuBookP = StateProvider<bool>((ref) => false);
 final enableParallelChapterScrollingP = StateProvider<bool>((ref) => true);
-final wordLookupEntryP = StateProvider<String>((ref) => ref.watch(instantHighlightP).state);
+final wordLookupEntryP = StateProvider<String>((ref) => ref.watch(instantHighlightWordP).state);
 final lookupMatchesP = StateProvider<List<Map<String, dynamic>>>((ref) => []);
 final lookupContentP = StateProvider<String>((ref) => "");
+final pickerSelectedColorP = StateProvider<Color>((ref) => Colors.white);
 
 final customInterlinearP = StateProvider<Map<String, bool>>((ref) {
   return {
@@ -105,7 +106,13 @@ final languageP = StateProvider<String>(
     ttsEnglishP = StateProvider<String>(
             (ref) => ref.watch(configProvider).state.stringValues["ttsEnglish"]),
     ttsGreekP = StateProvider<String>(
-            (ref) => ref.watch(configProvider).state.stringValues["ttsGreek"]);
+            (ref) => ref.watch(configProvider).state.stringValues["ttsGreek"]),
+    instantHighlightColorCodeP = StateProvider<String>(
+            (ref) => ref.watch(configProvider).state.stringValues["instantHighlightColorCode"]),
+    bookmarkHighlight1ColorCodeP = StateProvider<String>(
+            (ref) => ref.watch(configProvider).state.stringValues["bookmarkHighlight1ColorCode"]),
+    bookmarkHighlight2ColorCodeP = StateProvider<String>(
+            (ref) => ref.watch(configProvider).state.stringValues["bookmarkHighlight2ColorCode"]);
 
 final fontSizeP = StateProvider<double>(
         (ref) => ref.watch(configProvider).state.doubleValues["fontSize"]),
@@ -276,7 +283,9 @@ class Configurations {
     "ttsChinese": "zh-CN",
     "ttsEnglish": "en-GB",
     "ttsGreek": "modern",
-    "instantHighlightColor": "#ffb7b7",
+    "instantHighlightColorCode": "#ffb7b7",
+    "bookmarkHighlight1ColorCode": "#ffff00",
+    "bookmarkHighlight2ColorCode": "#ff0000",
   };
   // Default double values.
   Map<String, double> doubleValues = {
@@ -549,9 +558,15 @@ class Configurations {
 
   // Text styles and colours
 
+  void updateSingleColor(String item, String newColorCode) {
+    save("${item}ColorCode", newColorCode);
+    myColors[item] = HexColor.fromHex(newColorCode);
+    myTextStyle[item] = TextStyle(backgroundColor: myColors[item]);
+  }
+
   // Run the following function when intValues["backgroundBrightness"] or doubleValues["fontSize"] is changed.
   void updateTheme() {
-    Color instantHighlightColor, backgroundColor, canvasColor, cardColor,
+    Color instantHighlightColor, bookmarkHighlight1Color, bookmarkHighlight2Color, backgroundColor, canvasColor, cardColor,
         blueAccent, indigo, black, blue, deepOrange, brown, grey,
         appBarColor, floatingButtonColor, bottomAppBarColor,
         dropdownBackground, dropdownBorder, dropdownDisabled, dropdownEnabled;
@@ -559,7 +574,9 @@ class Configurations {
     final int backgroundBrightness = intValues["backgroundBrightness"];
     // adjustment with changes of brightness
     backgroundColor = (backgroundBrightness == 0) ? Colors.white : Colors.blueGrey[backgroundBrightness];
-    instantHighlightColor = HexColor.fromHex(stringValues["instantHighlightColor"]);
+    instantHighlightColor = HexColor.fromHex(stringValues["instantHighlightColorCode"]);
+    bookmarkHighlight1Color = HexColor.fromHex(stringValues["bookmarkHighlight1ColorCode"]);
+    bookmarkHighlight2Color = HexColor.fromHex(stringValues["bookmarkHighlight2ColorCode"]);
 
     if (backgroundBrightness >= 500) {
       canvasColor = Colors.blueGrey[backgroundBrightness - 200];
@@ -617,6 +634,9 @@ class Configurations {
       "dropdownBorder": dropdownBorder,
       "dropdownDisabled": dropdownDisabled,
       "dropdownEnabled": dropdownEnabled,
+      "instantHighlight": instantHighlightColor,
+      "bookmarkHighlight1": bookmarkHighlight1Color,
+      "bookmarkHighlight2": bookmarkHighlight2Color,
     };
 
     // update various font text style here
@@ -663,7 +683,9 @@ class Configurations {
           decoration: TextDecoration.underline,
           color: Colors.blue,
         ),
-    instantHighlight = TextStyle(backgroundColor: instantHighlightColor);
+    instantHighlightTextStyle = TextStyle(backgroundColor: instantHighlightColor),
+    bookmarkHighlight1TextStyle = TextStyle(backgroundColor: bookmarkHighlight1Color),
+    bookmarkHighlight2TextStyle = TextStyle(backgroundColor: bookmarkHighlight2Color);
 
     // set the same font settings, which is passed to search delegate
     myTextStyle = {
@@ -680,7 +702,9 @@ class Configurations {
       "interlinearStyleDim": interlinearStyleDim,
       "subtitleStyle": subtitleStyle,
       "highlightStyle": highlightStyle,
-      "instantHighlight": instantHighlight,
+      "instantHighlight": instantHighlightTextStyle,
+      "bookmarkHighlight1": bookmarkHighlight1TextStyle,
+      "bookmarkHighlight2": bookmarkHighlight2TextStyle,
     };
 
     bibleTextStyles = {

@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'dart:io';
 import 'config.dart';
+import 'html_elements.dart';
 
 class BibleSettings extends StatelessWidget {
-
   @override
   build(BuildContext context) {
     return Consumer(
       builder: (context, watch, child) {
         final List<String> interface = watch(interfaceBibleSettingsP).state;
+        final Map<String, Color> myColors = watch(myColorsP).state;
         return Theme(
           data: watch(mainThemeP).state,
           child: Scaffold(
+            // Reference about appbar back button:
+            // https://stackoverflow.com/questions/51508257/how-to-change-the-appbar-back-button-color
             appBar: AppBar(
-              backgroundColor: watch(myColorsP).state["background"],
+              backgroundColor: myColors["appBarColor"],
               title: Text(interface[0]),
             ),
             body: _bibleSettings(context, interface),
@@ -37,6 +41,10 @@ class BibleSettings extends StatelessWidget {
                 const Divider(),
                 ..._backgroundBrightness(context, interface),
                 ..._fontSize(context, interface),
+                const Divider(),
+                _instantHighlightColor(context, interface),
+                _bookmarkHighlightColor1(context, interface),
+                _bookmarkHighlightColor2(context, interface),
                 const Divider(),
                 _keepDrawerOpen(context, interface),
                 _autoFocusVerseReferenceField(context, interface),
@@ -77,8 +85,8 @@ class BibleSettings extends StatelessWidget {
     return Consumer(
       builder: (context, watch, child) {
         return ListTile(
-          title:
-          Text(interface[39], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[39],
+              style: watch(myTextStyleP).state["verseFont"]),
         );
       },
     );
@@ -135,7 +143,8 @@ class BibleSettings extends StatelessWidget {
     return <Widget>[
       Consumer(
         builder: (context, watch, child) {
-          return Text(interface[11], style: watch(myTextStyleP).state["verseFont"]);
+          return Text(interface[11],
+              style: watch(myTextStyleP).state["verseFont"]);
         },
       ),
       Consumer(builder: (context, watch, child) {
@@ -171,7 +180,8 @@ class BibleSettings extends StatelessWidget {
     return <Widget>[
       Consumer(
         builder: (context, watch, child) {
-          return Text(interface[6], style: watch(myTextStyleP).state["verseFont"]);
+          return Text(interface[6],
+              style: watch(myTextStyleP).state["verseFont"]);
         },
       ),
       Consumer(builder: (context, watch, child) {
@@ -201,13 +211,156 @@ class BibleSettings extends StatelessWidget {
     ];
   }
 
+  Widget _instantHighlightColor(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final Color instantHighlightColor = watch(myColorsP).state["instantHighlight"];
+        final String instantHighlightColorCode = watch(instantHighlightColorCodeP).state;
+        return ListTile(
+          title: Text(
+            interface[42],
+            style: watch(myTextStyleP).state["verseFont"],
+          ),
+          subtitle: Text(
+            instantHighlightColorCode,
+            style: watch(myTextStyleP).state["subtitleStyle"],
+          ),
+          trailing: IconButton(
+            tooltip: interface[41],
+            icon: Icon(
+              Icons.color_lens,
+              color: instantHighlightColor,
+            ),
+            onPressed: () async {
+              context.read(pickerSelectedColorP).state = instantHighlightColor;
+              if (await showColorDialog(context)) {
+                final String newColorCode = context.read(pickerSelectedColorP).state.toHex();
+                context.read(configProvider).state.updateSingleColor("instantHighlight", newColorCode);
+                context.refresh(myColorsP);
+                context.refresh(myTextStyleP);
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _bookmarkHighlightColor1(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final Color bookmarkHighlight1Color = watch(myColorsP).state["bookmarkHighlight1"];
+        final String bookmarkHighlight1ColorCode = watch(bookmarkHighlight1ColorCodeP).state;
+        return ListTile(
+          title: Text(
+            interface[43],
+            style: watch(myTextStyleP).state["verseFont"],
+          ),
+          subtitle: Text(
+            bookmarkHighlight1ColorCode,
+            style: watch(myTextStyleP).state["subtitleStyle"],
+          ),
+          trailing: IconButton(
+            tooltip: interface[41],
+            icon: Icon(
+              Icons.color_lens,
+              color: bookmarkHighlight1Color,
+            ),
+            onPressed: () async {
+              context.read(pickerSelectedColorP).state = bookmarkHighlight1Color;
+              if (await showColorDialog(context)) {
+                final String newColorCode = context.read(pickerSelectedColorP).state.toHex();
+                context.read(configProvider).state.updateSingleColor("bookmarkHighlight1", newColorCode);
+                context.refresh(myColorsP);
+                context.refresh(myTextStyleP);
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _bookmarkHighlightColor2(BuildContext context, List<String> interface) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final Color bookmarkHighlight2Color = watch(myColorsP).state["bookmarkHighlight2"];
+        final String bookmarkHighlight2ColorCode = watch(bookmarkHighlight2ColorCodeP).state;
+        return ListTile(
+          title: Text(
+            interface[44],
+            style: watch(myTextStyleP).state["verseFont"],
+          ),
+          subtitle: Text(
+            bookmarkHighlight2ColorCode,
+            style: watch(myTextStyleP).state["subtitleStyle"],
+          ),
+          trailing: IconButton(
+            tooltip: interface[41],
+            icon: Icon(
+              Icons.color_lens,
+              color: bookmarkHighlight2Color,
+            ),
+            onPressed: () async {
+              context.read(pickerSelectedColorP).state = bookmarkHighlight2Color;
+              if (await showColorDialog(context)) {
+                final String newColorCode = context.read(pickerSelectedColorP).state.toHex();
+                context.read(configProvider).state.updateSingleColor("bookmarkHighlight2", newColorCode);
+                context.refresh(myColorsP);
+                context.refresh(myTextStyleP);
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Future<bool> showColorDialog(BuildContext context) async {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return Consumer(builder: (context, watch, child) {
+          final pickerSelectedColor = watch(pickerSelectedColorP).state;
+          final Map<String, List<String>> colorDialogWords = {
+            "ENG": ["Select a color", "Cancel", "Change"],
+            "TC": ["選擇您喜歡的顔色", "取消", "變更"],
+            "SC": ["选择您喜欢的颜色", "取消", "变更"],
+          };
+          final List<String> words = colorDialogWords[watch(languageP).state];
+          return AlertDialog(
+            title: Text(words.first),
+            content: SingleChildScrollView(
+              child: ColorPicker(
+                pickerColor: pickerSelectedColor,
+                onColorChanged: (Color color) => context.read(pickerSelectedColorP).state = color,
+                showLabel: true,
+                pickerAreaHeightPercent: 0.8,
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: Text(words[1]),
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+              TextButton(
+                child: Text(words.last),
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
   Widget _keepDrawerOpen(BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
         final bool keepDrawerOpen = watch(keepDrawerOpenP).state;
         return ListTile(
-          title:
-              Text(interface[24], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[24],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: keepDrawerOpen,
               onChanged: (bool newValue) {
@@ -224,13 +377,15 @@ class BibleSettings extends StatelessWidget {
     );
   }
 
-  Widget _interlinearClauseBoundaries(BuildContext context, List<String> interface) {
+  Widget _interlinearClauseBoundaries(
+      BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final bool customInterlinearOption = watch(customInterlinearP).state["clauseBoundaries"];
+        final bool customInterlinearOption =
+            watch(customInterlinearP).state["clauseBoundaries"];
         return ListTile(
-          title:
-          Text(interface[40], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[40],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: customInterlinearOption,
               onChanged: (bool newValue) {
@@ -250,10 +405,11 @@ class BibleSettings extends StatelessWidget {
   Widget _interlinear0(BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearWord"];
+        final bool customInterlinearOption =
+            watch(customInterlinearP).state["interlinearWord"];
         return ListTile(
-          title:
-          Text(interface[30], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[30],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: customInterlinearOption,
               onChanged: (bool newValue) {
@@ -273,10 +429,11 @@ class BibleSettings extends StatelessWidget {
   Widget _interlinear1(BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearTransliteration"];
+        final bool customInterlinearOption =
+            watch(customInterlinearP).state["interlinearTransliteration"];
         return ListTile(
-          title:
-          Text(interface[31], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[31],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: customInterlinearOption,
               onChanged: (bool newValue) {
@@ -296,10 +453,11 @@ class BibleSettings extends StatelessWidget {
   Widget _interlinear2(BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearPronunciation"];
+        final bool customInterlinearOption =
+            watch(customInterlinearP).state["interlinearPronunciation"];
         return ListTile(
-          title:
-          Text(interface[32], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[32],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: customInterlinearOption,
               onChanged: (bool newValue) {
@@ -319,10 +477,11 @@ class BibleSettings extends StatelessWidget {
   Widget _interlinear3(BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearLexeme"];
+        final bool customInterlinearOption =
+            watch(customInterlinearP).state["interlinearLexeme"];
         return ListTile(
-          title:
-          Text(interface[33], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[33],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: customInterlinearOption,
               onChanged: (bool newValue) {
@@ -342,10 +501,11 @@ class BibleSettings extends StatelessWidget {
   Widget _interlinear4(BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearLexicon"];
+        final bool customInterlinearOption =
+            watch(customInterlinearP).state["interlinearLexicon"];
         return ListTile(
-          title:
-          Text(interface[34], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[34],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: customInterlinearOption,
               onChanged: (bool newValue) {
@@ -365,10 +525,11 @@ class BibleSettings extends StatelessWidget {
   Widget _interlinear5(BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearGloss"];
+        final bool customInterlinearOption =
+            watch(customInterlinearP).state["interlinearGloss"];
         return ListTile(
-          title:
-          Text(interface[35], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[35],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: customInterlinearOption,
               onChanged: (bool newValue) {
@@ -388,10 +549,11 @@ class BibleSettings extends StatelessWidget {
   Widget _interlinear6(BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearMorphology"];
+        final bool customInterlinearOption =
+            watch(customInterlinearP).state["interlinearMorphology"];
         return ListTile(
-          title:
-          Text(interface[36], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[36],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: customInterlinearOption,
               onChanged: (bool newValue) {
@@ -411,10 +573,11 @@ class BibleSettings extends StatelessWidget {
   Widget _interlinear7(BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearInterlinear"];
+        final bool customInterlinearOption =
+            watch(customInterlinearP).state["interlinearLiteral"];
         return ListTile(
-          title:
-          Text(interface[37], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[37],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: customInterlinearOption,
               onChanged: (bool newValue) {
@@ -422,7 +585,7 @@ class BibleSettings extends StatelessWidget {
                   context
                       .read(configProvider)
                       .state
-                      .save("interlinearInterlinear", newValue);
+                      .save("interlinearLiteral", newValue);
                   context.refresh(customInterlinearP);
                 }
               }),
@@ -434,10 +597,11 @@ class BibleSettings extends StatelessWidget {
   Widget _interlinear8(BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final bool customInterlinearOption = watch(customInterlinearP).state["interlinearTranslation"];
+        final bool customInterlinearOption =
+            watch(customInterlinearP).state["interlinearSmooth"];
         return ListTile(
-          title:
-          Text(interface[38], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[38],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: customInterlinearOption,
               onChanged: (bool newValue) {
@@ -445,7 +609,7 @@ class BibleSettings extends StatelessWidget {
                   context
                       .read(configProvider)
                       .state
-                      .save("interlinearTranslation", newValue);
+                      .save("interlinearSmooth", newValue);
                   context.refresh(customInterlinearP);
                 }
               }),
@@ -454,13 +618,14 @@ class BibleSettings extends StatelessWidget {
     );
   }
 
-  Widget _autoFocusVerseReferenceField(BuildContext context, List<String> interface) {
+  Widget _autoFocusVerseReferenceField(
+      BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
         final bool currentValue = watch(autoFocusVerseReferenceFieldP).state;
         return ListTile(
-          title:
-          Text(interface[25], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[25],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: currentValue,
               onChanged: (bool newValue) {
@@ -477,13 +642,14 @@ class BibleSettings extends StatelessWidget {
     );
   }
 
-  Widget _openBookWithoutChapterSelection(BuildContext context, List<String> interface) {
+  Widget _openBookWithoutChapterSelection(
+      BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
         final bool currentValue = watch(openBookWithoutChapterSelectionP).state;
         return ListTile(
-          title:
-          Text(interface[26], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[26],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: currentValue,
               onChanged: (bool newValue) {
@@ -500,13 +666,15 @@ class BibleSettings extends StatelessWidget {
     );
   }
 
-  Widget _openChapterWithoutVerseSelection(BuildContext context, List<String> interface) {
+  Widget _openChapterWithoutVerseSelection(
+      BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final bool currentValue = watch(openChapterWithoutVerseSelectionP).state;
+        final bool currentValue =
+            watch(openChapterWithoutVerseSelectionP).state;
         return ListTile(
-          title:
-          Text(interface[27], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[27],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: currentValue,
               onChanged: (bool newValue) {
@@ -523,13 +691,14 @@ class BibleSettings extends StatelessWidget {
     );
   }
 
-  Widget _enableParallelSearchResults(BuildContext context, List<String> interface) {
+  Widget _enableParallelSearchResults(
+      BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
         final bool currentValue = watch(enableParallelSearchResultsP).state;
         return ListTile(
-          title:
-          Text(interface[28], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[28],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: currentValue,
               onChanged: (bool newValue) {
@@ -546,13 +715,14 @@ class BibleSettings extends StatelessWidget {
     );
   }
 
-  Widget _enableParallelMultipleVerses(BuildContext context, List<String> interface) {
+  Widget _enableParallelMultipleVerses(
+      BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
         final bool currentValue = watch(enableParallelMultipleVersesP).state;
         return ListTile(
-          title:
-          Text(interface[29], style: watch(myTextStyleP).state["verseFont"]),
+          title: Text(interface[29],
+              style: watch(myTextStyleP).state["verseFont"]),
           trailing: Switch(
               value: currentValue,
               onChanged: (bool newValue) {
@@ -618,7 +788,8 @@ class BibleSettings extends StatelessWidget {
   Widget _favouriteAction(BuildContext context, List<String> interface) {
     return Consumer(
       builder: (context, watch, child) {
-        final List<String> _favouriteActionList = watch(interfaceDialogP).state.sublist(4);
+        final List<String> _favouriteActionList =
+            watch(interfaceDialogP).state.sublist(4);
         _favouriteActionList.insert(0, "---");
         final int favouriteAction = watch(favouriteActionP).state;
         final String favouriteActionDescription =
@@ -703,7 +874,8 @@ class BibleSettings extends StatelessWidget {
         builder: (context, watch, child) {
           final String ttsEnglish = watch(ttsEnglishP).state;
           return ListTile(
-            title: Text(interface[12], style: watch(myTextStyleP).state["verseFont"]),
+            title: Text(interface[12],
+                style: watch(myTextStyleP).state["verseFont"]),
             trailing: DropdownButton<String>(
               style: watch(myTextStyleP).state["verseFont"],
               underline: watch(dropdownUnderlineP).state,
@@ -734,7 +906,8 @@ class BibleSettings extends StatelessWidget {
         builder: (context, watch, child) {
           final String ttsChinese = watch(ttsChineseP).state;
           return ListTile(
-            title: Text(interface[13], style: watch(myTextStyleP).state["verseFont"]),
+            title: Text(interface[13],
+                style: watch(myTextStyleP).state["verseFont"]),
             trailing: DropdownButton<String>(
               style: watch(myTextStyleP).state["verseFont"],
               underline: watch(dropdownUnderlineP).state,
@@ -774,7 +947,8 @@ class BibleSettings extends StatelessWidget {
           final bool alwaysOpenMarvelBibleExternallyValue =
               watch(alwaysOpenMarvelBibleExternallyP).state;
           return ListTile(
-            title: Text(interface[22], style: watch(myTextStyleP).state["verseFont"]),
+            title: Text(interface[22],
+                style: watch(myTextStyleP).state["verseFont"]),
             trailing: Switch(
                 value: alwaysOpenMarvelBibleExternallyValue,
                 onChanged: (bool newValue) {
@@ -807,8 +981,10 @@ class BibleSettings extends StatelessWidget {
           };
           final String marvelBible = marvelBibles[watch(marvelBibleP).state];
           return ListTile(
-            title: Text(interface[19], style: watch(myTextStyleP).state["verseFont"]),
-            subtitle: Text("Marvel $marvelBible Bible", style: watch(myTextStyleP).state["subtitleStyle"]),
+            title: Text(interface[19],
+                style: watch(myTextStyleP).state["verseFont"]),
+            subtitle: Text("Marvel $marvelBible Bible",
+                style: watch(myTextStyleP).state["subtitleStyle"]),
             trailing: DropdownButton<String>(
               style: watch(myTextStyleP).state["verseFont"],
               underline: watch(dropdownUnderlineP).state,
@@ -891,9 +1067,10 @@ class BibleSettings extends StatelessWidget {
           final String marvelCommentary =
               watch(marvelCommentaryP).state.substring(1);
           return ListTile(
-            title: Text(interface[23], style: watch(myTextStyleP).state["verseFont"]),
+            title: Text(interface[23],
+                style: watch(myTextStyleP).state["verseFont"]),
             subtitle: Text(marvelCommentaries[marvelCommentary],
-              style: watch(myTextStyleP).state["subtitleStyle"]),
+                style: watch(myTextStyleP).state["subtitleStyle"]),
             trailing: DropdownButton<String>(
               style: watch(myTextStyleP).state["verseFont"],
               underline: watch(dropdownUnderlineP).state,

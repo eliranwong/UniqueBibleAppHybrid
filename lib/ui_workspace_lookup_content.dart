@@ -1,6 +1,5 @@
 // Packages
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/all.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 // The following three imports work with webview.
@@ -12,7 +11,7 @@ import 'config.dart';
 import 'html_elements.dart';
 import 'font_uri.dart';
 
-class LookupContent extends HookWidget {
+class LookupContent extends StatelessWidget {
 
   final Function callBack;
   WebViewController _webViewController;

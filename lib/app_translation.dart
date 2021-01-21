@@ -300,6 +300,10 @@ class AppTranslation {
       "Smooth Translation", //38
       "Interlinear Options",
       "Clause Boundaries", // 40
+      "Change", //41
+      "Instant Highlight Color", //42
+      "Bookmark Highlight Color 1", //43
+      "Bookmark Highlight Color 2", //44
     ],
     "TC": [
       "設定",
@@ -343,6 +347,10 @@ class AppTranslation {
       "順譯", //38
       "原文逐字翻譯選項",
       "子句邊界", // 40
+      "變更", //41
+      "即時點選顔色", //42
+      "標簽經文顔色一", //43
+      "標簽經文顔色二", //44
     ],
     "SC": [
       "设定",
@@ -386,6 +394,10 @@ class AppTranslation {
       "順譯", //38
       "原文逐字翻译选项",
       "子句边界",
+      "变更", //41
+      "即时点选颜色", //42
+      "标签经文颜色一", //43
+      "标签经文颜色二", //44
     ],
   };
 

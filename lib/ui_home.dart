@@ -421,7 +421,7 @@ class UiHome extends HookWidget {
     //verseText = TextTransformer.processBibleVerseText(verseText);
 
     return Consumer(builder: (context, watch, child) {
-      final String instantHighlight = watch(instantHighlightP).state;
+      final String instantHighlightWord = watch(instantHighlightWordP).state;
       return ParsedText(
         selectable:
         (!listener), //selectable option breaks the listener for parallel scrolling
@@ -472,10 +472,10 @@ class UiHome extends HookWidget {
               await newVerseSelectedSameChapter(context, data.first);
             },
           ),
-          if (instantHighlight.isNotEmpty)
+          if (instantHighlightWord.isNotEmpty)
             MatchText(
               pattern:
-              instantHighlight, // predefined type can be any of this ParsedTypes
+              instantHighlightWord, // predefined type can be any of this ParsedTypes
               style: context.read(configProvider).state.myTextStyle[
               "instantHighlight"], // custom style to be applied to this matched text
               onTap: (url) {
@@ -512,7 +512,7 @@ class UiHome extends HookWidget {
     verseText = TextTransformer.processBibleVerseText(verseText);
 
     return Consumer(builder: (context, watch, child) {
-      final String instantHighlight = watch(instantHighlightP).state;
+      final String instantHighlightWord = watch(instantHighlightWordP).state;
       return ParsedText(
         selectable:
             (!listener), //selectable option breaks the listener for parallel scrolling
@@ -531,10 +531,10 @@ class UiHome extends HookWidget {
               await newVerseSelectedSameChapter(context, data.first);
             },
           ),
-          if (instantHighlight.isNotEmpty)
+          if (instantHighlightWord.isNotEmpty)
             MatchText(
               pattern:
-                  instantHighlight, // predefined type can be any of this ParsedTypes
+              instantHighlightWord, // predefined type can be any of this ParsedTypes
               style: context.read(configProvider).state.myTextStyle[
                   "instantHighlight"], // custom style to be applied to this matched text
               onTap: (url) {
@@ -551,7 +551,7 @@ class UiHome extends HookWidget {
             onTap: (String url) async {
               enableParallelChapterScrolling(context);
               context.read(configProvider).state.speak(url, language: language);
-              context.read(instantHighlightP).state = url.trim();
+              context.read(instantHighlightWordP).state = url.trim();
               // do something here with passed url
             }, // callback function when the text is tapped on
           ),
