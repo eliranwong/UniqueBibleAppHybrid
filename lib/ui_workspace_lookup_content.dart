@@ -1,5 +1,6 @@
 // Packages
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/all.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 // The following three imports work with webview.
@@ -9,11 +10,12 @@ import 'dart:convert';
 // My libraries
 import 'config.dart';
 import 'html_elements.dart';
+import 'font_uri.dart';
 
-class LookupContent extends StatelessWidget {
+class LookupContent extends HookWidget {
 
   final Function callBack;
-  //WebViewController _webViewController;
+  WebViewController _webViewController;
   LookupContent(this.callBack);
 
   @override
@@ -27,13 +29,13 @@ class LookupContent extends StatelessWidget {
       final Map<String, Color> myColors = watch(myColorsP).state;
       final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
       final double fontSize = watch(fontSizeP).state;
-      return WebView(
+      return (lookupContent.isEmpty) ? Container() : WebView(
         initialUrl: _buildHtmlContent(context, lookupContent, myColors, myTextStyle, fontSize),
         javascriptMode: JavascriptMode.unrestricted,
         javascriptChannels: <JavascriptChannel>[
           HtmlElements.ubaJsChannel(),
         ].toSet(),
-        //onWebViewCreated: (WebViewController webViewController) => _webViewController = webViewController,
+        onWebViewCreated: (WebViewController webViewController) => _webViewController = webViewController,
         gestureRecognizers: Set()
           ..addAll({
             Factory<VerticalDragGestureRecognizer>(() => VerticalDragGestureRecognizer()),
@@ -55,10 +57,14 @@ class LookupContent extends StatelessWidget {
     final fullContent = """
 <!DOCTYPE html><html>
 <head><title>UniqueBible.app</title>
-<style>body { font-size: ${fontSize}px; background-color: $backgroundColor; color: $fontColor; }</style>
-<style>${HtmlElements.defaultCss()}</style>
-<script src='js/common.js'></script>
-<script src='w3.js'></script>
+<style>
+body { font-size: ${fontSize}px; background-color: $backgroundColor; color: $fontColor; } 
+@font-face { font-family: 'KoineGreek'; src: url(${FontUri.koineGreekttf}); } 
+@font-face { font-family: 'Ezra SIL'; src: url(${FontUri.sileotttf}); } 
+</style>
+<style>${HtmlElements.defaultCss}</style>
+<script>${HtmlElements.defaultJs}</script>
+<script>${HtmlElements.w3Js}</script>
 <script>$activeBcvSettings</script>
 <script>
 var versionList = []; 

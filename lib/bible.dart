@@ -95,7 +95,15 @@ class Bible {
       String verseText = "";
       int clauseID = entry.value.first["ClauseID"];
       for (Map<String, dynamic> word in entry.value) {
-        final wordString = "<cid>${word["ClauseID"]}</cid><wid>${word["WordID"]}</wid><w>${word["Word"]}</w><transliterate>${word["Transliteration"]}</transliterate><pronounce>${word["Pronunciation"]}</pronounce><lexeme>${word["Lexeme"]}</lexeme><lexicon>${word["LexicalEntry"]}</lexicon><gloss>${word["Gloss"]}</gloss><morphCode>${word["MorphologyCode"]}</morphCode><morph>${word["Morphology"]}</morph><inter>${word["Interlinear"]}</inter><trans>${word["Translation"]}</trans>";
+        final wordString = "<cid>${word["ClauseID"]}</cid><wid>${word["WordID"]}</wid><w>${word["Word"]}</w>"
+            "<transliterate>${word["Transliteration"]}</transliterate>"
+            "<pronounce>${word["Pronunciation"]}</pronounce>"
+            "<lexeme>${word["Lexeme"]}</lexeme>"
+            "<lexicon>${word["LexicalEntry"]}</lexicon>"
+            "<gloss>${word["Gloss"]}</gloss>"
+            "<morphCode>${word["MorphologyCode"]}</morphCode><morph>${word["Morphology"]}</morph>"
+            "<literal>${word["Interlinear"]}</literal>"
+            "<smooth>${word["Translation"]}</smooth>";
         if (word["ClauseID"] == clauseID) {
           verseText = "$verseText｜$wordString";
         } else {

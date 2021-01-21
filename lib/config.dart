@@ -4,7 +4,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:flutter/services.dart';
 // Core libraries
 import 'dart:io';
 import 'dart:typed_data';
@@ -15,6 +14,7 @@ import 'bible.dart';
 import 'file_mx.dart';
 import 'bible_parser.dart';
 import 'text_transformer.dart';
+import 'html_elements.dart';
 
 final configurationsProvider = FutureProvider<Configurations>((ref) async {
   final Configurations configurations = Configurations();
@@ -49,8 +49,8 @@ final customInterlinearP = StateProvider<Map<String, bool>>((ref) {
     "interlinearLexicon": ref.watch(configProvider).state.boolValues["interlinearLexicon"],
     "interlinearGloss": ref.watch(configProvider).state.boolValues["interlinearGloss"],
     "interlinearMorphology": ref.watch(configProvider).state.boolValues["interlinearMorphology"],
-    "interlinearInterlinear": ref.watch(configProvider).state.boolValues["interlinearInterlinear"],
-    "interlinearTranslation": ref.watch(configProvider).state.boolValues["interlinearTranslation"],
+    "interlinearLiteral": ref.watch(configProvider).state.boolValues["interlinearLiteral"],
+    "interlinearSmooth": ref.watch(configProvider).state.boolValues["interlinearSmooth"],
     "clauseBoundaries": ref.watch(configProvider).state.boolValues["clauseBoundaries"],
   };
 });
@@ -245,8 +245,8 @@ class Configurations {
     "interlinearLexicon": true,
     "interlinearGloss": true,
     "interlinearMorphology": true,
-    "interlinearInterlinear": true,
-    "interlinearTranslation": true,
+    "interlinearLiteral": true,
+    "interlinearSmooth": true,
     "clauseBoundaries": true,
     "enableParallelSearchResults": false,
     "enableParallelMultipleVerses": false,
@@ -276,6 +276,7 @@ class Configurations {
     "ttsChinese": "zh-CN",
     "ttsEnglish": "en-GB",
     "ttsGreek": "modern",
+    "instantHighlightColor": "#ffb7b7",
   };
   // Default double values.
   Map<String, double> doubleValues = {
@@ -550,14 +551,15 @@ class Configurations {
 
   // Run the following function when intValues["backgroundBrightness"] or doubleValues["fontSize"] is changed.
   void updateTheme() {
-    Color backgroundColor, canvasColor, cardColor,
+    Color instantHighlightColor, backgroundColor, canvasColor, cardColor,
         blueAccent, indigo, black, blue, deepOrange, brown, grey,
         appBarColor, floatingButtonColor, bottomAppBarColor,
         dropdownBackground, dropdownBorder, dropdownDisabled, dropdownEnabled;
 
     final int backgroundBrightness = intValues["backgroundBrightness"];
     // adjustment with changes of brightness
-    backgroundColor = Colors.blueGrey[backgroundBrightness];
+    backgroundColor = (backgroundBrightness == 0) ? Colors.white : Colors.blueGrey[backgroundBrightness];
+    instantHighlightColor = HexColor.fromHex(stringValues["instantHighlightColor"]);
 
     if (backgroundBrightness >= 500) {
       canvasColor = Colors.blueGrey[backgroundBrightness - 200];
@@ -577,7 +579,7 @@ class Configurations {
       dropdownDisabled = Colors.blueAccent[100];
       dropdownEnabled = Colors.blueAccent[100];
     } else {
-      canvasColor = Colors.blueGrey[backgroundBrightness];
+      canvasColor = backgroundColor;
       cardColor = Colors.grey[300];
       blueAccent = Colors.blue[700];
       indigo = Colors.indigo[700];
@@ -590,7 +592,7 @@ class Configurations {
       appBarColor = Colors.blue[600];
       floatingButtonColor = Colors.blue[600];
       bottomAppBarColor = Colors.grey[backgroundBrightness + 100];
-      dropdownBackground = Colors.blueGrey[backgroundBrightness];
+      dropdownBackground = backgroundColor;
       dropdownBorder = Colors.grey[700];
       dropdownDisabled = Colors.blueAccent[700];
       dropdownEnabled = Colors.blueAccent[700];
@@ -661,7 +663,7 @@ class Configurations {
           decoration: TextDecoration.underline,
           color: Colors.blue,
         ),
-    instantHighlight = TextStyle(backgroundColor: Colors.red[300]);
+    instantHighlight = TextStyle(backgroundColor: instantHighlightColor);
 
     // set the same font settings, which is passed to search delegate
     myTextStyle = {
@@ -694,8 +696,7 @@ class Configurations {
     mainTheme = ThemeData(
       //primaryColor: myColors["appBarColor"],
       appBarTheme: AppBarTheme(color: myColors["appBarColor"]),
-      scaffoldBackgroundColor:
-      Colors.blueGrey[intValues["backgroundBrightness"]],
+      scaffoldBackgroundColor: backgroundColor,
       canvasColor: myColors["canvasColor"],
       unselectedWidgetColor: myColors["blue"],
       accentColor: myColors["blueAccent"],

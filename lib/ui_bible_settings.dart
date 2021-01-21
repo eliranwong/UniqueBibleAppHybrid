@@ -4,6 +4,7 @@ import 'dart:io';
 import 'config.dart';
 
 class BibleSettings extends StatelessWidget {
+
   @override
   build(BuildContext context) {
     return Consumer(

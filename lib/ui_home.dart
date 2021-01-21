@@ -6,6 +6,10 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:swipedetector/swipedetector.dart';
 import 'package:flutter_parsed_text/flutter_parsed_text.dart';
+// The following three imports work with webview.
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+import 'dart:convert';
 // Core libraries
 import 'dart:io';
 import 'dart:async';
@@ -16,8 +20,11 @@ import 'bibles_scroll_coordinator.dart';
 import 'bible.dart';
 import 'bible_parser.dart';
 import 'text_transformer.dart';
-import 'ui_workspace_word_features.dart';
+import 'html_elements.dart';
+import 'font_uri.dart';
+import 'testing_text.dart';
 // ui
+import 'ui_workspace_word_features.dart';
 import 'ui_home_bottom_app_bar.dart';
 import 'ui_home_top_app_bar.dart';
 import 'ui_drawer.dart';
@@ -44,6 +51,7 @@ class UiHome extends HookWidget {
   BiblesScrollCoordinator biblesScrollCoordinator;
   TabController workSpaceTabController;
   int workSpaceTabIndex = 0;
+  WebViewController _webViewController;
 
   // Constructor
   UiHome() {
@@ -120,6 +128,7 @@ class UiHome extends HookWidget {
     return Consumer(
       builder: (context, watch, child) {
         return FloatingActionButton(
+          mini: true,
           backgroundColor: watch(myColorsP).state["floatingButtonColor"],
           tooltip: watch(interfaceBottomP).state[9],
           onPressed: () async {
@@ -249,6 +258,7 @@ class UiHome extends HookWidget {
               (List<dynamic> data) async => await callBack(context, data)),
       LookupContent(
               (List<dynamic> data) async => await callBack(context, data)),
+      _buildWebView(context),
       BibleSearchResults(
           (List<dynamic> data) async => await callBack(context, data)),
       MultipleVerses(
@@ -537,11 +547,11 @@ class UiHome extends HookWidget {
             ),
           MatchText(
             pattern:
-                r"\b([A-Za-z][a-z]*?)\b|([^ ]*?) |[^\w\.\?\[\]\{\}\!\@\#\$\%\^\&\*\(\)\-\+\=\,\:\;\']", // a custom pattern to match
-            onTap: (url) async {
+                r"\b([A-Za-z][a-z]*?)\b|([^ ]*?) |[^\w\.\?\[\]\{\}\!\@\#\$\%\^\&\*\(\)\-\+\=\,\:\;\' ]", // a custom pattern to match
+            onTap: (String url) async {
               enableParallelChapterScrolling(context);
               context.read(configProvider).state.speak(url, language: language);
-              context.read(instantHighlightP).state = url;
+              context.read(instantHighlightP).state = url.trim();
               // do something here with passed url
             }, // callback function when the text is tapped on
           ),
@@ -801,13 +811,13 @@ class UiHome extends HookWidget {
             },
           ),
           MatchText(
-            pattern: r"<inter>(.*?)</inter>",
+            pattern: r"<literal>(.*?)</literal>",
             style: bibleTextStyles["interlinear"].last,
             renderText: ({String str, String pattern}) {
               Map<String, String> map = Map<String, String>();
               RegExp customRegExp = RegExp(pattern);
               Match match = customRegExp.firstMatch(str);
-              map['display'] = (customInterlinear["interlinearInterlinear"]) ? "\n${match.group(1)}" : "";
+              map['display'] = (customInterlinear["interlinearLiteral"]) ? "\n${match.group(1)}" : "";
               map['value'] = match.group(1);
               return map;
             },
@@ -817,13 +827,13 @@ class UiHome extends HookWidget {
             },
           ),
           MatchText(
-            pattern: r"<trans>(.*?)</trans>",
+            pattern: r"<smooth>(.*?)</smooth>",
             style: bibleTextStyles["interlinear"].first,
             renderText: ({String str, String pattern}) {
               Map<String, String> map = Map<String, String>();
               RegExp customRegExp = RegExp(pattern);
               Match match = customRegExp.firstMatch(str);
-              map['display'] = (customInterlinear["interlinearTranslation"]) ? "\n${match.group(1)}" : "";
+              map['display'] = (customInterlinear["interlinearSmooth"]) ? "\n${match.group(1)}" : "";
               map['value'] = match.group(1);
               return map;
             },
@@ -1433,4 +1443,83 @@ class UiHome extends HookWidget {
         .updateMultipleVersions(verseData, references: references);
     context.refresh(multipleVersionsP);
   }
+
+  // Functions to work with WebView
+
+  Widget _buildWebView(BuildContext context) {
+    return Consumer(builder: (context, watch, child) {
+      final String lookupContent = watch(lookupContentP).state;
+      final Map<String, Color> myColors = watch(myColorsP).state;
+      final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
+      final double fontSize = watch(fontSizeP).state;
+      return WebView(
+        initialUrl: _buildHtmlContent(context, lookupContent, myColors, myTextStyle, fontSize),
+        javascriptMode: JavascriptMode.unrestricted,
+        javascriptChannels: <JavascriptChannel>[
+          HtmlElements.ubaJsChannel(),
+        ].toSet(),
+        onWebViewCreated: (WebViewController webViewController) => _webViewController = webViewController,
+        gestureRecognizers: Set()
+          ..addAll({
+            Factory<VerticalDragGestureRecognizer>(() => VerticalDragGestureRecognizer()),
+            Factory<TapGestureRecognizer>(() => TapGestureRecognizer()),
+            Factory<LongPressGestureRecognizer>(() => LongPressGestureRecognizer()),
+          }),
+      );
+    });
+  }
+
+  String _buildHtmlContent(BuildContext context, String content, Map<String, Color> myColors, Map<String, TextStyle> myTextStyle, double fontSize, {bool rtl = false}) {
+
+    // Insert text for testing only.
+    content = TestingText.content;
+    rtl = true;
+
+    final String backgroundColor = myColors["background"].toHex();
+    final String fontColor = myColors["black"].toHex();
+
+    final List<int> bcvList = context.read(historyActiveVerseP).state.first;
+    final String activeBcvSettings = "var activeText = 'KJV'; var activeB = ${bcvList.first}; var activeC = ${bcvList[1]}; var activeV = ${bcvList[2]};";
+
+    final fullContent = """
+<!DOCTYPE html><html>
+<head><title>UniqueBible.app</title>
+<style>
+body { font-size: ${fontSize}px; background-color: $backgroundColor; color: $fontColor; } 
+@font-face { font-family: 'KoineGreek'; src: url(${FontUri.koineGreekttf}); } 
+@font-face { font-family: 'Ezra SIL'; src: url(${FontUri.sileotttf}); } 
+</style>
+<style>${HtmlElements.defaultCss}</style>
+<script>${HtmlElements.defaultJs}</script>
+<script>${HtmlElements.w3Js}</script>
+<script>$activeBcvSettings</script>
+<script>
+var versionList = []; 
+var compareList = []; 
+var parallelList = []; 
+var diffList = []; 
+var searchList = [];
+</script>
+</head>
+<body>
+<span id='v0.0.0'></span>
+${rtl ? "<div style='direction: rtl;'>" : "<div>"}
+$content
+</div>
+</body>
+</html>
+    """;
+
+    return Uri.dataFromString(fullContent, mimeType: 'text/html', encoding: utf8).toString();
+  }
+
+  void webViewScrollToBcv(BuildContext context, WebViewController webViewController, {List<int> bcvList = const []}) {
+    if (bcvList.isEmpty) bcvList = context.read(historyActiveVerseP).state.first;
+    final String js = "var activeVerse = document.getElementById('v${bcvList.first}.${bcvList[1]}.${bcvList[2]}'); "
+        "if (typeof(activeVerse) != 'undefined' && activeVerse != null) { "
+        "activeVerse.scrollIntoView(); activeVerse.style.color = 'red'; } "
+        "else { document.getElementById('v0.0.0').scrollIntoView(); }";
+    webViewController?.evaluateJavascript(js);
+  }
+
 }
