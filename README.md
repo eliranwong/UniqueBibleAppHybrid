@@ -90,5 +90,8 @@ what have been done in this hybrid project:
 <img src="screenshots/screenshot_search_result_chart.png">
 [screenshot_search_result_chart.png]
 
-<img src="screenshots/screenshot_search_results.png">
-[screenshot_search_results.png]
+<img src="screenshots/combined_screenshot1_search_MAB.png">
+[combined_screenshot1_search_MAB.png]
+
+<img src="screenshots/combined_screenshot1_highlight_color.png">
+[combined_screenshot1_highlight_color.png]
