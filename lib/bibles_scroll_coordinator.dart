@@ -37,7 +37,9 @@ class BiblesScrollCoordinator {
   }
 
   void checkScrolling() {
-    final List<List<dynamic>> chapterData1 = context.read(chapterData1P).state;
+    final List<int> activeVerse = context.read(historyActiveVerseP).state.first;
+    final String activeBcString = "${activeVerse.first}.${activeVerse[1]}";
+    final List<List<dynamic>> chapterData1 = context.read(allChapterData1P).state[activeBcString];
     final List<List<dynamic>> chapterData2 = context.read(chapterData2P).state;
     switch (bibleToBeScrolled) {
       case 1:

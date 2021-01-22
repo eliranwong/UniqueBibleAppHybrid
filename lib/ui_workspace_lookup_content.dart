@@ -50,8 +50,8 @@ class LookupContent extends StatelessWidget {
     final String backgroundColor = myColors["background"].toHex();
     final String fontColor = myColors["black"].toHex();
 
-    final List<int> bcvList = context.read(historyActiveVerseP).state.first;
-    final String activeBcvSettings = "var activeText = 'KJV'; var activeB = ${bcvList.first}; var activeC = ${bcvList[1]}; var activeV = ${bcvList[2]};";
+    final List<int> activeVerse = context.read(historyActiveVerseP).state.first;
+    final String activeBcvSettings = "var activeText = 'KJV'; var activeB = ${activeVerse.first}; var activeC = ${activeVerse[1]}; var activeV = ${activeVerse[2]};";
 
     final fullContent = """
 <!DOCTYPE html><html>

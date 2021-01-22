@@ -135,13 +135,7 @@ class BibleDrawer extends StatelessWidget {
             final List<List<dynamic>> references =
                 context.read(parserP).state.extractAllReferences(value);
             if (references.first.join(".") != activeVerse.join(".")) {
-              await callBack([
-                (references.first.sublist(0, 2).join(".") ==
-                        activeVerse.sublist(0, 2).join("."))
-                    ? "newVerseSelectedSameChapter"
-                    : "newVerseSelected",
-                references.first
-              ]);
+              await callBack(["newVerseSelected", references.first]);
               _completeDrawerAction(context);
             }
           },
@@ -274,6 +268,7 @@ class BibleDrawer extends StatelessWidget {
                   "newVerseSelected",
                   [bookNo, newChapter, newVerse]
                 ]);
+                _completeDrawerAction(context);
               }
             }
           },
@@ -374,6 +369,7 @@ class BibleDrawer extends StatelessWidget {
                 "newVerseSelected",
                 [context.read(menuBookP).state, chapterNo, firstVerseNo]
               ]);
+              _completeDrawerAction(context);
             }
           },
         );
@@ -451,6 +447,7 @@ class BibleDrawer extends StatelessWidget {
                 "newVerseSelected",
                 [menuBook, menuChapter, verseNo]
               ]);
+              _completeDrawerAction(context);
             }
           },
         );

@@ -189,7 +189,10 @@ final searchEntryOptionP = StateProvider<int>((ref) => ref.watch(configProvider)
 final searchEntryExclusionP = StateProvider<bool>((ref) => ref.watch(configProvider).state.searchEntryExclusion);
 final searchWholeBibleP = StateProvider<bool>((ref) => ref.watch(configProvider).state.searchWholeBible);
 final bibleSearchBookFilterP = StateProvider<Set<int>>((ref) => ref.watch(configProvider).state.bibleDB1.bibleSearchBookFilter);
-final chapterData1P = StateProvider<List<List<dynamic>>>((ref) => ref.watch(configProvider).state.chapterData1);
+final allChapterList1P = StateProvider<List<String>>((ref) => ref.watch(configProvider).state.bibleDB1.allChapterList);
+final allChapterData1P = StateProvider<Map<String, List<List<dynamic>>>>((ref) => ref.watch(configProvider).state.allChapterData);
+final currentChapterPageP = StateProvider<double>((ref) => ref.watch(configProvider).state.currentChapterPage);
+//final chapterData1P = StateProvider<List<List<dynamic>>>((ref) => ref.watch(configProvider).state.chapterData1);
 final chapterData2P = StateProvider<List<List<dynamic>>>((ref) => ref.watch(configProvider).state.chapterData2);
 final activeScrollIndex1P = StateProvider<int>((ref) => ref.watch(configProvider).state.activeScrollIndex1);
 final activeScrollIndex2P = StateProvider<int>((ref) => ref.watch(configProvider).state.activeScrollIndex2);
@@ -322,9 +325,13 @@ class Configurations {
   Map<String, List<String>> allBibles = {};
   //Map<String, List<String>> allBiblesByLanguages = {"he": [], "el": [], "he.el": []};
   Bible bibleDB1, bibleDB2, searchBibleDB, iBibleDB, tBibleDB, headingsDB;
+  Map<String, List<List<dynamic>>> allChapterData = {};
   List<List<dynamic>> chapterData1, chapterData1Parallel, chapterData2;
   int activeScrollIndex1, activeScrollIndex2;
   Map<String, String> allCommentaries, allLexicons, allEncyclopedia, allDictionaries, allGeneralDictionaries;
+  double currentChapterPage = 0;
+
+  void updateCurrentChapterPage(double page) => currentChapterPage = page;
 
   // Functions to work with "settings" or preferences
 
@@ -474,16 +481,6 @@ class Configurations {
 
     // Update text styles, colours, theme data
     updateTheme();
-  }
-
-  Future<void> changeWorkspaceLayout() async {
-    int workspaceLayout = intValues["workspaceLayout"];
-    if (workspaceLayout == 2) {
-      workspaceLayout = 0;
-    } else {
-      workspaceLayout++;
-    }
-    await save("workspaceLayout", workspaceLayout);
   }
 
   Future<void> save(String feature, dynamic newSetting) async {
@@ -742,11 +739,6 @@ class Configurations {
     );
   }
 
-  static Future<void> goTo(BuildContext context, Widget widget) async {
-    await Navigator.push(
-        context, MaterialPageRoute(builder: (context) => widget));
-  }
-
   // Set up resources
   Future<void> setupResources() async {
     marvelData = await StorageMx.getUserDirectoryPath();
@@ -802,7 +794,12 @@ class Configurations {
     }
   }
 
-  Future<void> newVerseSelected(List<dynamic> bcvList) async {
+  Future<void> onChapterChanged(List<int> bcvList) async {
+    await updateBCVMenu(bcvList);
+    await updateDBChapterData(bcvList);
+  }
+
+  /*Future<void> newVerseSelected(List<dynamic> bcvList) async {
     final List<int> activeVerse = listListIntValues["historyActiveVerse"].first;
     if (bcvList.sublist(0, 3).join(".") != activeVerse.sublist(0, 3).join(".")) {
       if (bcvList.sublist(0, 2).join(".") != activeVerse.sublist(0, 2).join(".")) {
@@ -811,7 +808,7 @@ class Configurations {
       }
       await add("historyActiveVerse", bcvList);
     }
-  }
+  }*/
 
   Future<void> openBibleDatabase() async {
     await openBibleDB1();
@@ -843,10 +840,11 @@ class Configurations {
     await save("bible1", bibleDB1.module);
     await save("bible2", bibleDB2.module);
 
-    // Update chapter data for display
-    updateDisplayChapterData();
-
     final List<int> activeVerse = listListIntValues["historyActiveVerse"].first;
+
+    // Update chapter data for display
+    updateDisplayChapterData(activeVerse);
+    // Update scroll index
     updateActiveScrollIndex(activeVerse);
   }
 
@@ -870,10 +868,10 @@ class Configurations {
     await bibleDB2.updateChapterData(activeVerse);
 
     // Update chapter data for display
-    updateDisplayChapterData();
+    updateDisplayChapterData(activeVerse);
   }
 
-  void updateDisplayChapterData() {
+  void updateDisplayChapterData(List<int> activeVerse) {
     // Setup chapterData1Parallel
     int vs1 = bibleDB1.verseList.first;
     int ve1 = bibleDB1.verseList.last;
@@ -897,6 +895,9 @@ class Configurations {
     chapterData1 = (boolValues["parallelVerses"]) ? chapterData1Parallel : bibleDB1.chapterData;
     // chapterData2 always use secondary bible data.
     chapterData2 = bibleDB2.chapterData;
+
+    // Update all chapter data map
+    allChapterData["${activeVerse.first}.${activeVerse[1]}"] = chapterData1;
   }
 
   void updateActiveScrollIndex(List<int> activeVerse) {
@@ -957,5 +958,22 @@ class Configurations {
   }
 
   void updateLastBibleSearchResultsParallel(Map<int, List<List<dynamic>>> data) => lastBibleSearchResultsParallel = data;
+
+  // Workspace
+  Future<void> changeWorkspaceLayout() async {
+    int workspaceLayout = intValues["workspaceLayout"];
+    if (workspaceLayout == 2) {
+      workspaceLayout = 0;
+    } else {
+      workspaceLayout++;
+    }
+    await save("workspaceLayout", workspaceLayout);
+  }
+
+  // Navigation
+  static Future<void> goTo(BuildContext context, Widget widget) async {
+    await Navigator.push(
+        context, MaterialPageRoute(builder: (context) => widget));
+  }
 
 }

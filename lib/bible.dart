@@ -6,6 +6,7 @@ class Bible {
   final String module, filePath;
   final FileMx fileMx;
   Database db;
+  List<String> allChapterList;
   List<int> bookList, chapterList, verseList, menuChapterList, menuVerseList;
   //Map<int, List<int>> allChapterList;
   //Map<String, List<int>> allVerseList;
@@ -18,10 +19,14 @@ class Bible {
 
   Bible(this.module, this.filePath, this.fileMx);
 
-  Future<void> openDatabase() async => db = await fileMx.openSqliteDB("FULLPATH", filePath);
+  Future<void> openDatabase() async {
+    db = await fileMx.openSqliteDB("FULLPATH", filePath);
+    allChapterList = await getAllChapterList();
+    bookList = await getBookList();
+  }
 
   Future<void> updateBCVMenu(List<int> bcvList) async {
-    bookList = await getBookList();
+    if (bookList == null) bookList = await getBookList();
     chapterList = await getChapterList(bcvList);
     menuChapterList = chapterList;
     verseList = await getVerseList(bcvList);
@@ -44,6 +49,20 @@ class Bible {
 
   Future<void> updateChapterData(List<int> bcvList) async {
     chapterData = await getChapterData(bcvList);
+  }
+
+  Future<List<String>> getAllChapterList() async {
+    // Avoid errors if database is closed or not opened.
+    if ((db == null) || (!db.isOpen)) await openDatabase();
+
+    final String queryTable = (module == "OHGBc") ? "Data" : "Bible";
+    final String query = "SELECT DISTINCT Book, Chapter FROM $queryTable ORDER BY Book, Chapter";
+    final List<Map<String, dynamic>> results =
+    await fileMx.queryOpenedSqliteDB(db, query, []);
+    return [
+      for (Map<String, dynamic> result in results)
+        if (result["Book"] != 0) "${result["Book"]}.${result["Chapter"]}"
+    ];
   }
 
   Future<List<int>> getBookList() async {

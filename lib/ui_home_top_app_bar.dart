@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'config.dart';
-import 'app_translation.dart';
 import 'ui_bible_settings.dart';
 
 class HomeTopAppBar {
@@ -21,7 +20,7 @@ class HomeTopAppBar {
             await context.read(configProvider).state.swapBibles();
             context.refresh(bible1P);
             context.refresh(bible2P);
-            context.refresh(chapterData1P);
+            context.refresh(allChapterData1P);
             context.refresh(chapterData2P);
             context.refresh(activeScrollIndex1P);
             context.refresh(activeScrollIndex2P);
@@ -44,10 +43,10 @@ class HomeTopAppBar {
                 .state
                 .save("parallelVerses", !parallelVerses);
             context.refresh(parallelVersesP);
-            context.read(configProvider).state.updateDisplayChapterData();
-            context.refresh(chapterData1P);
-            context.read(configProvider).state.updateActiveScrollIndex(
-                context.read(historyActiveVerseP).state.first);
+            final List<int> activeVerse = context.read(historyActiveVerseP).state.first;
+            context.read(configProvider).state.updateDisplayChapterData(activeVerse);
+            context.refresh(allChapterData1P);
+            context.read(configProvider).state.updateActiveScrollIndex(activeVerse);
             context.refresh(activeScrollIndex1P);
             callBack(["scrollToBibleVerse", ""]);
           },

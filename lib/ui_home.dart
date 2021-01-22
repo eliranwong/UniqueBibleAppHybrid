@@ -4,7 +4,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:swipedetector/swipedetector.dart';
+//import 'package:swipedetector/swipedetector.dart';
 import 'package:flutter_parsed_text/flutter_parsed_text.dart';
 // The following three imports work with webview.
 import 'package:flutter/foundation.dart';
@@ -37,17 +37,10 @@ import 'ui_workspace_lookup_content.dart';
 class UiHome extends HookWidget {
   // A global key
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  // To work with provider
-  final configState = useProvider(configProvider).state;
-  // variable to work with translations
-  /*String language;
-  final Map<String, List<String>> interfaceApp = AppTranslation.interfaceApp,
-      interfaceBottom = AppTranslation.interfaceBottom,
-      interfaceMessage = AppTranslation.interfaceMessage,
-      interfaceDialog = AppTranslation.interfaceDialog,
-      interfaceBibleSearch = AppTranslation.interfaceBibleSearch;*/
-  ItemScrollController verseScrollController1, verseScrollController2;
-  ItemPositionsListener versePositionsListener1, versePositionsListener2;
+  // Widget controllers
+  PageController chaptersPageController;
+  ItemScrollController verseScrollController1 = ItemScrollController(), verseScrollController2 = ItemScrollController();
+  ItemPositionsListener versePositionsListener1 = ItemPositionsListener.create(), versePositionsListener2 = ItemPositionsListener.create();
   BiblesScrollCoordinator biblesScrollCoordinator;
   TabController workSpaceTabController;
   int workSpaceTabIndex = 0;
@@ -62,26 +55,54 @@ class UiHome extends HookWidget {
   void setupPackages() {
     // Using hybrid composition for webview v1.0.7+; read https://pub.dev/packages/webview_flutter
     if (Platform.isAndroid) WebView.platform = SurfaceAndroidWebView();
-    // initiate tts plugin
-    //initTts();
+
     // Lemmatizer
     //lemmatizer =  Lemmatizer();
     // _text = lemmatizer.lemma(_controller.text);
-
-    // Setup scroll controllers for reading parallel chapters.
-    verseScrollController1 = ItemScrollController();
-    versePositionsListener1 = ItemPositionsListener.create();
-    verseScrollController2 = ItemScrollController();
-    versePositionsListener2 = ItemPositionsListener.create();
   }
 
-  /*void setupAtmosphere() {
-    language = configState.stringValues["language"];
-  }*/
+  void setupChaptersPageController(BuildContext context) {
+    final List<String> allChapterList1 = context.read(allChapterList1P).state;
+    final List<int> activeVerse = context.read(historyActiveVerseP).state.first;
+    final int initialChapterIndex = allChapterList1.indexOf("${activeVerse.first}.${activeVerse[1]}");
+    chaptersPageController = PageController(initialPage: (initialChapterIndex == -1) ? 0 : initialChapterIndex);
+    // The following line does not work.
+    //context.read(currentChapterPageP).state = initialChapterIndex.toDouble();
+    // Therefore, we use the following line instead.
+    context.read(configProvider).state.updateCurrentChapterPage(initialChapterIndex.toDouble());
+    chaptersPageController.addListener(() => context.read(currentChapterPageP).state = chaptersPageController.page);
+  }
+
+  void setupBiblesScrollCoordinator(BuildContext context) {
+    biblesScrollCoordinator =
+        BiblesScrollCoordinator(context, (List<int> data) async {
+          // data.first tells which bible to scroll
+          // data.last tells which index to go
+
+          // The following delay is necessary to avoid calling on items currently being built.
+          await new Future.delayed(const Duration(microseconds: 1));
+
+          final int goToIndex = data.last;
+          switch (data.first) {
+            case 1:
+              if (verseScrollController1.isAttached)
+                verseScrollController1.jumpTo(index: goToIndex);
+              break;
+            case 2:
+              if (verseScrollController2.isAttached)
+                verseScrollController2.jumpTo(index: goToIndex);
+              break;
+            default:
+              break;
+          }
+        });
+  }
 
   @override
   build(BuildContext context) {
+    setupChaptersPageController(context);
     setupBiblesScrollCoordinator(context);
+    final Map<String, Color> myColors = useProvider(myColorsP).state;
     final HomeTopAppBar homeTopAppBar = HomeTopAppBar(
         (List<dynamic> data) async => await callBack(context, data));
     return Theme(
@@ -89,23 +110,59 @@ class UiHome extends HookWidget {
       child: Scaffold(
         key: _scaffoldKey,
         appBar: AppBar(
-          backgroundColor: useProvider(myColorsP).state["appBarColor"],
-          title: Text(useProvider(activeVerseReferenceP).state),
-          leading: Builder(
+          backgroundColor: myColors["appBarColor"],
+          title: Row(
+            children: [
+              IconButton(
+                //tooltip: watch(interfaceAppP).state[1],
+                icon: const Icon(Icons.navigate_before),
+                onPressed: () {
+                  chaptersPageController.previousPage(
+                    duration: Duration(milliseconds: 10),
+                    curve: Curves.linear,
+                  );
+                },
+              ),
+              Consumer(builder: (context, watch, child) {
+                return TextButton(
+                  onPressed: () {
+                    context.read(configProvider).state.save(
+                        "showDrawer", !context.read(showDrawerP).state);
+                    context.refresh(showDrawerP);
+                  },
+                  child: Text(
+                    watch(activeVerseReferenceP).state,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                );
+              }),
+              IconButton(
+                //tooltip: watch(interfaceAppP).state[1],
+                icon: const Icon(Icons.navigate_next),
+                onPressed: () {
+                  chaptersPageController.nextPage(
+                    duration: Duration(milliseconds: 10),
+                    curve: Curves.linear,
+                  );
+                },
+              ),
+            ],
+          ),
+          /*leading: Builder(
             builder: (BuildContext context) {
               return Consumer(builder: (context, watch, child) {
                 return IconButton(
                   tooltip: watch(interfaceAppP).state[1],
                   icon: const Icon(Icons.menu),
                   onPressed: () {
-                    configState.save(
+                    context.read(configProvider).state.save(
                         "showDrawer", !context.read(showDrawerP).state);
                     context.refresh(showDrawerP);
                   },
                 );
               });
             },
-          ),
+          ),*/
           actions: <Widget>[
             homeTopAppBar.parallelVersesButton(context),
             homeTopAppBar.buildSwitchButton(context),
@@ -113,7 +170,7 @@ class UiHome extends HookWidget {
           ],
         ),
         body: Container(
-          color: configState.myColors["backgroundColor"],
+          color: myColors["backgroundColor"],
           child: _buildLayout(context),
         ),
         bottomNavigationBar: HomeBottomAppBar(context).buildBottomAppBar(),
@@ -178,10 +235,12 @@ class UiHome extends HookWidget {
   }
 
   Widget _buildDivider() {
-    return Container(
-      decoration: BoxDecoration(
-          border: Border.all(color: configState.myColors["grey"])),
-    );
+    return Consumer(builder: (context, watch, child) {
+      return Container(
+        decoration: BoxDecoration(
+            border: Border.all(color: watch(myColorsP).state["grey"])),
+      );
+    });
   }
 
   List<Widget> _buildLayoutWidgets(BuildContext context) {
@@ -192,7 +251,7 @@ class UiHome extends HookWidget {
           if (workspaceLayout == 2) {
             return Container();
           } else {
-            return _wrap(_buildBibleChapter1(context), 2);
+            return _wrap(_buildBibleChapters(context), 2);
           }
         },
       ),
@@ -279,7 +338,112 @@ class UiHome extends HookWidget {
     );
   }
 
-  Widget _buildBibleChapter1(BuildContext context) {
+  Widget _buildBibleChapters(BuildContext context) {
+    return Consumer(builder: (context, watch, child) {
+      final List<String> allChapterList1 = watch(allChapterList1P).state;
+      return PageView.builder(
+        controller: chaptersPageController,
+        itemCount: allChapterList1.length,
+        itemBuilder: (BuildContext context, int pageIndex) {
+          /*if (index == context.read(currentChapterPageP).state.floor()) {
+            // Condition: If the page is the page being swiped from
+          } else if (index == context.read(currentChapterPageP).state.floor() + 1) {
+            // Condition: If the page is the page being swiped to
+          } else {
+            // Condition: If the page is a page off screen
+          }*/
+          return _bible1EachChapterContent(context, pageIndex, allChapterList1[pageIndex]);
+        },
+        onPageChanged: (int newPageIndex) async {
+          final String newChapterBcString = allChapterList1[newPageIndex];
+          final List<int> newChapterBcList = [for (String i in newChapterBcString.split(".")) int.parse(i)];
+
+          // Load new chapter data
+          // This step must be done before saving history record and updating scroll index.
+          await context.read(configProvider).state.onChapterChanged([...newChapterBcList, 1]);
+
+          // Save history record only if book and chapter does not match the latest one.
+          final List<int> activeVerse = context.read(configProvider).state.listListIntValues["historyActiveVerse"].first;
+          if (activeVerse.sublist(0, 2).join(".") != newChapterBcString) {
+            final int firstVerseNo = context.read(configProvider).state.bibleDB1.verseList.first;
+            await context.read(configProvider).state.add("historyActiveVerse", [...newChapterBcList, firstVerseNo]);
+          } else {
+            // The following line is important to update scroll index without saving history record.
+            context.read(configProvider).state.updateActiveScrollIndex(activeVerse);
+          }
+
+          // Update providers
+          context.refresh(historyActiveVerseP);
+          context.refresh(activeScrollIndex1P);
+          context.refresh(activeScrollIndex2P);
+          context.refresh(allChapterData1P);
+          context.refresh(chapterData2P);
+          context.refresh(menuBookP);
+          context.refresh(menuChapterP);
+        },
+      );
+    });
+  }
+
+  Widget _bible1EachChapterContent(BuildContext context, int pageIndex, String chapterKey) {
+    return Consumer(builder: (context, watch, child) {
+      final List<List<dynamic>> chapterData = watch(allChapterData1P).state[chapterKey] ?? [];
+      if (chapterData.isEmpty) return Center(child: CircularProgressIndicator(),);
+      final bool listeningBible1Chapter = watch(enableParallelChapterScrollingP).state;
+      // To ensure verseScrollController1 is attached to the opened chapter and the page is not changing.
+      final double currentChapterPage = watch(currentChapterPageP).state;
+      final bool listener = (currentChapterPage % 1 == 0) && (currentChapterPage.toInt() == pageIndex);
+      if ((!listeningBible1Chapter) || (!listener))
+        return _buildEachChapterBibleVerses1(context, chapterData, listener: false);
+      return ValueListenableBuilder<Iterable<ItemPosition>>(
+        valueListenable: versePositionsListener1.itemPositions,
+        builder: (context, positions, child) {
+          int topIndex;
+          if (positions.isNotEmpty) {
+            topIndex = positions
+                .where((ItemPosition position) => position.itemTrailingEdge > 0)
+                .reduce((ItemPosition min, ItemPosition position) =>
+            position.itemTrailingEdge < min.itemTrailingEdge
+                ? position
+                : min)
+                .index;
+            /*int bottomIndex = positions
+              .where((ItemPosition position) => position.itemLeadingEdge < 1)
+              .reduce((ItemPosition max, ItemPosition position) =>
+          position.itemLeadingEdge > max.itemLeadingEdge
+              ? position
+              : max)
+              .index;*/
+
+            // Update bible 1 current position
+            biblesScrollCoordinator.updateBible1Index(topIndex);
+          }
+          return _buildEachChapterBibleVerses1(context, chapterData);
+        },
+      );
+    });
+  }
+
+  Widget _buildEachChapterBibleVerses1(BuildContext context, List<List<dynamic>> chapterData, {bool listener: true}) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final int activeScrollIndex1 = watch(activeScrollIndex1P).state;
+        return ScrollablePositionedList.builder(
+          padding: EdgeInsets.zero,
+          itemCount: chapterData.length,
+          itemBuilder: (context, i) => _buildVerseRow(
+              context, i, activeScrollIndex1, chapterData[i],
+              listener: listener),
+          initialScrollIndex: activeScrollIndex1,
+          itemScrollController: (listener) ? verseScrollController1 : null,
+          itemPositionsListener: (listener) ? versePositionsListener1 : null,
+        );
+      },
+    );
+  }
+
+  // The following three functions were used without PageView
+  /*Widget _buildBibleChapter1(BuildContext context) {
     return SwipeDetector(
       child: _bible1ChapterContent(context),
       onSwipeLeft: () async {
@@ -326,6 +490,25 @@ class UiHome extends HookWidget {
     });
   }
 
+  Widget _buildBibleVerses1(BuildContext context, {bool listener: true}) {
+    return Consumer(
+      builder: (context, watch, child) {
+        final List<List<dynamic>> chapterData = watch(chapterData1P).state;
+        final int activeScrollIndex1 = watch(activeScrollIndex1P).state;
+        return ScrollablePositionedList.builder(
+          padding: EdgeInsets.zero,
+          itemCount: chapterData.length,
+          itemBuilder: (context, i) => _buildVerseRow(
+              context, i, activeScrollIndex1, chapterData[i],
+              listener: listener),
+          initialScrollIndex: activeScrollIndex1,
+          itemScrollController: verseScrollController1,
+          itemPositionsListener: (listener) ? versePositionsListener1 : null,
+        );
+      },
+    );
+  }*/
+
   Widget _bible2ChapterContent(BuildContext context) {
     return Consumer(builder: (context, watch, child) {
       final bool listeningBible1Chapter =
@@ -359,25 +542,6 @@ class UiHome extends HookWidget {
         },
       );
     });
-  }
-
-  Widget _buildBibleVerses1(BuildContext context, {bool listener: true}) {
-    return Consumer(
-      builder: (context, watch, child) {
-        final List<List<dynamic>> chapterData = watch(chapterData1P).state;
-        final int activeScrollIndex1 = watch(activeScrollIndex1P).state;
-        return ScrollablePositionedList.builder(
-          padding: EdgeInsets.zero,
-          itemCount: chapterData.length,
-          itemBuilder: (context, i) => _buildVerseRow(
-              context, i, activeScrollIndex1, chapterData[i],
-              listener: listener),
-          initialScrollIndex: activeScrollIndex1,
-          itemScrollController: verseScrollController1,
-          itemPositionsListener: (listener) ? versePositionsListener1 : null,
-        );
-      },
-    );
   }
 
   Widget _buildBibleVerses2(BuildContext context, {bool listener: true}) {
@@ -469,7 +633,7 @@ class UiHome extends HookWidget {
                 : bibleTextStyles["verseNo"].last,
             onTap: (url) async {
               enableParallelChapterScrolling(context);
-              await newVerseSelectedSameChapter(context, data.first);
+              await newVerseSelected(context, data.first);
             },
           ),
           if (instantHighlightWord.isNotEmpty)
@@ -528,7 +692,7 @@ class UiHome extends HookWidget {
                 : bibleTextStyles["verseNo"].last,
             onTap: (url) async {
               enableParallelChapterScrolling(context);
-              await newVerseSelectedSameChapter(context, data.first);
+              await newVerseSelected(context, data.first);
             },
           ),
           if (instantHighlightWord.isNotEmpty)
@@ -599,7 +763,7 @@ class UiHome extends HookWidget {
                     : bibleTextStyles["verseNo"].last,
                 onTap: (url) async {
                   enableParallelChapterScrolling(context);
-                  await newVerseSelectedSameChapter(context, data.first);
+                  await newVerseSelected(context, data.first);
                 },
               ),
             ],
@@ -664,7 +828,7 @@ class UiHome extends HookWidget {
                   : bibleTextStyles["verseNo"].last,
               onTap: (url) async {
                 enableParallelChapterScrolling(context);
-                await newVerseSelectedSameChapter(context, data.first);
+                await newVerseSelected(context, data.first);
               },
             ),
           ],
@@ -907,7 +1071,7 @@ class UiHome extends HookWidget {
                   : bibleTextStyles["verseNo"].last,
               onTap: (url) async {
                 enableParallelChapterScrolling(context);
-                await newVerseSelectedSameChapter(context, data.first);
+                await newVerseSelected(context, data.first);
               },
             ),
           ],
@@ -1017,31 +1181,6 @@ class UiHome extends HookWidget {
       context.read(enableParallelChapterScrollingP).state = false;
   }
 
-  void setupBiblesScrollCoordinator(BuildContext context) {
-    biblesScrollCoordinator =
-        BiblesScrollCoordinator(context, (List<int> data) async {
-      // data.first tells which bible to scroll
-      // data.last tells which index to go
-
-      // The following delay is necessary to avoid calling on items currently being built.
-      await new Future.delayed(const Duration(microseconds: 1));
-
-      final int goToIndex = data.last;
-      switch (data.first) {
-        case 1:
-          if (verseScrollController1.isAttached)
-            verseScrollController1.jumpTo(index: goToIndex);
-          break;
-        case 2:
-          if (verseScrollController2.isAttached)
-            verseScrollController2.jumpTo(index: goToIndex);
-          break;
-        default:
-          break;
-      }
-    });
-  }
-
   void scrollToBibleVerse(BuildContext context,
       {int index = -1, bool slowly = false}) {
     int workspaceLayout = context.read(workspaceLayoutP).state;
@@ -1068,7 +1207,7 @@ class UiHome extends HookWidget {
     }
   }
 
-  Future<void> goNextChapter(BuildContext context) async {
+  /*Future<void> goNextChapter(BuildContext context) async {
     final List<int> activeVerse = context.read(historyActiveVerseP).state.first;
     final int currentBook = activeVerse.first;
     final int currentChapter = activeVerse[1];
@@ -1164,7 +1303,7 @@ class UiHome extends HookWidget {
         await newVerseSelected(
             context, <int>[currentBook, newChapter, newChapterVerseList.first]);
     }
-  }
+  }*/
 
   // Workspace
   Future<void> changeWorkspaceTab(BuildContext context, int i) async {
@@ -1186,7 +1325,6 @@ class UiHome extends HookWidget {
     Map<String, Function> actions = {
       "newVersionVerseSelected": newVersionVerseSelected,
       "newVerseSelected": newVerseSelected,
-      "newVerseSelectedSameChapter": newVerseSelectedSameChapter,
       "changeBible1Version": changeBible1Version,
       "changeBible2Version": changeBible2Version,
       "searchBible": searchBible,
@@ -1240,29 +1378,29 @@ class UiHome extends HookWidget {
     await newVerseSelected(context, bcvList);
   }
 
-  Future<void> newVerseSelectedSameChapter(
-          BuildContext context, List<dynamic> bcvList) async =>
-      await newVerseSelected(context, bcvList, sameChapter: true);
+  Future<void> newVerseSelected(BuildContext context, List<dynamic> bcvList) async {
+    final List<int> activeVerse = context.read(configProvider).state.listListIntValues["historyActiveVerse"].first;
 
-  Future<void> newVerseSelected(BuildContext context, List<dynamic> bcvList,
-      {bool sameChapter = false}) async {
-    final List<int> activeVerse = context
-        .read(configProvider)
-        .state
-        .listListIntValues["historyActiveVerse"]
-        .first;
-    if (bcvList.join(".") != activeVerse.join(".")) {
-      await context.read(configProvider).state.newVerseSelected(bcvList);
-      context.refresh(historyActiveVerseP);
-      context.refresh(activeScrollIndex1P);
-      context.refresh(activeScrollIndex2P);
-      if (!sameChapter) {
-        context.refresh(chapterData1P);
-        context.refresh(chapterData2P);
+    // Check if same as the last active verse.
+    if (bcvList.sublist(0, 3).join(".") != activeVerse.sublist(0, 3).join(".")) {
+
+      // Save active verse
+      await context.read(configProvider).state.add("historyActiveVerse", bcvList);
+
+      // Check if on the same chapter
+      if (bcvList.sublist(0, 2).join(".") != activeVerse.sublist(0, 2).join(".")) {
+        // Scroll to the right page to open a new chapter.
+        final List<String> allChapterList1 = context.read(allChapterList1P).state;
+        final int chapterIndex = allChapterList1.indexOf("${bcvList.first}.${bcvList[1]}");
+        chaptersPageController.jumpToPage((chapterIndex == -1) ? 0 : chapterIndex);
+      } else {
+        context.refresh(historyActiveVerseP);
+        context.refresh(activeScrollIndex1P);
+        context.refresh(activeScrollIndex2P);
+        context.refresh(menuBookP);
+        context.refresh(menuChapterP);
+        scrollToBibleVerse(context);
       }
-      context.refresh(menuBookP);
-      context.refresh(menuChapterP);
-      scrollToBibleVerse(context);
     }
   }
 
@@ -1314,12 +1452,12 @@ class UiHome extends HookWidget {
         default:
           break;
       }
+      context.read(configProvider).state.updateDisplayChapterData(activeVerse);
       context.read(configProvider).state.updateActiveScrollIndex(activeVerse);
-      context.read(configProvider).state.updateDisplayChapterData();
       switch (whichBible) {
         case 1:
           context.refresh(bible1P);
-          context.refresh(chapterData1P);
+          context.refresh(allChapterData1P);
           context.refresh(activeScrollIndex1P);
           break;
         case 2:
