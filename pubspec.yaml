@@ -52,6 +52,7 @@ dependencies:
   pie_chart: ^4.0.1
   fl_chart: ^0.12.2
   charts_flutter: ^0.9.0
+  flutter_colorpicker: ^0.3.5
 
 # Run the following command:
 # flutter pub run flutter_launcher_icons:main
