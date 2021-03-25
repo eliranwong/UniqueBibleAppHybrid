@@ -44,8 +44,8 @@ dependencies:
   connectivity: ^2.0.2
   lpinyin: ^1.1.0
   lemmatizer: ^0.0.1
-  flutter_hooks: ^0.14.0
-  hooks_riverpod: ^0.12.1
+  flutter_hooks: ^0.16.0
+  hooks_riverpod: ^0.13.1+1
   flutter_html: ^1.1.1
   webview_flutter: ^1.0.7
   flutter_parsed_text: ^1.2.5
