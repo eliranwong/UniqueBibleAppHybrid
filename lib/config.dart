@@ -38,7 +38,8 @@ final displayAllMenuBookP = StateProvider<bool>((ref) => false);
 final enableParallelChapterScrollingP = StateProvider<bool>((ref) => true);
 final wordLookupEntryP = StateProvider<String>((ref) => ref.watch(instantHighlightWordP).state);
 final lookupMatchesP = StateProvider<List<Map<String, dynamic>>>((ref) => []);
-final lookupContentP = StateProvider<String>((ref) => "");
+final lookupContentP = StateProvider<String>((ref) => "[Lookup Content]");
+final marvelBibleContentP = StateProvider<String>((ref) => "[Marvel Bible]");
 final pickerSelectedColorP = StateProvider<Color>((ref) => Colors.white);
 
 final customInterlinearP = StateProvider<Map<String, bool>>((ref) {
@@ -923,7 +924,7 @@ class Configurations {
 
   Future<void> copyAssetsResources() async {
     Map<String, List<String>> resources = {
-      "bibles": ["KJV.bible", "NET.bible", "OHGBx.bible", "OHGBt.bible", "OHGBi.bible"],
+      "bibles": ["KJV.bible", "NET.bible", "OHGBx.bible", "OHGBt.bible", "OHGBi.bible", "MAB.bible"],
       "morphology": ["OHGB.morphology"],
     };
     for (String resource in resources.keys) {

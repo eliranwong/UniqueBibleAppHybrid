@@ -207,6 +207,15 @@ class Bible {
     ];
   }
 
+  Future<String> getFormattedChapterString(List<int> bcvList) async {
+    // Avoid errors if database is closed or not opened.
+    if ((db == null) || (!db.isOpen)) await openDatabase();
+
+    final String query = "SELECT Scripture FROM Bible WHERE Book=? AND Chapter=?";
+    List<Map<String, dynamic>> results = await fileMx.queryOpenedSqliteDB(db, query, bcvList.sublist(0, 2));
+    return results.first["Scripture"];
+  }
+
   Future<void> searchMultipleBooks(String searchEntry, int searchEntryOption,
       {List<int> filter = const [], String exclusion = ""}) async {
 

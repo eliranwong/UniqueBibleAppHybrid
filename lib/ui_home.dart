@@ -313,17 +313,17 @@ class UiHome extends HookWidget {
         Workspace((List<dynamic> data) async => await callBack(context, data));
     return <Widget>[
       _bible2ChapterContent(context),
-      WordFeatures(
-              (List<dynamic> data) async => await callBack(context, data)),
-      LookupContent(
-              (List<dynamic> data) async => await callBack(context, data)),
-      _buildWebView(context),
+      _buildMarvelBibleView(context),
       BibleSearchResults(
           (List<dynamic> data) async => await callBack(context, data)),
       MultipleVerses(
           (List<dynamic> data) async => await callBack(context, data)),
       MultipleVersions(
           (List<dynamic> data) async => await callBack(context, data)),
+      WordFeatures(
+              (List<dynamic> data) async => await callBack(context, data)),
+      LookupContent(
+              (List<dynamic> data) async => await callBack(context, data)),
       //TestChart(),
       //workspace.dummyWidget("Tab 3"),
     ];
@@ -1334,6 +1334,7 @@ class UiHome extends HookWidget {
       "dictionary": dictionary,
       "encyclopedia": encyclopedia,
       "generalDictionary": generalDictionary,
+      "marvelBible": syncMarvelBible,
       "scrollToBibleVerse": scrollToBibleVerse, // non-future function
     };
     (data.last.isEmpty)
@@ -1583,14 +1584,24 @@ class UiHome extends HookWidget {
 
   // Functions to work with WebView
 
-  Widget _buildWebView(BuildContext context) {
+  void syncMarvelBible(BuildContext context) {
+    final List<int> activeVerse = context.read(historyActiveVerseP).state.first;
+    final Map<String, List<String>> allBibles = context.read(configProvider).state.allBibles;
+    final String module = "MAB";
+    final FileMx fileMx = context.read(fileMxP).state;
+    Bible(module, allBibles[module].last, fileMx).getFormattedChapterString(activeVerse).then((content) => context.read(marvelBibleContentP).state = content);
+  }
+
+  Widget _buildMarvelBibleView(BuildContext context) {
     return Consumer(builder: (context, watch, child) {
-      final String lookupContent = watch(lookupContentP).state;
+      final List<int> activeVerse = context.read(historyActiveVerseP).state.first;
+      final bool rtl = (activeVerse.first < 40) ? true : false;
+      final String content = watch(marvelBibleContentP).state;
       final Map<String, Color> myColors = watch(myColorsP).state;
       final Map<String, TextStyle> myTextStyle = watch(myTextStyleP).state;
       final double fontSize = watch(fontSizeP).state;
       return WebView(
-        initialUrl: _buildHtmlContent(context, lookupContent, myColors, myTextStyle, fontSize),
+        initialUrl: _buildHtmlContent(context, content, myColors, myTextStyle, fontSize, rtl: rtl),
         javascriptMode: JavascriptMode.unrestricted,
         javascriptChannels: <JavascriptChannel>[
           HtmlElements.ubaJsChannel(),
@@ -1607,10 +1618,6 @@ class UiHome extends HookWidget {
   }
 
   String _buildHtmlContent(BuildContext context, String content, Map<String, Color> myColors, Map<String, TextStyle> myTextStyle, double fontSize, {bool rtl = false}) {
-
-    // Insert text for testing only.
-    content = TestingText.content;
-    rtl = true;
 
     final String backgroundColor = myColors["background"].toHex();
     final String fontColor = myColors["black"].toHex();
