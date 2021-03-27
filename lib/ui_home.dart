@@ -1589,7 +1589,10 @@ class UiHome extends HookWidget {
     final Map<String, List<String>> allBibles = context.read(configProvider).state.allBibles;
     final String module = "MAB";
     final FileMx fileMx = context.read(fileMxP).state;
-    Bible(module, allBibles[module].last, fileMx).getFormattedChapterString(activeVerse).then((content) => context.read(marvelBibleContentP).state = content);
+    Bible(module, allBibles[module].last, fileMx).getFormattedChapterString(activeVerse).then((content) {
+      context.read(marvelBibleContentP).state = content;
+      changeWorkspaceTab(context, 1);
+    });
   }
 
   Widget _buildMarvelBibleView(BuildContext context) {
@@ -1607,6 +1610,7 @@ class UiHome extends HookWidget {
           HtmlElements.ubaJsChannel(),
         ].toSet(),
         onWebViewCreated: (WebViewController webViewController) => _webViewController = webViewController,
+        onPageFinished: (String content) => webViewScrollToBcv(context, _webViewController),
         gestureRecognizers: Set()
           ..addAll({
             Factory<VerticalDragGestureRecognizer>(() => VerticalDragGestureRecognizer()),
@@ -1658,12 +1662,17 @@ $content
   }
 
   void webViewScrollToBcv(BuildContext context, WebViewController webViewController, {List<int> bcvList = const []}) {
-    if (bcvList.isEmpty) bcvList = context.read(historyActiveVerseP).state.first;
-    final String js = "var activeVerse = document.getElementById('v${bcvList.first}.${bcvList[1]}.${bcvList[2]}'); "
-        "if (typeof(activeVerse) != 'undefined' && activeVerse != null) { "
-        "activeVerse.scrollIntoView(); activeVerse.style.color = 'red'; } "
-        "else { document.getElementById('v0.0.0').scrollIntoView(); }";
-    webViewController?.evaluateJavascript(js);
+    if (bcvList.isEmpty) {
+      final List<List<int>> historyActiveVerse = context.read(historyActiveVerseP).state;
+      bcvList = (historyActiveVerse.isEmpty) ? [] : historyActiveVerse.first;
+    }
+    if (bcvList.isNotEmpty) {
+      final String js = "var activeVerse = document.getElementById('v${bcvList.first}.${bcvList[1]}.${bcvList[2]}'); "
+          "if (typeof(activeVerse) != 'undefined' && activeVerse != null) { "
+          "activeVerse.scrollIntoView(); activeVerse.style.color = 'red'; } "
+          "else { document.getElementById('v0.0.0').scrollIntoView(); }";
+      webViewController?.evaluateJavascript(js);
+    }
   }
 
 }

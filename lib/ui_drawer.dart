@@ -52,13 +52,6 @@ class BibleDrawer extends StatelessWidget {
         _buildChapterMenuList(context),
         _buildShowVerseSwitch(context),
         _buildVerseMenuList(context),
-        TextButton(
-          child: Text("MAB"),
-          onPressed: () async {
-            await callBack(["marvelBible", []]);
-            _completeDrawerAction(context);
-          },
-        ),
       ],
     );
   }
@@ -469,6 +462,13 @@ class BibleDrawer extends StatelessWidget {
         _buildVersionList(context, false),
         _buildVersionFilterChipsList(context),
         _buildCompareButton(context),
+        TextButton(
+          child: Text("MAB"),
+          onPressed: () {
+            callBack(["marvelBible", []]);
+            _completeDrawerAction(context);
+          },
+        ),
       ],
     );
   }

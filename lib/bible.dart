@@ -213,7 +213,7 @@ class Bible {
 
     final String query = "SELECT Scripture FROM Bible WHERE Book=? AND Chapter=?";
     List<Map<String, dynamic>> results = await fileMx.queryOpenedSqliteDB(db, query, bcvList.sublist(0, 2));
-    return results.first["Scripture"];
+    return (results.isEmpty) ? "[not found]" : results.first["Scripture"];
   }
 
   Future<void> searchMultipleBooks(String searchEntry, int searchEntryOption,
